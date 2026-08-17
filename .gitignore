@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# Dependencias de Composer
+# ---------------------------------------------------------------------------
+# No se versionan: se reconstruyen con `composer install` a partir de
+# composer.lock, que sí está en el repositorio y fija las versiones exactas.
+/vendor/
+
+# ---------------------------------------------------------------------------
+# Configuración local / por entorno
+# ---------------------------------------------------------------------------
+# Contiene credenciales de base de datos propias de cada máquina.
+# La plantilla versionada es config/config.local.example.php
+/config/config.local.php
+
+# ---------------------------------------------------------------------------
+# Archivos generados en tiempo de ejecución
+# ---------------------------------------------------------------------------
+# Los carnés en PDF se regeneran desde la aplicación y contienen datos
+# personales de estudiantes. Se conserva el directorio con .gitkeep.
+/storage/carnes/*
+!/storage/carnes/.gitkeep
+
+/storage/logs/*
+!/storage/logs/.gitkeep
+
+/storage/cache/*
+!/storage/cache/.gitkeep
+
+/storage/tmp/*
+!/storage/tmp/.gitkeep
+
+# Hojas de cálculo y reportes exportados
+/storage/exportaciones/*
+!/storage/exportaciones/.gitkeep
+
+# ---------------------------------------------------------------------------
+# Compilados de assets
+# ---------------------------------------------------------------------------
+/public/css/*.map
+/node_modules/
+/.sass-cache/
+
+# ---------------------------------------------------------------------------
+# Sistema operativo y editores
+# ---------------------------------------------------------------------------
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+/.idea/
+/.vscode/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*~
+
+# ---------------------------------------------------------------------------
+# Volcados y respaldos de base de datos
+# ---------------------------------------------------------------------------
+# El esquema oficial vive en database/schema.sql y database/seed.sql;
+# cualquier otro .sql suelto suele ser un respaldo con datos reales.
+/*.sql
+/backups/
+*.sql.gz
+*.zip

@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------------------
+# Normalización de finales de línea
+# ---------------------------------------------------------------------------
+# Se desarrolla en Windows (CRLF) y se despliega en Linux (LF). Con esta regla
+# Git guarda todo con LF en el repositorio y entrega a cada quien lo que su
+# sistema espera, evitando diffs donde un archivo aparece modificado entero
+# sin haber cambiado ni una línea.
+* text=auto
+
+# Archivos que deben conservar LF sí o sí: los ejecuta el servidor Linux y un
+# CRLF los rompe (shebang inválido, .htaccess mal interpretado).
+*.php     text eol=lf
+*.sql     text eol=lf
+*.sh      text eol=lf
+*.css     text eol=lf
+*.js      text eol=lf
+*.json    text eol=lf
+*.md      text eol=lf
+*.html    text eol=lf
+*.yml     text eol=lf
+*.yaml    text eol=lf
+.htaccess text eol=lf
+
+# Archivos de Windows que deben conservar CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# ---------------------------------------------------------------------------
+# Binarios: nunca convertir ni intentar diferenciar como texto
+# ---------------------------------------------------------------------------
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.pdf  binary
+*.zip  binary
+*.ttf  binary
+*.otf  binary
+*.woff binary
+*.woff2 binary
+*.xlsx binary
+*.xls  binary
+
+# ---------------------------------------------------------------------------
+# Exclusiones del archivo exportado (git archive)
+# ---------------------------------------------------------------------------
+.gitattributes export-ignore
+.gitignore     export-ignore

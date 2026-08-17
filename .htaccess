@@ -1,0 +1,30 @@
+# Redirige la raíz del proyecto hacia public/, que es el único directorio
+# que el servidor web debe exponer.
+#
+# En Hostinger lo correcto es apuntar el dominio directamente a public/ desde
+# cPanel ("Document Root"). Este archivo es la red de seguridad para cuando eso
+# no es posible, y para que en XAMPP funcione http://localhost/compite sin
+# tener que escribir /public en la URL.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    RewriteCond %{REQUEST_URI} !^/?public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Nada fuera de public/ debe servirse jamás: config con credenciales,
+# esquema de la base, dependencias de Composer, logs, carnés generados.
+<FilesMatch "\.(sql|md|json|lock|log|ini)$">
+    Require all denied
+</FilesMatch>
+
+# Segunda capa, deliberadamente redundante.
+#
+# La regla de arriba y la reescritura hacia public/ dependen de mod_rewrite.
+# Si en Hostinger llegara a estar desactivado, config.local.php quedaría
+# accesible con las credenciales de la base dentro. Esto lo impide por ruta,
+# sin depender de ningún módulo opcional.
+RedirectMatch 404 ^/?(config|core|app|database|storage|scripts|vendor|resources|docs)(/|$)
+
+Options -Indexes

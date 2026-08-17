@@ -1,0 +1,1649 @@
+<title>Protocolo de pruebas COCIAP</title>
+<style>
+/* ============================================================
+   Paleta: neutros con sesgo frío hacia el azul del propio sistema.
+   El azul #1E40AF es el acento real de la app, no uno inventado:
+   el documento debe parecer parte del producto.
+   ============================================================ */
+:root {
+    --ground:      #FBFCFD;
+    --surface:     #FFFFFF;
+    --surface-alt: #F4F7FA;
+    --line:        #DDE4EC;
+    --line-soft:   #EBF0F5;
+    --ink:         #16202C;
+    --ink-mid:     #445364;
+    --ink-soft:    #6E7E90;
+    --accent:      #1E40AF;
+    --accent-soft: #E8EEFC;
+    --pass:        #0F7B4F;
+    --pass-soft:   #E4F4EC;
+    --warn:        #8A5A00;
+    --warn-soft:   #FBF1DE;
+    --crit:        #A81F28;
+    --crit-soft:   #FBE9EA;
+    --shadow:      0 1px 2px rgba(22,32,44,.05), 0 6px 20px rgba(22,32,44,.05);
+
+    --font-ui: "Segoe UI Variable Text", "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --font-display: "Segoe UI Variable Display", "Segoe UI Semibold", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "Cascadia Code", Consolas, "SF Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        --ground:      #0E141B;
+        --surface:     #151E28;
+        --surface-alt: #1B2735;
+        --line:        #2A3948;
+        --line-soft:   #202D3A;
+        --ink:         #E4ECF4;
+        --ink-mid:     #A9B8C8;
+        --ink-soft:    #7C8B9C;
+        --accent:      #8AABFF;
+        --accent-soft: #1B2941;
+        --pass:        #5FD4A0;
+        --pass-soft:   #122E24;
+        --warn:        #E5B45C;
+        --warn-soft:   #2E2415;
+        --crit:        #FF8A8F;
+        --crit-soft:   #331A1D;
+        --shadow:      0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+    }
+}
+
+:root[data-theme="dark"] {
+    --ground:      #0E141B;
+    --surface:     #151E28;
+    --surface-alt: #1B2735;
+    --line:        #2A3948;
+    --line-soft:   #202D3A;
+    --ink:         #E4ECF4;
+    --ink-mid:     #A9B8C8;
+    --ink-soft:    #7C8B9C;
+    --accent:      #8AABFF;
+    --accent-soft: #1B2941;
+    --pass:        #5FD4A0;
+    --pass-soft:   #122E24;
+    --warn:        #E5B45C;
+    --warn-soft:   #2E2415;
+    --crit:        #FF8A8F;
+    --crit-soft:   #331A1D;
+    --shadow:      0 1px 2px rgba(0,0,0,.3), 0 6px 20px rgba(0,0,0,.25);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+}
+
+.envoltura {
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* ---------- Encabezado ---------- */
+.portada { display: flex; flex-direction: column; gap: .9rem; }
+
+.marca {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.marca::before {
+    content: "";
+    width: 1.6rem;
+    height: 2px;
+    background: var(--accent);
+}
+
+h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.8rem, 4.5vw, 2.5rem);
+    font-weight: 700;
+    letter-spacing: -.022em;
+    line-height: 1.12;
+    text-wrap: balance;
+}
+
+.entradilla {
+    margin: 0;
+    max-width: 62ch;
+    font-size: 1.02rem;
+    color: var(--ink-mid);
+}
+
+/* ---------- Ficha de arranque ---------- */
+.ficha {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ficha__celda {
+    background: var(--surface);
+    padding: .85rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .2rem;
+}
+
+.ficha__rotulo {
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--ink-soft);
+}
+
+.ficha__valor {
+    font-family: var(--font-mono);
+    font-size: .88rem;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+/* ---------- Barra de progreso ---------- */
+.progreso {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 0 -1.25rem;
+    padding: .8rem 1.25rem;
+    background: color-mix(in srgb, var(--ground) 88%, transparent);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+}
+
+.progreso__cifra {
+    font-family: var(--font-mono);
+    font-size: .95rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.progreso__barra {
+    flex: 1 1 160px;
+    height: 6px;
+    background: var(--line-soft);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.progreso__relleno {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 99px;
+    transition: width .25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progreso__relleno { transition: none; }
+}
+
+.progreso__reset {
+    padding: .3rem .7rem;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: var(--surface);
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.progreso__reset:hover { color: var(--ink); border-color: var(--ink-soft); }
+
+/* ---------- Secciones ---------- */
+section { display: flex; flex-direction: column; gap: 1.1rem; }
+
+.seccion__cabecera { display: flex; flex-direction: column; gap: .35rem; }
+
+h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -.015em;
+    text-wrap: balance;
+}
+
+.seccion__nota {
+    margin: 0;
+    max-width: 68ch;
+    color: var(--ink-mid);
+    font-size: .93rem;
+}
+
+/* ---------- Pasos numerados (Parte A) ---------- */
+.pasos { display: flex; flex-direction: column; gap: .75rem; counter-reset: paso; }
+
+.paso {
+    display: grid;
+    grid-template-columns: 2.1rem 1fr;
+    gap: 0 .9rem;
+    padding: 1rem 1.1rem;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+}
+
+.paso::before {
+    counter-increment: paso;
+    content: counter(paso);
+    grid-row: 1 / span 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 50%;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    font-weight: 700;
+}
+
+.paso__titulo {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 650;
+    align-self: center;
+    min-height: 2.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.paso__cuerpo { margin: .5rem 0 0; color: var(--ink-mid); font-size: .93rem; }
+.paso__cuerpo:first-of-type { margin-top: .35rem; }
+
+/* ---------- Tabla de valores exactos ---------- */
+.valores {
+    margin-top: .7rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.valores__fila {
+    display: grid;
+    grid-template-columns: minmax(130px, 34%) 1fr;
+    gap: .75rem;
+    padding: .5rem .8rem;
+    border-bottom: 1px solid var(--line-soft);
+    align-items: baseline;
+}
+
+.valores__fila:last-child { border-bottom: 0; }
+.valores__fila:nth-child(odd) { background: var(--surface-alt); }
+
+.valores__campo { font-size: .82rem; color: var(--ink-soft); }
+
+.dato {
+    font-family: var(--font-mono);
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    border-bottom: 1px dashed var(--line);
+    padding: 0;
+    text-align: left;
+    cursor: copy;
+    word-break: break-word;
+}
+
+.dato:hover, .dato:focus-visible { color: var(--accent); border-bottom-color: var(--accent); }
+.dato[data-copiado="1"] { color: var(--pass); border-bottom-color: var(--pass); }
+.dato[data-copiado="1"]::after { content: "  copiado"; font-size: .72rem; font-weight: 500; }
+
+.vacio-nota { font-size: .82rem; color: var(--ink-soft); font-style: italic; }
+
+/* ---------- Bloques de prueba ---------- */
+.bloque {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.bloque__cabecera {
+    display: flex;
+    align-items: baseline;
+    gap: .7rem;
+    flex-wrap: wrap;
+    padding: .8rem 1.1rem;
+    background: var(--surface-alt);
+    border-bottom: 1px solid var(--line);
+}
+
+.bloque__clave {
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: var(--accent);
+}
+
+.bloque__nombre { margin: 0; font-size: .98rem; font-weight: 650; }
+
+.bloque__pista { font-size: .8rem; color: var(--ink-soft); margin-left: auto; }
+
+.prueba {
+    display: grid;
+    grid-template-columns: 1.6rem minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.prueba:last-child { border-bottom: 0; }
+
+.prueba__marca {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: .85rem 0 0 .55rem;
+}
+
+.prueba__marca input {
+    width: 1.05rem;
+    height: 1.05rem;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.prueba__accion { padding: .8rem .9rem .85rem .55rem; }
+
+.prueba__espera {
+    padding: .8rem .9rem .85rem 1rem;
+    background: var(--surface-alt);
+    border-left: 2px solid var(--line);
+}
+
+.prueba[data-critico="1"] .prueba__espera {
+    background: var(--crit-soft);
+    border-left-color: var(--crit);
+}
+
+.prueba__id {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: .68rem;
+    letter-spacing: .06em;
+    color: var(--ink-soft);
+    margin-bottom: .18rem;
+}
+
+.prueba__texto { margin: 0; font-size: .9rem; }
+.prueba__espera .prueba__texto { color: var(--ink-mid); }
+.prueba[data-critico="1"] .prueba__espera .prueba__texto { color: var(--ink); }
+
+.prueba__rotulo {
+    display: block;
+    font-size: .66rem;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--ink-soft);
+    margin-bottom: .18rem;
+}
+
+.prueba__porque {
+    margin: .45rem 0 0;
+    font-size: .82rem;
+    color: var(--ink-soft);
+}
+
+.prueba input:checked ~ * { }
+
+.prueba:has(input:checked) { opacity: .55; }
+.prueba:has(input:checked) .prueba__texto { text-decoration: line-through; text-decoration-thickness: 1px; }
+
+code, .cod {
+    font-family: var(--font-mono);
+    font-size: .85em;
+    padding: .08em .35em;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-radius: 4px;
+}
+
+/* ---------- Avisos ---------- */
+.aviso {
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+    padding: .9rem 1.1rem;
+    border-radius: 10px;
+    border: 1px solid;
+    font-size: .91rem;
+}
+
+.aviso--critico { background: var(--crit-soft); border-color: color-mix(in srgb, var(--crit) 35%, transparent); }
+.aviso--ojo     { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
+.aviso--info    { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+
+.aviso__titulo { font-weight: 700; font-size: .88rem; }
+.aviso--critico .aviso__titulo { color: var(--crit); }
+.aviso--ojo .aviso__titulo     { color: var(--warn); }
+.aviso--info .aviso__titulo    { color: var(--accent); }
+.aviso p { margin: 0; color: var(--ink-mid); }
+.aviso--critico p, .aviso--ojo p { color: var(--ink); }
+
+/* ---------- Fuera de alcance ---------- */
+.pendientes { display: flex; flex-direction: column; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+
+.pendiente {
+    display: flex;
+    align-items: baseline;
+    gap: .7rem;
+    padding: .6rem .9rem;
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    font-size: .9rem;
+    color: var(--ink-mid);
+}
+
+.pendiente__fase {
+    font-family: var(--font-mono);
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    color: var(--ink-soft);
+    white-space: nowrap;
+}
+
+/* ---------- Pie ---------- */
+.pie {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line);
+    font-size: .85rem;
+    color: var(--ink-soft);
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+@media (max-width: 680px) {
+    .prueba { grid-template-columns: 1.6rem 1fr; }
+    .prueba__espera { grid-column: 2; border-left: 0; border-top: 1px solid var(--line); }
+    .valores__fila { grid-template-columns: 1fr; gap: .15rem; }
+    .paso { grid-template-columns: 1.8rem 1fr; }
+}
+</style>
+
+<div class="envoltura">
+
+    <header class="portada">
+        <span class="marca">Compite &middot; COCIAP 2026</span>
+        <h1>Protocolo de pruebas en el navegador</h1>
+        <p class="entradilla">
+            Dos partes. Primero la <strong>ruta feliz</strong>: los pasos exactos para meter una
+            delegación completa, con los valores ya escritos para que no tengas que inventarlos.
+            Después el <strong>banco de pruebas</strong>: 53 comprobaciones en 9 bloques, cada una
+            con lo que debe pasar. Marca cada casilla conforme avances.
+        </p>
+
+        <div class="ficha">
+            <div class="ficha__celda">
+                <span class="ficha__rotulo">Dirección</span>
+                <button class="dato ficha__valor" type="button">http://localhost/compite</button>
+            </div>
+            <div class="ficha__celda">
+                <span class="ficha__rotulo">Tu usuario</span>
+                <button class="dato ficha__valor" type="button">robertokar97@gmail.com</button>
+            </div>
+            <div class="ficha__celda">
+                <span class="ficha__rotulo">Estado de la base</span>
+                <span class="ficha__valor">1 I.E. · 4 pendientes</span>
+            </div>
+            <div class="ficha__celda">
+                <span class="ficha__rotulo">Última revisión</span>
+                <span class="ficha__valor">17 ago 2026</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="progreso">
+        <span class="progreso__cifra"><span id="hechas">0</span> / <span id="totales">0</span></span>
+        <div class="progreso__barra"><div class="progreso__relleno" id="relleno"></div></div>
+        <button class="progreso__reset" type="button" id="reiniciar">Reiniciar marcas</button>
+    </div>
+
+    <div class="aviso aviso--info">
+        <span class="aviso__titulo">Antes de empezar</span>
+        <p>
+            Abre el <strong>XAMPP Control Panel</strong> y confirma que <strong>Apache</strong> y
+            <strong>MySQL</strong> estén en verde. La base ya trae el concurso, las 11 categorías
+            y las 3 tarifas. Todo lo que registres aquí son datos de prueba: al terminar puedes
+            borrarlos y te digo cómo.
+        </p>
+    </div>
+
+    <div class="aviso aviso--ojo">
+        <span class="aviso__titulo">Cambios del 17 de agosto &mdash; léelo antes de probar</span>
+        <p>
+            <strong>El código de seguridad de Yape ahora es opcional.</strong> Lo obligatorio es
+            el medio de pago. Si escribes el código, se sigue validando que sean 3 dígitos.
+        </p>
+        <p>
+            <strong>Todos los listados ordenan en español peruano.</strong> La Ñ va después de la
+            N, no mezclada entre ellas. Hay un bloque nuevo de pruebas, <span class="cod">ORD</span>,
+            dedicado a esto.
+        </p>
+        <p>
+            <strong>Ya no arrancas de cero:</strong> la base tiene la I.E. «JOSÉ MARTÍ» (privada,
+            Huaraz) con 4 inscripciones pendientes &mdash; Manrique, Nolasco, Ñiquen y Xenofia.
+            Puedes usarlas para el bloque ORD y para el cobro sin registrar nada nuevo.
+        </p>
+    </div>
+
+    <!-- =========================================================
+         PARTE A
+         ========================================================= -->
+    <section>
+        <div class="seccion__cabecera">
+            <h2>Parte A &middot; Insertar una delegación, paso a paso</h2>
+            <p class="seccion__nota">
+                El orden importa: no puedes registrar una delegación sin que su institución exista
+                antes, porque el formulario solo ofrece las que ya están en el catálogo. Los valores
+                en <span class="cod">mono</span> se copian al hacer clic.
+            </p>
+        </div>
+
+        <div class="pasos">
+
+            <article class="paso">
+                <h3 class="paso__titulo">Entrar al sistema</h3>
+                <p class="paso__cuerpo">
+                    Abre <span class="cod">http://localhost/compite</span>. Te va a mandar
+                    directo al login, porque ninguna página interna es accesible sin sesión.
+                    Ingresa con tu correo y tu contraseña.
+                </p>
+                <p class="paso__cuerpo">
+                    Deberías caer en el <strong>Panel</strong>, con el concurso, la cuenta regresiva
+                    al 22 de agosto y todas las métricas en cero.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Registrar la institución educativa</h3>
+                <p class="paso__cuerpo">
+                    Menú <strong>Instituciones</strong> &rarr; botón <strong>Nueva institución</strong>.
+                    Llena así:
+                </p>
+                <div class="valores">
+                    <div class="valores__fila">
+                        <span class="valores__campo">Nombre de la I.E.</span>
+                        <button class="dato" type="button">I.E. 86002 Virgen de Fátima</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Tipo</span>
+                        <span class="dato" style="cursor:default">Pública</span>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Departamento</span>
+                        <span class="vacio-nota">ya viene con Áncash, no lo toques</span>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Provincia</span>
+                        <span class="vacio-nota">ya viene con Huaraz</span>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Distrito</span>
+                        <button class="dato" type="button">Independencia</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Dirección</span>
+                        <button class="dato" type="button">Av. Confraternidad Internacional Oeste 1250</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; ap. paterno</span>
+                        <button class="dato" type="button">Quiñónez</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; ap. materno</span>
+                        <button class="dato" type="button">Ñañez</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; nombres</span>
+                        <button class="dato" type="button">Rosa Elena</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; celular</span>
+                        <button class="dato" type="button">987654321</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; correo</span>
+                        <button class="dato" type="button">rosa.quinonez@ejemplo.pe</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Director (todo el bloque)</span>
+                        <span class="vacio-nota">déjalo vacío a propósito: es opcional</span>
+                    </div>
+                </div>
+                <p class="paso__cuerpo">
+                    Guarda. Los apellidos llevan <strong>ñ y tildes</strong> deliberadamente: si al
+                    volver a abrir la ficha se ven correctos, la codificación de la base está bien.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Abrir el formulario de delegación</h3>
+                <p class="paso__cuerpo">
+                    Menú <strong>Inscripciones</strong> &rarr; botón <strong>Nueva delegación</strong>.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Elegir la delegación y confirmar la tarifa</h3>
+                <p class="paso__cuerpo">
+                    En el desplegable, selecciona <span class="cod">I.E. 86002 Virgen de Fátima</span>.
+                    Al hacerlo debe aparecer una caja azul que dice
+                    <strong>«Tarifa aplicada: S/ 10.00 por estudiante»</strong>.
+                </p>
+                <p class="paso__cuerpo">
+                    Esa caja no es informativa nada más: confirma que el sistema dedujo solo el monto
+                    a partir del tipo de institución. No hay ningún campo donde escribir el precio,
+                    y es intencional.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Llenar los participantes</h3>
+                <p class="paso__cuerpo">
+                    La tabla ofrece 5 filas. Llena solo las tres primeras y deja las otras dos en
+                    blanco &mdash; el sistema las descarta.
+                </p>
+                <div class="valores">
+                    <div class="valores__fila">
+                        <span class="valores__campo">Fila 1</span>
+                        <button class="dato" type="button">71234567 · Ñañez · Quiñónez · María Belén · Primaria 3°</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Fila 2</span>
+                        <button class="dato" type="button">71234568 · Rímac · Huayllán · José Antonio · Primaria 5°</button>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Fila 3</span>
+                        <button class="dato" type="button">71234569 · Vega · Ríos · Diego Alonso · Secundaria 2°</button>
+                    </div>
+                </div>
+                <p class="paso__cuerpo">
+                    Abajo debe ir apareciendo el contador
+                    <strong>«3 participante(s) por registrar»</strong> conforme escribes.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Registrar</h3>
+                <p class="paso__cuerpo">
+                    Botón <strong>Registrar delegación</strong>. Te lleva al listado con el mensaje:
+                </p>
+                <p class="paso__cuerpo">
+                    <span class="cod">Se registraron 3 participante(s) de «I.E. 86002 Virgen de Fátima». Total por cobrar: S/ 30.00.</span>
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Verificar lo que quedó</h3>
+                <p class="paso__cuerpo">
+                    En el listado deben salir <strong>3 filas</strong>, cada una con su código
+                    <span class="cod">COCIAP2026-0001-XXXXXX</span>, monto S/ 10.00 y estado
+                    <strong>pendiente</strong>. Arriba, «por cobrar S/ 30.00».
+                </p>
+                <p class="paso__cuerpo">
+                    Fíjate en los sufijos de los tres códigos: son distintos y no siguen ningún
+                    patrón. Eso es lo que impide que alguien recorra los carnés de todos los chicos
+                    cambiando un número en la URL.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Cobrar y emitir los carnés</h3>
+                <p class="paso__cuerpo">
+                    Marca la casilla del encabezado para seleccionar las tres. Aparece abajo la barra
+                    de cobro con «3 seleccionada(s) · total S/ 30.00». Elige medio de pago
+                    <strong>Yape</strong>, escribe el código <span class="cod">742</span> y confirma.
+                </p>
+                <p class="paso__cuerpo">
+                    Las tres pasan a <strong>confirmada</strong>, el recaudado sube a S/ 30.00 y
+                    cada fila gana los enlaces <strong>ver carné</strong>, <strong>PDF</strong> y
+                    <strong>Regenerar</strong>.
+                </p>
+            </article>
+
+        </div>
+    </section>
+
+    <!-- =========================================================
+         PARTE B
+         ========================================================= -->
+    <section>
+        <div class="seccion__cabecera">
+            <h2>Parte B &middot; Banco de pruebas</h2>
+            <p class="seccion__nota">
+                A la izquierda lo que haces; a la derecha lo que <em>debe</em> pasar. Si no coincide,
+                anótalo y pásamelo. Las filas con fondo rojo son las que no pueden fallar bajo ningún
+                concepto: tocan dinero o datos de menores de edad.
+            </p>
+        </div>
+
+        <!-- ACCESO -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">ACC</span>
+                <h3 class="bloque__nombre">Acceso y sesión</h3>
+                <span class="bloque__pista">4 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="acc1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ACC-1</span>
+                    <p class="prueba__texto">Con la sesión cerrada, escribe <span class="cod">/panel</span> en la barra de direcciones.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rebotarte al login, no mostrar el panel.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="acc2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ACC-2</span>
+                    <p class="prueba__texto">Intenta entrar con tu correo y una contraseña equivocada.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir solo «Las credenciales no son correctas».</p>
+                    <p class="prueba__porque">Nunca debe distinguir entre «ese correo no existe» y «la clave está mal»: eso revelaría qué cuentas existen.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="acc3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ACC-3</span>
+                    <p class="prueba__texto">Entra con un correo que no exista, por ejemplo <span class="cod">nadie@ejemplo.pe</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mostrar exactamente el mismo mensaje que ACC-2, y tardar más o menos lo mismo.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="acc4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ACC-4</span>
+                    <p class="prueba__texto">Ya dentro, pulsa <strong>Salir</strong> y luego el botón «atrás» del navegador.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">No dejarte operar: cualquier clic te devuelve al login.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- INSTITUCIONES -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">IE</span>
+                <h3 class="bloque__nombre">Instituciones educativas</h3>
+                <span class="bloque__pista">7 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-1</span>
+                    <p class="prueba__texto">Envía el formulario de nueva institución completamente vacío.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Listar <em>todos</em> los errores juntos, no uno solo.</p>
+                    <p class="prueba__porque">Con 18 campos, cortar en el primer error obligaría a la secretaria a enviar el formulario diez veces.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-2</span>
+                    <p class="prueba__texto">Llena todo bien pero pon el celular del delegado como <span class="cod">123456789</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo pidiendo 9 dígitos que empiecen en 9, <strong>y conservar todo lo demás que ya escribiste</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-3</span>
+                    <p class="prueba__texto">Escribe el celular como <span class="cod">987 654 321</span>, con espacios.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Aceptarlo y guardarlo limpio como <span class="cod">987654321</span>.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-4</span>
+                    <p class="prueba__texto">Guarda una institución sin ningún dato del director.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Guardarla sin protestar. El director es opcional.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-5</span>
+                    <p class="prueba__texto">Ahora pon <em>solo</em> el correo del director como <span class="cod">esto-no-es-correo</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo. Opcional significa «puedes dejarlo vacío», no «puedes ponerlo mal».</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-6</span>
+                    <p class="prueba__texto">Empieza a crear otra institución y escribe en el nombre <span class="cod">Virgen</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Avisar de que ya existe una parecida, con enlace a ella &mdash; <strong>pero dejarte continuar</strong>.</p>
+                    <p class="prueba__porque">Dos colegios distintos pueden llamarse igual en distritos distintos. Aviso, no bloqueo.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-7</span>
+                    <p class="prueba__texto">Intenta eliminar la institución que ya tiene la delegación inscrita.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Negarse, diciendo cuántos participantes dependen de ella.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- APODERADOS -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">APO</span>
+                <h3 class="bloque__nombre">Apoderados</h3>
+                <span class="bloque__pista">3 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-1</span>
+                    <p class="prueba__texto">Crea un apoderado con DNI <span class="cod">44112233</span>, apellidos <span class="cod">Vega</span> / <span class="cod">Luna</span>, nombres <span class="cod">Carmen Rosa</span>, celular <span class="cod">987111222</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Guardarlo y mostrarlo en la lista con «0 vinculados».</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-2</span>
+                    <p class="prueba__texto">Intenta crear otro apoderado con el mismo DNI <span class="cod">44112233</span> pero otro nombre.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo diciendo quién es el que ya existe, y sugerir reutilizarlo.</p>
+                    <p class="prueba__porque">Aquí sí se bloquea, al revés que con las instituciones: un DNI es una persona.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-3</span>
+                    <p class="prueba__texto">Prueba un DNI de 7 dígitos, y luego un carné de extranjería como <span class="cod">CE12345678</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazar el de 7 dígitos y aceptar el carné de extranjería.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DELEGACIÓN -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">DEL</span>
+                <h3 class="bloque__nombre">Inscripción por delegación</h3>
+                <span class="bloque__pista">7 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-1</span>
+                    <p class="prueba__texto">Registra la delegación de la Parte A y observa el mensaje final.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir «3 participante(s)» y «Total por cobrar: S/ 30.00».</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-2</span>
+                    <p class="prueba__texto">Intenta registrar sin elegir institución.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Avisar y, textualmente, decir que <strong>no se guardó nada</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="del3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-3</span>
+                    <p class="prueba__texto">Llena 3 filas correctas y deja la 4.ª con <em>solo el DNI</em>, sin nombres ni categoría.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazar todo el lote señalando «Fila 4: …», y <strong>no registrar ni siquiera las 3 buenas</strong>.</p>
+                    <p class="prueba__porque">Es todo o nada. A media delegación cargada, un guardado parcial dejaría a la secretaria sin saber por dónde iba.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-4</span>
+                    <p class="prueba__texto">Registra una institución <strong>privada</strong> y empieza una delegación con ella.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">La caja de tarifa debe cambiar sola a <strong>S/ 15.00</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-5</span>
+                    <p class="prueba__texto">Pulsa <strong>+ Agregar 5 filas</strong> dos veces.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Llegar a 15 filas numeradas correlativamente, todas vacías y utilizables.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-6</span>
+                    <p class="prueba__texto">En una fila nueva escribe el DNI <span class="cod">71234567</span>, que ya inscribiste antes.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Avisar de que ese documento ya está registrado, <strong>sin impedirte continuar</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-7</span>
+                    <p class="prueba__texto">En el listado, combina filtros: delegación + nivel Primaria + estado pendiente.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Filtrar por los tres a la vez, y «Limpiar» debe devolver la lista completa.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LIBRE -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">LIB</span>
+                <h3 class="bloque__nombre">Estudiante libre y reutilización del apoderado</h3>
+                <span class="bloque__pista">4 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-1</span>
+                    <p class="prueba__texto">Abre <strong>Estudiante libre</strong> y escribe en el DNI del apoderado el <span class="cod">44112233</span> de APO-1.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Autocompletar solo apellidos, nombres y celular, y avisar «Ya registrado: se reutilizará el mismo apoderado».</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-2</span>
+                    <p class="prueba__texto">Completa el estudiante: <span class="cod">71234570 · Vega · Ríos · Sofía Milagros · Secundaria 1°</span> y registra.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Cobrar <strong>S/ 15.00</strong>, no S/ 10.00, y darte su código.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-3</span>
+                    <p class="prueba__texto">Repite con otro hermano: mismo apoderado, estudiante <span class="cod">71234571 · Vega · Ríos · Luis Fernando</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">En <strong>Apoderados</strong>, Carmen Rosa debe figurar ahora con <strong>2 vinculados</strong>, sin haberse duplicado.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-4</span>
+                    <p class="prueba__texto">En el listado de inscripciones, filtra por origen <strong>Estudiante libre</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Salir solo los dos hermanos, con la etiqueta gris «libre» en vez de un colegio.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAGOS Y CARNÉ -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">PAG</span>
+                <h3 class="bloque__nombre">Cobro y emisión del carné</h3>
+                <span class="bloque__pista">10 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-1</span>
+                    <p class="prueba__texto">Marca una sola casilla y observa la barra que aparece abajo.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mostrar «1 seleccionada(s)» y el total correcto; al desmarcar, desaparecer.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-2</span>
+                    <p class="prueba__texto">Marca la casilla del encabezado de la tabla.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Seleccionar solo las <strong>pendientes</strong>, y sumar bien el total.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-3</span>
+                    <p class="prueba__texto">Elige medio de pago <strong>Efectivo</strong>, y luego cámbialo a <strong>Yape</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">El campo del código aparece solo con Yape, se esconde con los otros medios, y su etiqueta dice <strong>(opcional)</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-4</span>
+                    <p class="prueba__texto">Marca una inscripción y pulsa confirmar <strong>sin elegir medio de pago</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Impedirlo. El medio de pago es lo único obligatorio del cobro.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag9"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-9</span>
+                    <p class="prueba__texto">Elige <strong>Yape</strong>, deja el código <strong>vacío</strong> y confirma.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Confirmar sin problema. El código es un dato de respaldo, no puede detener la caja.</p>
+                    <p class="prueba__porque">Cambió el 17 de agosto: antes era obligatorio.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag10"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-10</span>
+                    <p class="prueba__texto">Con Yape elegido, escribe un código de <strong>4</strong> dígitos e intenta confirmar.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo y dejar las inscripciones <strong>en pendiente</strong>. Opcional no significa que valga cualquier cosa.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-5</span>
+                    <p class="prueba__texto">Confirma las 3 de la delegación con Yape y código <span class="cod">742</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir «Se confirmaron 3 pago(s) por S/ 30.00», y el recaudado del panel subir a S/ 30.00.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-6</span>
+                    <p class="prueba__texto">Pulsa <strong>PDF</strong> en una fila confirmada y abre el archivo.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Descargar un carné con el QR, el nombre completo <strong>con tildes correctas</strong> y el código legible.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-7</span>
+                    <p class="prueba__texto">Escanea ese QR con tu celular, o pulsa <strong>ver carné</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Abrir la vista pública con el sello verde <strong>«Inscripción válida»</strong> y los datos correctos.</p>
+                    <p class="prueba__porque">Si el celular no resuelve <code>localhost</code>, prueba desde el navegador de la misma máquina.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-8</span>
+                    <p class="prueba__texto">Pulsa <strong>Regenerar</strong> en esa misma fila y vuelve a descargar el PDF.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Avisar «Carné regenerado» y entregar un PDF nuevo con el mismo código.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ANULACIÓN -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">ANU</span>
+                <h3 class="bloque__nombre">Corrección y anulación</h3>
+                <span class="bloque__pista">6 pruebas</span>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-1</span>
+                    <p class="prueba__texto">En una inscripción <strong>ya pagada</strong>, pulsa <strong>Corregir categoría</strong> y anota su código antes de seguir.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">La pantalla debe explicarte por adelantado qué va a pasar, incluido que la nueva <strong>nace pagada</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-2</span>
+                    <p class="prueba__texto">Cambia la categoría a otra y confirma.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">El participante <strong>conserva exactamente el mismo código</strong>, la nueva inscripción sale confirmada y el recaudado <strong>no cambia</strong>.</p>
+                    <p class="prueba__porque">Nadie paga dos veces porque el colegio informó mal el grado.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-3</span>
+                    <p class="prueba__texto">Abre otra vez el carné público de ese estudiante.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Seguir <strong>válido</strong> y mostrar ya la categoría corregida, no la vieja.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-4</span>
+                    <p class="prueba__texto">En otra inscripción pagada, pulsa <strong>Anular</strong> y lee el aviso antes de aceptar.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Advertirte del monto que irá al fondo de devoluciones y recordarte que existe «Corregir categoría».</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-5</span>
+                    <p class="prueba__texto">Escribe un motivo y confirma la anulación. Luego abre su carné público.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mostrar el sello rojo <strong>ANULADO</strong>, el código tachado, el motivo, y decir que no vale para el ingreso.</p>
+                    <p class="prueba__porque">Nunca un 404: quien escanea en la puerta necesita ver <em>por qué</em> no vale.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-6</span>
+                    <p class="prueba__texto">Anula ahora una inscripción que esté <strong>pendiente</strong>, sin pagar.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto"><strong>No</strong> mostrar la etiqueta «por devolver». Nunca se cobró nada, así que no hay qué devolver.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ORDENAMIENTO -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">ORD</span>
+                <h3 class="bloque__nombre">Orden alfabético en español peruano</h3>
+                <span class="bloque__pista">7 pruebas &middot; nuevo</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-1</span>
+                    <p class="prueba__texto">Abre <span class="cod">/inscripciones</span> y mira el orden de los apellidos.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Manrique, Nolasco, <strong>Ñiquen</strong>, Xenofia. La Ñ después de la N, la X al final.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-2</span>
+                    <p class="prueba__texto">Crea tres instituciones llamadas <span class="cod">Prueba Navarro</span>, <span class="cod">Prueba Ñahui</span> y <span class="cod">Prueba Núñez</span>, en ese desorden.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Listarlas como Navarro, Núñez, <strong>Ñahui</strong>. Todas las N antes de cualquier Ñ.</p>
+                    <p class="prueba__porque">Este es el fallo que corregimos: antes salía Ñahui, Navarro, Núñez.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-3</span>
+                    <p class="prueba__texto">En el buscador de instituciones escribe <span class="cod">Nahui</span>, <strong>sin la eñe</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Encontrar «Prueba Ñahui» igualmente.</p>
+                    <p class="prueba__porque">Ordenar bien no puede costar la tolerancia al buscar. Si esta falla, el arreglo salió caro.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-4</span>
+                    <p class="prueba__texto">Busca <span class="cod">nunez</span> en minúscula y sin tilde.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Encontrar «Prueba Núñez».</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-5</span>
+                    <p class="prueba__texto">Crea instituciones <span class="cod">Prueba Chávez</span>, <span class="cod">Prueba Cortez</span> y <span class="cod">Prueba Ccahuana</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Ordenarlas Ccahuana, Chávez, Cortez. La CH se alfabetiza como C+H, no como letra aparte.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-6</span>
+                    <p class="prueba__texto">Registra dos apoderados con el mismo apellido paterno <span class="cod">Ñañez</span> y maternos <span class="cod">Rojas</span> y <span class="cod">Alva</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Salir Alva antes que Rojas: a igualdad de paterno manda el materno.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ord7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ORD-7</span>
+                    <p class="prueba__texto">Corrige la categoría de «Ñiquen» y vuelve al listado.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Las dos filas de Ñiquen (la anulada y la vigente) quedan <strong>juntas</strong>, con la anulada primero.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEGURIDAD -->
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">SEG</span>
+                <h3 class="bloque__nombre">Fronteras de seguridad</h3>
+                <span class="bloque__pista">5 pruebas &middot; todas críticas</span>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-1</span>
+                    <p class="prueba__texto">Copia la URL de un carné público y ábrela en una <strong>ventana de incógnito</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Verse perfectamente sin sesión, y <strong>sin ningún menú del sistema interno</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-2</span>
+                    <p class="prueba__texto">En esa misma ventana de incógnito, pega
+                    <span class="cod">http://localhost/compite/inscripciones/1/carne.pdf</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mandarte al login. El PDF nunca se entrega sin sesión.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-3</span>
+                    <p class="prueba__texto">Abre <span class="cod">http://localhost/compite/config/config.local.php</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Dar error, <strong>nunca</strong> mostrar las credenciales de la base de datos.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-4</span>
+                    <p class="prueba__texto">Abre <span class="cod">/storage/carnes/</span> y también <span class="cod">/database/schema.sql</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Ambos bloqueados. Los PDFs solo se sirven a través del sistema, nunca por URL directa.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-5</span>
+                    <p class="prueba__texto">Toma un código real y cámbiale un dígito al número: <span class="cod">COCIAP2026-0002-…</span> con el mismo sufijo.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Dar «Carné no encontrado». Sin el sufijo correcto no se llega a ningún otro estudiante.</p>
+                    <p class="prueba__porque">Esta es la prueba que protege los datos de todos los menores del concurso.</p>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- =========================================================
+         FUERA DE ALCANCE
+         ========================================================= -->
+    <section>
+        <div class="seccion__cabecera">
+            <h2>Lo que todavía no vas a encontrar</h2>
+            <p class="seccion__nota">
+                Para que no lo busques ni lo reportes como fallo. Está construido hasta la Fase 4.
+            </p>
+        </div>
+
+        <ul class="pendientes">
+            <li class="pendiente">
+                <span class="pendiente__fase">Fase 5</span>
+                <span>Exportación a Excel del listado de inscritos con filtros combinables.</span>
+            </li>
+            <li class="pendiente">
+                <span class="pendiente__fase">Fase 5</span>
+                <span>Pantalla del fondo de devoluciones. El cálculo ya funciona &mdash; verás la etiqueta «por devolver» en el listado &mdash; pero aún no tiene su reporte propio.</span>
+            </li>
+            <li class="pendiente">
+                <span class="pendiente__fase">Fase 6</span>
+                <span>Compilación de SASS y despliegue en Hostinger.</span>
+            </li>
+            <li class="pendiente">
+                <span class="pendiente__fase">Admin</span>
+                <span>Pantallas para gestionar concurso, categorías, tarifas y usuarios. Hoy se hacen por consola.</span>
+            </li>
+        </ul>
+
+        <div class="aviso aviso--ojo">
+            <span class="aviso__titulo">Cuando termines de probar</span>
+            <p>
+                Dime y te dejo los datos de prueba borrados en un solo comando, para que la base
+                arranque limpia el día que la secretaria empiece a usarla de verdad. No borres
+                nada a mano desde phpMyAdmin: los carnés y las inscripciones están enlazados por
+                claves foráneas y hay que respetar el orden.
+            </p>
+        </div>
+    </section>
+
+    <section>
+        <div class="seccion__cabecera">
+            <h2>Cómo reportarme un fallo</h2>
+        </div>
+        <div class="aviso aviso--info">
+            <p>
+                Pásame tres cosas: el <strong>identificador de la prueba</strong> (por ejemplo
+                <span class="cod">PAG-4</span>), <strong>qué esperabas</strong> y <strong>qué
+                pasó en realidad</strong>. Si salió un error en pantalla, cópialo entero. Con eso
+                lo reproduzco de inmediato; sin eso, tengo que adivinar.
+            </p>
+        </div>
+    </section>
+
+    <footer class="pie">
+        Compite &middot; Sistema de inscripciones COCIAP 2026 &middot;
+        I.E. Víctor Valenzuela Guardia, UNASAM &mdash; Huaraz, Áncash.
+        Protocolo generado el 16 de agosto de 2026 sobre las fases 1 a 4;
+        revisado el 17 de agosto con los cambios de cobro y ordenamiento.
+    </footer>
+
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var CLAVE = 'cociap-pruebas-v1';
+    var casillas = Array.prototype.slice.call(document.querySelectorAll('.prueba input[type="checkbox"]'));
+    var hechas = document.getElementById('hechas');
+    var totales = document.getElementById('totales');
+    var relleno = document.getElementById('relleno');
+    var reiniciar = document.getElementById('reiniciar');
+
+    totales.textContent = String(casillas.length);
+
+    function leerEstado() {
+        try {
+            return JSON.parse(window.localStorage.getItem(CLAVE) || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function guardarEstado(estado) {
+        try {
+            window.localStorage.setItem(CLAVE, JSON.stringify(estado));
+        } catch (e) {
+            /* Sin almacenamiento, la página sigue siendo usable en la sesión actual. */
+        }
+    }
+
+    function actualizar() {
+        var n = casillas.filter(function (c) { return c.checked; }).length;
+        hechas.textContent = String(n);
+        relleno.style.width = casillas.length ? (n / casillas.length * 100) + '%' : '0%';
+    }
+
+    var estado = leerEstado();
+
+    casillas.forEach(function (casilla) {
+        var id = casilla.getAttribute('data-id');
+        if (estado[id]) { casilla.checked = true; }
+
+        casilla.addEventListener('change', function () {
+            var actual = leerEstado();
+            if (casilla.checked) { actual[id] = true; } else { delete actual[id]; }
+            guardarEstado(actual);
+            actualizar();
+        });
+    });
+
+    reiniciar.addEventListener('click', function () {
+        casillas.forEach(function (c) { c.checked = false; });
+        guardarEstado({});
+        actualizar();
+    });
+
+    actualizar();
+
+    /* --- Copiar al portapapeles los valores exactos --- */
+    function copiar(texto) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(texto);
+        }
+        return new Promise(function (resolver, rechazar) {
+            var area = document.createElement('textarea');
+            area.value = texto;
+            area.setAttribute('readonly', '');
+            area.style.position = 'fixed';
+            area.style.opacity = '0';
+            document.body.appendChild(area);
+            area.select();
+            try {
+                document.execCommand('copy');
+                resolver();
+            } catch (e) {
+                rechazar(e);
+            } finally {
+                document.body.removeChild(area);
+            }
+        });
+    }
+
+    document.querySelectorAll('button.dato').forEach(function (boton) {
+        boton.addEventListener('click', function () {
+            copiar(boton.textContent.trim()).then(function () {
+                boton.setAttribute('data-copiado', '1');
+                window.setTimeout(function () {
+                    boton.removeAttribute('data-copiado');
+                }, 1400);
+            }).catch(function () { /* silencio: el texto sigue siendo seleccionable a mano */ });
+        });
+    });
+})();
+</script>

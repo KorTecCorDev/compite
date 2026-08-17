@@ -1,0 +1,15 @@
+# Front controller: todo lo que no sea un archivo real va a index.php
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # No reescribir archivos ni directorios que existen de verdad
+    # (css, js, imágenes compiladas).
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Sin listado de directorios.
+Options -Indexes
