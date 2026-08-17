@@ -1,0 +1,59 @@
+// Barra superior: marca, menú de módulos y datos del usuario en sesión.
+
+.barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .85rem 1.5rem;
+    background: var(--papel);
+    border-bottom: 1px solid var(--borde);
+
+    &__marca {
+        font-weight: 700;
+        letter-spacing: .02em;
+        color: var(--tinta);
+        text-decoration: none;
+    }
+
+    // `margin-right: auto` empuja el bloque de usuario al extremo derecho.
+    &__menu {
+        display: flex;
+        gap: .25rem;
+        margin-right: auto;
+        margin-left: 1.5rem;
+    }
+
+    &__enlace {
+        padding: .35rem .7rem;
+        border-radius: 7px;
+        color: var(--tinta-suave);
+        text-decoration: none;
+        font-size: .92rem;
+        font-weight: 600;
+
+        &:hover {
+            background: var(--fondo);
+            color: var(--tinta);
+        }
+
+        &--activo {
+            background: var(--acento-suave);
+            color: var(--acento);
+        }
+    }
+
+    &__nav {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    &__usuario {
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+        font-size: .9rem;
+        color: var(--tinta-suave);
+    }
+}

@@ -1,0 +1,140 @@
+// Vista digital del carné: es la página que abre el QR impreso.
+//
+// Acceso público, sin sesión, y casi siempre desde un teléfono en la puerta del
+// evento. Por eso vive dentro de una tarjeta angosta y centrada.
+//
+// Ojo: el carné en PDF NO usa esta hoja. Lleva su propio <style> embebido en
+// App\Servicios\GeneradorCarne porque dompdf soporta un subconjunto reducido de
+// CSS y necesita estilos autocontenidos.
+
+.carne-publico {
+    width: 100%;
+    max-width: 420px;
+}
+
+.carne-tarjeta {
+    position: relative;
+    padding: 1.6rem 1.5rem 1.4rem;
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-top: 4px solid var(--acento);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+
+    // El color del borde superior comunica el estado a distancia.
+    &--anulada {
+        border-top-color: var(--error);
+        opacity: .95;
+    }
+
+    &--pendiente {
+        border-top-color: var(--aviso);
+    }
+
+    &--confirmada {
+        border-top-color: var(--exito);
+    }
+}
+
+// Sello de validez (decisión D-13: el carné anulado se muestra con sello,
+// no se oculta).
+.carne-sello {
+    display: inline-block;
+    margin-bottom: 1rem;
+    padding: .3rem .8rem;
+    border-radius: 999px;
+    font-size: .76rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+
+    &--valido {
+        background: var(--exito-suave);
+        color: var(--exito);
+    }
+
+    &--pendiente {
+        background: var(--aviso-suave);
+        color: var(--aviso);
+    }
+
+    &--anulado {
+        background: var(--error-suave);
+        color: var(--error);
+    }
+}
+
+.carne-cabecera {
+    margin-bottom: 1.2rem;
+}
+
+.carne-evento {
+    margin: 0 0 .2rem;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.carne-sede {
+    margin: 0;
+    font-size: .82rem;
+    color: var(--tinta-suave);
+}
+
+.carne-datos {
+    margin: 0;
+    display: grid;
+    gap: .8rem;
+
+    dt {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--tinta-suave);
+    }
+
+    dd {
+        margin: .1rem 0 0;
+        font-weight: 600;
+    }
+}
+
+.carne-nombre {
+    font-size: 1.1rem;
+}
+
+// Código correlativo, en monoespaciada para que se pueda dictar sin ambigüedad.
+.carne-codigo {
+    margin: 1.3rem 0 0;
+    padding: .6rem;
+    background: var(--acento-suave);
+    border-radius: 8px;
+    text-align: center;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--acento);
+
+    .carne-tarjeta--anulada & {
+        background: var(--error-suave);
+        color: var(--error);
+        text-decoration: line-through;
+    }
+}
+
+.carne-nota {
+    margin: 1rem 0 0;
+    padding-top: .9rem;
+    border-top: 1px solid var(--borde);
+    font-size: .85rem;
+    color: var(--tinta-suave);
+
+    &--alerta {
+        color: var(--error);
+        font-weight: 600;
+
+        .tenue {
+            font-weight: 400;
+        }
+    }
+}

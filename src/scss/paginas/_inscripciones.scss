@@ -1,0 +1,34 @@
+@use '../base/tokens' as t;
+
+// La tarifa se muestra, nunca se edita (decisión D-11): la calcula el backend
+// a partir del tipo de institución.
+.caja-tarifa {
+    display: flex;
+    align-items: baseline;
+    gap: .75rem;
+    flex-wrap: wrap;
+    padding: .8rem 1rem;
+    background: var(--acento-suave);
+    border: 1px solid t.$borde-acento;
+    border-radius: 8px;
+
+    &__texto {
+        font-size: .95rem;
+
+        strong {
+            font-size: 1.1rem;
+        }
+    }
+
+    &__nota {
+        font-size: .8rem;
+        color: var(--tinta-suave);
+    }
+}
+
+// Variante de `.acciones` para el pie del formulario de lote. Depende de que
+// `componentes/_formularios.scss` se cargue antes: misma especificidad.
+.acciones--espaciado {
+    margin-top: 1rem;
+    align-items: center;
+}

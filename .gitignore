@@ -36,7 +36,15 @@
 # ---------------------------------------------------------------------------
 # Compilados de assets
 # ---------------------------------------------------------------------------
-/public/css/*.map
+# `public/build/` SÍ se versiona, a diferencia de vendor/. Hostinger es hosting
+# compartido y no tiene Node para compilar allá: el CSS y el JS ya compilados
+# tienen que viajar dentro del repositorio. La contrapartida es acordarse de
+# correr `npm run build` antes de commitear cambios de estilos.
+#
+# Los sourcemaps son la excepción: solo los genera `npm run dev`, sirven para
+# depurar en local y no tienen nada que hacer en producción.
+/public/build/**/*.map
+
 /node_modules/
 /.sass-cache/
 

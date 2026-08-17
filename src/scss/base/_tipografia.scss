@@ -1,0 +1,21 @@
+// Títulos y textos de apoyo reutilizados en todas las pantallas.
+
+.titulo {
+    margin: 0 0 .35rem;
+    font-size: 1.4rem;
+    letter-spacing: -.01em;
+}
+
+.subtitulo {
+    margin: 0 0 1.4rem;
+    color: var(--tinta-suave);
+    font-size: .92rem;
+}
+
+.nota {
+    margin: 1rem 0 0;
+    padding-top: .9rem;
+    border-top: 1px solid var(--borde);
+    font-size: .84rem;
+    color: var(--tinta-suave);
+}

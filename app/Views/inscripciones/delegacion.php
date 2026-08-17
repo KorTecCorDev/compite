@@ -69,7 +69,8 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
             </label>
         </div>
 
-        <div id="resumen-tarifa" class="caja-tarifa" hidden>
+        <div id="resumen-tarifa" class="caja-tarifa" hidden
+             data-montos="<?= View::e(json_encode($montos, JSON_UNESCAPED_UNICODE)) ?>">
             <span class="caja-tarifa__texto">
                 Tarifa aplicada: <strong id="tarifa-monto">—</strong> por estudiante
             </span>
@@ -99,7 +100,8 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
                         <th style="width:11rem">Categoría</th>
                     </tr>
                 </thead>
-                <tbody id="filas-participantes">
+                <tbody id="filas-participantes"
+                       data-url-verificar="<?= View::e(View::url('/api/participantes/verificar')) ?>">
                 <?php foreach ($filasAPintar as $i => $fila): ?>
                     <tr>
                         <td class="tenue"><?= $i + 1 ?></td>
@@ -151,99 +153,4 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
     </div>
 </form>
 
-<script>
-(function () {
-    const montos = <?= json_encode($montos, JSON_UNESCAPED_UNICODE) ?>;
-    const selector = document.getElementById('selector-ie');
-    const caja = document.getElementById('resumen-tarifa');
-    const montoTexto = document.getElementById('tarifa-monto');
-    const cuerpo = document.getElementById('filas-participantes');
-    const contador = document.getElementById('contador-filas');
-
-    /* --- Tarifa: se muestra, nunca se edita (decisión D-11) --- */
-    function pintarTarifa() {
-        const opcion = selector.options[selector.selectedIndex];
-        const tipo = opcion ? opcion.dataset.tipo : null;
-
-        if (!tipo || montos[tipo] === undefined) {
-            caja.hidden = true;
-            return;
-        }
-
-        montoTexto.textContent = 'S/ ' + Number(montos[tipo]).toFixed(2);
-        caja.hidden = false;
-    }
-
-    selector.addEventListener('change', pintarTarifa);
-    pintarTarifa();
-
-    /* --- Filas dinámicas --- */
-    function contarLlenas() {
-        let llenas = 0;
-        cuerpo.querySelectorAll('tr').forEach(function (fila) {
-            const campos = fila.querySelectorAll('input[type="text"]');
-            for (const campo of campos) {
-                if (campo.value.trim() !== '') { llenas++; return; }
-            }
-        });
-        contador.textContent = llenas === 0
-            ? 'Ninguna fila llenada todavía.'
-            : llenas + ' participante(s) por registrar.';
-    }
-
-    document.getElementById('agregar-fila').addEventListener('click', function () {
-        const plantilla = cuerpo.querySelector('tr');
-        let indice = cuerpo.querySelectorAll('tr').length;
-
-        for (let n = 0; n < 5; n++) {
-            const nueva = plantilla.cloneNode(true);
-            nueva.querySelector('td').textContent = String(indice + 1);
-
-            nueva.querySelectorAll('input, select').forEach(function (campo) {
-                campo.name = campo.name.replace(/p\[\d+\]/, 'p[' + indice + ']');
-                if (campo.tagName === 'SELECT') { campo.selectedIndex = 0; }
-                else { campo.value = ''; }
-            });
-
-            cuerpo.appendChild(nueva);
-            indice++;
-        }
-        contarLlenas();
-    });
-
-    cuerpo.addEventListener('input', contarLlenas);
-    contarLlenas();
-
-    /* --- Aviso de documento repetido (D-05: avisa, no bloquea) --- */
-    const avisos = document.getElementById('avisos-documento');
-    let temporizador = null;
-
-    cuerpo.addEventListener('input', function (evento) {
-        if (!evento.target.classList.contains('entrada-documento')) return;
-
-        clearTimeout(temporizador);
-        const doc = evento.target.value.trim();
-        if (doc.length < 8) return;
-
-        temporizador = setTimeout(async function () {
-            try {
-                const url = <?= json_encode(View::url('/api/participantes/verificar')) ?> +
-                            '?dni=' + encodeURIComponent(doc);
-                const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                if (!r.ok) return;
-
-                const datos = await r.json();
-                if (!datos.repetidos || datos.repetidos.length === 0) return;
-
-                const caja = document.createElement('div');
-                caja.className = 'aviso aviso--aviso';
-                caja.textContent = 'El documento ' + doc + ' ya está registrado en este concurso (' +
-                                   datos.repetidos.length + ' coincidencia(s)). ' +
-                                   'Puedes continuar si es correcto.';
-                avisos.innerHTML = '';
-                avisos.appendChild(caja);
-            } catch (e) { /* la ayuda falla en silencio, el formulario sigue */ }
-        }, 400);
-    });
-})();
-</script>
+<script src="<?= View::e(View::url('build/js/delegacion.js')) ?>" defer></script>

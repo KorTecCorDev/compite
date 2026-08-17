@@ -58,7 +58,9 @@ $msg = static function (string $campo) use ($errores): string {
         <div class="rejilla">
             <label class="campo campo--ancho<?= $err('nombre') ?>">
                 <span class="campo__etiqueta">Nombre de la I.E. *</span>
-                <input type="text" name="nombre" maxlength="200" required value="<?= $v('nombre') ?>">
+                <input type="text" name="nombre" maxlength="200" required value="<?= $v('nombre') ?>"
+                       data-url-buscar="<?= View::e(View::url('/api/instituciones/buscar')) ?>"
+                       data-url-editar="<?= View::e(View::url('/instituciones/')) ?>">
                 <?= $msg('nombre') ?>
             </label>
 
@@ -206,60 +208,5 @@ $msg = static function (string $campo) use ($errores): string {
 <?php if ($esNueva): ?>
 <div id="aviso-duplicados" class="aviso aviso--aviso" hidden></div>
 
-<script>
-/*
- * Aviso de posible duplicado mientras se escribe el nombre.
- * Es solo una ayuda: no bloquea nada, porque dos colegios distintos pueden
- * llamarse igual en distritos distintos. La decisión la toma la secretaria.
- */
-(function () {
-    const campo = document.querySelector('input[name="nombre"]');
-    const aviso = document.getElementById('aviso-duplicados');
-    if (!campo || !aviso) return;
-
-    let temporizador = null;
-
-    campo.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        const termino = campo.value.trim();
-
-        if (termino.length < 3) {
-            aviso.hidden = true;
-            return;
-        }
-
-        temporizador = setTimeout(async function () {
-            try {
-                const url = <?= json_encode(View::url('/api/instituciones/buscar')) ?> +
-                            '?q=' + encodeURIComponent(termino);
-                const respuesta = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                if (!respuesta.ok) return;
-
-                const datos = await respuesta.json();
-                const lista = datos.resultados || [];
-
-                if (lista.length === 0) {
-                    aviso.hidden = true;
-                    return;
-                }
-
-                aviso.innerHTML =
-                    '<strong>Ya existe' + (lista.length === 1 ? '' : 'n') + ' ' +
-                    lista.length + ' institución' + (lista.length === 1 ? '' : 'es') +
-                    ' con un nombre parecido:</strong><ul class="lista-errores">' +
-                    lista.map(function (ie) {
-                        const texto = ie.nombre + ' — ' + ie.distrito + ' (' + ie.tipo + ')';
-                        return '<li><a href="<?= View::e(View::url('/instituciones/')) ?>' +
-                               ie.id + '/editar">' +
-                               texto.replace(/[<>&]/g, '') + '</a></li>';
-                    }).join('') +
-                    '</ul>';
-                aviso.hidden = false;
-            } catch (e) {
-                /* Si la búsqueda falla, el formulario sigue siendo usable. */
-            }
-        }, 350);
-    });
-})();
-</script>
+<script src="<?= View::e(View::url('build/js/instituciones.js')) ?>" defer></script>
 <?php endif; ?>

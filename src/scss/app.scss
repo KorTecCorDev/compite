@@ -1,0 +1,45 @@
+// ===========================================================================
+// COCIAP 2026 — hoja de estilos
+// ===========================================================================
+// Punto de entrada del build. Compila a `public/build/css/app.css` mediante
+// `npm run dev` (desarrollo) o `npm run build` (producción). No editar el CSS
+// compilado a mano: se sobrescribe en la siguiente compilación.
+//
+// El orden de los @use de abajo ES la cascada. Varias reglas comparten
+// especificidad y solo se distinguen por orden de aparición, así que reordenar
+// estas líneas cambia cómo se ve el sistema. Los casos concretos están
+// comentados en cada parcial:
+//
+//   · componentes/etiquetas antes de componentes/listas
+//   · componentes/formularios antes de paginas/inscripciones
+//   · utilidades al final, para que `.oculto` gane sin !important
+
+// --- Base: variables, reset y tipografía ---------------------------------
+@use 'base/variables';
+@use 'base/globales';
+@use 'base/tipografia';
+
+// --- Layout: estructura común de todas las pantallas ---------------------
+@use 'layout/barra';
+@use 'layout/contenido';
+
+// --- Componentes: piezas reutilizables -----------------------------------
+@use 'componentes/tarjetas';
+@use 'componentes/datos';
+@use 'componentes/metricas';
+@use 'componentes/etiquetas';
+@use 'componentes/listas';
+@use 'componentes/formularios';
+@use 'componentes/botones';
+@use 'componentes/avisos';
+@use 'componentes/filtros';
+@use 'componentes/enlaces';
+@use 'componentes/tablas';
+
+// --- Páginas: estilos propios de un flujo concreto -----------------------
+@use 'paginas/inscripciones';
+@use 'paginas/cobro';
+@use 'paginas/carne';
+
+// --- Utilidades: siempre al final ----------------------------------------
+@use 'utilidades/utilidades';

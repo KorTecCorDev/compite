@@ -29,6 +29,11 @@ final class Carne
     /**
      * Registra el carné. Si ya existía uno para esa inscripción, se
      * sobrescribe la ruta: puede haberse regenerado el PDF.
+     *
+     * `$codigoQr` es el código correlativo que el QR codifica, NO una URL: una
+     * URL absoluta ataría la base a un entorno y, al desplegar, todos los
+     * carnés existentes apuntarían a localhost. La URL se arma cuando se
+     * necesita con GeneradorCarne::urlPublica(). Ver D-21.
      */
     public static function registrar(int $inscripcionId, string $codigoQr, string $rutaPdf): void
     {

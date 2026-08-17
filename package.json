@@ -1,0 +1,27 @@
+{
+    "name": "compite-cociap2026",
+    "version": "1.0.0",
+    "description": "Pipeline de assets (SASS + JS) del sistema de inscripciones COCIAP 2026",
+    "private": true,
+    "license": "proprietary",
+    "type": "module",
+    "engines": {
+        "node": ">=22.11.0"
+    },
+    "scripts": {
+        "dev": "gulp",
+        "build": "gulp build"
+    },
+    "devDependencies": {
+        "autoprefixer": "^10.5.4",
+        "browser-sync": "^3.0.4",
+        "cssnano": "^8.0.6",
+        "gulp": "^5.0.1",
+        "gulp-plumber": "^1.2.1",
+        "gulp-postcss": "^10.0.0",
+        "gulp-sass": "^6.0.1",
+        "gulp-sourcemaps": "^3.0.0",
+        "gulp-terser": "^2.1.0",
+        "sass": "^1.102.0"
+    }
+}

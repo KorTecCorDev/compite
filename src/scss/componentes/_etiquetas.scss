@@ -1,0 +1,56 @@
+@use '../base/tokens' as t;
+
+// Píldora de estado. Se usa para el rol del usuario, el tipo de institución
+// (pública/privada) y el estado de la inscripción.
+
+.etiqueta {
+    display: inline-block;
+    padding: .12rem .5rem;
+    border-radius: 999px;
+    background: var(--acento-suave);
+    color: var(--acento);
+    font-size: .74rem;
+    font-style: normal;
+    font-weight: 600;
+    text-transform: lowercase;
+    white-space: nowrap;
+
+    &--alerta {
+        background: var(--error-suave);
+        color: var(--error);
+    }
+
+    // Tipo de institución educativa
+    &--publica {
+        background: t.$publica-fondo;
+        color: t.$publica-texto;
+    }
+
+    &--privada {
+        background: t.$privada-fondo;
+        color: t.$privada-texto;
+    }
+
+    &--neutra {
+        background: t.$gris-suave;
+        color: var(--tinta-suave);
+    }
+
+    // Estado de la inscripción. La anulada va tachada para que se distinga
+    // de un vistazo en el listado (decisión D-13: se muestra, no se oculta).
+    &--estado-pendiente {
+        background: var(--aviso-suave);
+        color: var(--aviso);
+    }
+
+    &--estado-confirmada {
+        background: var(--exito-suave);
+        color: var(--exito);
+    }
+
+    &--estado-anulada {
+        background: t.$gris-suave;
+        color: var(--tinta-suave);
+        text-decoration: line-through;
+    }
+}

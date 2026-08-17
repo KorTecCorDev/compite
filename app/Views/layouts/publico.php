@@ -21,7 +21,7 @@ use Core\View;
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title><?= View::e($titulo ?? '') ?></title>
-    <link rel="stylesheet" href="<?= View::e(View::url('css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= View::e(View::url('build/css/app.css')) ?>">
 </head>
 <body class="centrado">
     <main class="carne-publico">

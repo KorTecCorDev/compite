@@ -176,9 +176,11 @@ final class PagoController extends Controller
 
         $ruta = GeneradorCarne::generar($ficha);
 
+        // Se guarda el código, no la URL: la URL depende del entorno y se
+        // deriva cuando hace falta con GeneradorCarne::urlPublica(). Ver D-21.
         Carne::registrar(
             $inscripcionId,
-            GeneradorCarne::urlPublica((string) $inscripcion['codigo_correlativo']),
+            (string) $inscripcion['codigo_correlativo'],
             $ruta
         );
     }

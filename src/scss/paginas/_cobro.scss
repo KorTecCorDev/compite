@@ -1,0 +1,45 @@
+// Barra de cobro: aparece al marcar inscripciones pendientes en el listado.
+//
+// Es `sticky` al fondo de la ventana para que la secretaria pueda seguir
+// marcando filas sin perder de vista el total ni el botón de confirmar.
+
+.barra-cobro {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--papel);
+    border: 1px solid var(--acento);
+    border-radius: var(--radio);
+    box-shadow: 0 -4px 18px rgba(27, 36, 48, .1);
+
+    &__resumen {
+        margin-right: auto;
+        font-size: .95rem;
+        color: var(--tinta-suave);
+
+        strong {
+            color: var(--tinta);
+            font-size: 1.05rem;
+        }
+    }
+
+    &__campo {
+        display: grid;
+        gap: .3rem;
+
+        select,
+        input {
+            padding: .5rem .6rem;
+            border: 1px solid var(--borde);
+            border-radius: 8px;
+            font: inherit;
+            background: var(--papel);
+            color: var(--tinta);
+        }
+    }
+}

@@ -77,6 +77,11 @@ final class GeneradorCarne
 
     /**
      * URL que viaja dentro del QR.
+     *
+     * Lee `app.url_base` a propósito, y NUNCA Core\View::url(): esta URL se
+     * imprime en el carné del estudiante y no se puede corregir después. Si se
+     * derivara del request, un carné generado mientras se prueba con el proxy
+     * de BrowserSync quedaría apuntando a localhost:3000 de forma permanente.
      */
     public static function urlPublica(string $codigo): string
     {

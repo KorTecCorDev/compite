@@ -17,7 +17,7 @@ $flash = Sesion::tomarFlash();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= View::e($titulo ?? '') ?> · COCIAP 2026</title>
-    <link rel="stylesheet" href="<?= View::e(View::url('css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= View::e(View::url('build/css/app.css')) ?>">
 </head>
 <body>
 

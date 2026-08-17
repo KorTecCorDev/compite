@@ -1,0 +1,38 @@
+@use '../base/tokens' as t;
+
+// Lista de módulos del panel, con su estado de avance.
+//
+// Depende de `_etiquetas.scss`: la regla anidada sobrescribe el color de la
+// píldora cuando el módulo está listo, así que ese parcial debe cargarse antes
+// (ver el orden en app.scss).
+
+.lista-modulos {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: .5rem;
+
+    &__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .6rem .8rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font-size: .92rem;
+        color: var(--tinta-suave);
+
+        &--listo {
+            color: var(--tinta);
+            border-color: t.$borde-exito;
+            background: var(--exito-suave);
+
+            .etiqueta {
+                background: t.$verde-etiqueta;
+                color: var(--exito);
+            }
+        }
+    }
+}

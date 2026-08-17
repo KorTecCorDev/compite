@@ -230,6 +230,13 @@ CREATE TABLE inscripciones (
 
 -- ---------------------------------------------------------------------
 -- Carné generado al confirmar el pago. Una por inscripción.
+--
+-- Nada de lo que se guarda aquí puede depender del entorno: la misma base
+-- tiene que servir en XAMPP y en Hostinger sin reescribir filas (D-21).
+--
+-- codigo_qr: el CÓDIGO que el QR codifica, no la URL. La URL se arma al
+--   vuelo con GeneradorCarne::urlPublica(), que lee `app.url_base`.
+-- ruta_pdf: ruta RELATIVA a la raíz del proyecto (storage/carnes/...).
 -- ---------------------------------------------------------------------
 CREATE TABLE carnes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

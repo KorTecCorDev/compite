@@ -25,6 +25,6 @@
 # Si en Hostinger llegara a estar desactivado, config.local.php quedaría
 # accesible con las credenciales de la base dentro. Esto lo impide por ruta,
 # sin depender de ningún módulo opcional.
-RedirectMatch 404 ^/?(config|core|app|database|storage|scripts|vendor|resources|docs)(/|$)
+RedirectMatch 404 ^/?(config|core|app|database|storage|scripts|vendor|resources|docs|src|node_modules)(/|$)
 
 Options -Indexes

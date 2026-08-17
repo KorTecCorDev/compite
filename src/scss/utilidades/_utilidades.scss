@@ -1,0 +1,27 @@
+// ---------------------------------------------------------------------------
+// Utilidades
+// ---------------------------------------------------------------------------
+// Se cargan al final de app.scss para que ganen por orden de aparición frente
+// a los componentes, sin necesidad de !important.
+
+.tenue {
+    color: var(--tinta-suave);
+}
+
+// Estado vacío de un listado ("todavía no hay inscripciones").
+.vacio {
+    padding: 2.5rem 1.5rem;
+    text-align: center;
+    color: var(--tinta-suave);
+    background: var(--papel);
+    border: 1px dashed var(--borde);
+    border-radius: var(--radio);
+
+    a {
+        color: var(--acento);
+    }
+}
+
+.oculto {
+    display: none;
+}

@@ -636,18 +636,166 @@ El reporte de fondo de devoluciones (Fase 5) adopta el mismo orden.
 
 ---
 
+### D-19 — Pipeline de assets con Gulp, SASS y BrowserSync
+**Fecha:** 2026-08-17 · **Estado:** decisión técnica aplicada (cierra **P-07**)
+
+La sección 2 exige «HTML + SASS (compilado a CSS) + JS» pero no definía herramienta, así que
+`public/css/app.css` venía manteniéndose a mano (15.2 KB) y había ~400 líneas de JavaScript
+incrustadas en cuatro vistas. Se adopta el flujo de Gulp del curso *Desarrollo Web Completo*
+de Juan Pablo De la Torre, a petición del propietario.
+
+**Alcance deliberado: solo el frontend.** Las convenciones de backend del curso
+(`includes/funciones.php`, `incluirTemplate()`, clase `ActiveRecord`) son simplificaciones
+didácticas y adoptarlas aquí sería un retroceso: se perderían el token CSRF de `Core\Sesion`,
+el escape centralizado de `Core\View` y el autoload PSR-4. Además alejarían el proyecto de la
+migración a Laravel que la sección 2 declara como objetivo. La arquitectura MVC no se toca.
+
+**Estructura:** fuentes en `src/scss` (17 parciales: `base/`, `layout/`, `componentes/`,
+`paginas/`, `utilidades/`) y `src/js` (4 módulos); salida a `public/build/`. El destino es
+`public/build/` y no `build/` en la raíz porque el `.htaccess` raíz reescribe todo hacia
+`public/` y una carpeta fuera de ahí sería inalcanzable.
+
+**Datos de PHP hacia el JS:** los scripts inline recibían valores por interpolación
+(`<?= json_encode($montos) ?>`). Ahora viajan en atributos `data-*` del marcado, que es lo que
+permite que los `.js` sean estáticos y cacheables.
+
+**Comandos:** `gulp` (compila y levanta BrowserSync con los oyentes) y `gulp build` (compilado
+de producción). Requiere `gulp-cli` instalado global: `npm install --global gulp-cli`. Con nvm
+los paquetes globales son por versión de Node, así que hay que reinstalarlo si se cambia de
+versión. Sin él siguen funcionando `npm run dev` y `npm run build`, que usan el gulp local.
+
+**Ningún servidor arranca solo:** BrowserSync se levanta únicamente al ejecutar `gulp` (o
+`npm run dev`) y muere al cerrar ese proceso. Apache y MySQL los controla XAMPP, como siempre.
+
+**Node 22 LTS:** la versión instalada era la 16, EOL desde 2023, que bloquea `sass` (exige
+>=20.19), `gulp-postcss` (>=18) y `cssnano` (>=22.11). Se actualizó con nvm. Node vive solo en
+la máquina de desarrollo; Hostinger no lo necesita.
+
+**`public/build/` se versiona** (a diferencia de `vendor/`): el hosting compartido no tiene Node
+para compilar allá. Contrapartida asumida: hay que correr `npm run build` antes de commitear
+cambios de estilos. Los sourcemaps quedan ignorados, solo los genera `npm run dev`.
+
+**Verificación de la migración del CSS:** se comparó el CSS compilado contra el original
+parseando ambos con PostCSS y contrastando, selector por selector, la lista de declaraciones.
+Resultado: 132 selectores en ambos, ninguna diferencia de comportamiento. El minificado baja de
+15.2 KB a 10.7 KB.
+
+**Fuera de alcance a propósito:** el carné en PDF conserva su `<style>` embebido en
+`App\Servicios\GeneradorCarne`. dompdf soporta un subconjunto reducido de CSS y necesita
+estilos autocontenidos; meterlo al pipeline rompería el PDF.
+
+**Vulnerabilidades de npm:** `npm audit` reporta 6 (postcss 7 anidado en `gulp-sourcemaps`, e
+`immutable` en `browser-sync`). **No ejecutar `npm audit fix --force`**: degradaría browser-sync
+de 3.0.4 a 1.9.2. Son dependencias de desarrollo que nunca llegan al servidor, y el postcss que
+usan autoprefixer y cssnano es el 8.5.26, ya parchado.
+
+---
+
+### D-20 — Base de navegación derivada del request, separada de la canónica
+**Fecha:** 2026-08-17 · **Estado:** decisión técnica aplicada
+
+`app.url_base` estaba fija en `http://localhost/compite` y la usaban tanto `Core\View::url()`
+(enlaces y assets) como `GeneradorCarne::urlPublica()` (la URL dentro del QR). Se separan:
+
+- **Canónica (`app.url_base`)**: única fuente para lo que se persiste o se imprime. El QR del
+  carné la sigue leyendo directamente. **Nunca debe derivarse del request:** un carné generado
+  durante una sesión de pruebas quedaría con esa URL grabada de forma permanente en papel.
+- **De navegación (`View::baseNavegacion()`)**: derivada de `HTTP_HOST`, y **solo en entorno
+  local**. En producción devuelve la canónica tal cual, porque la cabecera `Host` la controla el
+  cliente y no debe decidir a dónde apuntan los enlaces del sistema.
+
+El motivo real es poder probar desde un celular en la red local
+(`http://192.168.x.x/compite`), que con la base fija generaba enlaces a `localhost` inservibles
+en el teléfono. Para BrowserSync no era necesario: su proxy ya reescribe los enlaces del HTML
+por su cuenta, y al proxear envía `Host: localhost`.
+
+---
+
+### D-21 — Ningún dato de la base puede depender del entorno
+**Fecha:** 2026-08-17 · **Estado:** corregido a pedido del propietario
+
+`carnes.codigo_qr` venía guardando la **URL absoluta** de la vista pública
+(`http://localhost/compite/carne/COCIAP2026-0019-KZZQMX`), escrita en
+`PagoController::emitirCarne()`. Es incorrecto: al restaurar la base en Hostinger, todos los
+carnés ya emitidos seguirían apuntando a `localhost`, y la única forma de arreglarlo sería
+reescribir filas después de cada despliegue.
+
+**Agravante:** la columna **nunca se leía**. Era un dato muerto que solo servía para atar la
+base a la máquina donde se generó el carné.
+
+**Corrección:** pasa a guardar el **código correlativo**. La URL se arma cuando se necesita con
+`GeneradorCarne::urlPublica()`, que lee `app.url_base`. Migración idempotente en
+`database/migraciones/2026-08-17-codigo-qr-sin-url.sql` (solo toca filas con forma de URL);
+aplicada sobre las 4 filas existentes.
+
+**Regla general que queda establecida:** la base guarda identificadores y rutas relativas, nunca
+URLs absolutas ni rutas del sistema de archivos. `ruta_pdf` ya cumplía
+(`storage/carnes/CODIGO.pdf`, relativa a la raíz del proyecto).
+
+**Auditoría:** se recorrieron todas las columnas de texto de las 10 tablas buscando `http://`,
+`https://`, `localhost`, `127.0.0.1`, `C:\` y `xampp`. Tras la migración: **cero hallazgos**.
+
+**Lo que sí lleva la URL absoluta, y debe llevarla:** el PDF del carné, porque se imprime y el
+QR tiene que ser escaneable desde cualquier teléfono. La toma de `app.url_base`, así que en
+producción sale con el dominio real. **Consecuencia para el despliegue:** un PDF generado en
+local queda con el QR apuntando a localhost; los carnés emitidos antes de subir a producción hay
+que regenerarlos con `/inscripciones/{id}/carne/regenerar`.
+
+---
+
+### D-22 — Acceso externo al servidor de pruebas
+**Fecha:** 2026-08-17 · **Estado:** decisión técnica aplicada
+
+Para probar los formularios con la secretaría desde sus propios equipos y teléfonos, `gulp`
+anuncia en consola el enlace de red local además del de la máquina:
+
+```
+En esta maquina : http://localhost:3000/compite
+Para compartir  : http://192.168.1.115:3000/compite
+```
+
+**Detección de la IP:** se calcula en cada arranque desde `os.networkInterfaces()`, no se
+configura a mano, porque la IP es por DHCP y cambia. Se descartan las **169.254.x.x** (APIPA):
+Windows se las asigna a interfaces sin red real —Bluetooth, adaptadores virtuales— y en esta
+máquina hay cuatro. Eran la razón de que BrowserSync no anunciara URL externa: no acertaba cuál
+elegir. Se le pasa la IP buena en `host` y se fuerza el anuncio con `online: true`.
+
+**Los enlaces no se salen del proxy:** BrowserSync reescribe las URLs del HTML al host con el
+que llegó la petición. Verificado: pidiendo a `192.168.1.115:3000`, el CSS sale como
+`//192.168.1.115:3000/compite/build/css/app.css`.
+
+**Vía alternativa sin BrowserSync:** `http://192.168.1.115/compite` (Apache directo, puerto 80).
+No tiene recarga automática, pero no depende de que el proceso de gulp siga vivo, así que es más
+estable para una sesión larga de pruebas con usuarios. Funciona gracias a D-20: sin la base de
+navegación derivada del request, los enlaces apuntarían a `localhost` y no abrirían en el
+teléfono. Verificado, HTTP 200.
+
+**Requiere abrir el puerto en el Firewall de Windows**, limitado al perfil `Private` (la red
+«COCIAP» está clasificada así). No se aplica automáticamente: exige permisos de administrador y
+es una decisión de seguridad del propietario, no del código.
+
+```powershell
+New-NetFirewallRule -DisplayName "COCIAP 2026 - BrowserSync (3000)" `
+  -Direction Inbound -Protocol TCP -LocalPort 3000 -Action Allow -Profile Private
+```
+
+**Alcance y límite:** esto expone el sistema a **cualquiera en la misma Wi-Fi**, con datos
+personales de menores a la vista. Es aceptable para una sesión de pruebas controlada en el
+colegio; no es un mecanismo de publicación. Conviene retirar la regla al terminar con
+`Remove-NetFirewallRule -DisplayName "COCIAP 2026 - BrowserSync (3000)"`.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04** Origen del `tipo_origen` que selecciona la tarifa (presumiblemente
   `instituciones_educativas.tipo` para delegación y `'libre'` para libre — sin confirmar).
   **Necesario antes de la Fase 3.**
 - **P-05** `usuarios` carece de `organizacion_id` pese al diseño multi-tenant declarado.
   Se respeta el plan tal como está; añadirlo después es un `ALTER TABLE` aditivo.
-- **P-07** Pipeline de compilación de SASS: el plan exige SASS pero no define la herramienta.
-  Por ahora `public/css/app.css` se mantiene a mano. **Necesario antes de la Fase 6.**
 
 ### Resueltas
 - ~~P-01 duplicados por DNI~~ → D-05 · ~~P-02 formato del correlativo~~ → D-04 ·
-  ~~P-06 charset por tabla~~ → D-03
+  ~~P-06 charset por tabla~~ → D-03 · ~~P-07 pipeline de compilación de SASS~~ → D-19
 
 ---
 

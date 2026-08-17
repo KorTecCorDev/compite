@@ -1,0 +1,38 @@
+// Enlaces y botones de acción dentro de tablas y encabezados.
+
+.enlace-tenue {
+    color: var(--tinta-suave);
+    text-decoration: none;
+    font-size: .9rem;
+    font-weight: 600;
+
+    &:hover {
+        color: var(--acento);
+        text-decoration: underline;
+    }
+}
+
+// Acciones destructivas (anular, eliminar). Son <button> dentro de un <form>
+// porque requieren POST + token CSRF, pero deben verse como un enlace.
+.enlace-peligro {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--error);
+    font: inherit;
+    font-size: .9rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+// Igual que el anterior, pero sin el color de alerta.
+.enlace-boton {
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}

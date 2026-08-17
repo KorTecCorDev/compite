@@ -1,0 +1,29 @@
+@use '../base/tokens' as t;
+
+// Mensajes flash de la sesión (guardado con éxito, error de validación...).
+
+.aviso {
+    padding: .7rem .9rem;
+    border-radius: 8px;
+    border: 1px solid;
+    font-size: .9rem;
+    margin-bottom: 1rem;
+
+    &--exito {
+        background: var(--exito-suave);
+        border-color: t.$borde-exito;
+        color: var(--exito);
+    }
+
+    &--error {
+        background: var(--error-suave);
+        border-color: t.$borde-error;
+        color: var(--error);
+    }
+
+    &--aviso {
+        background: var(--aviso-suave);
+        border-color: t.$borde-aviso;
+        color: var(--aviso);
+    }
+}

@@ -1,0 +1,34 @@
+// Columna central de contenido y encabezado de cada pantalla.
+
+.contenido {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 1.75rem 1.5rem 3rem;
+    display: grid;
+    gap: 1.25rem;
+}
+
+// Título de la pantalla a la izquierda, acciones a la derecha.
+.encabezado {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+
+    .titulo {
+        margin-bottom: .2rem;
+    }
+
+    .subtitulo {
+        margin-bottom: 0;
+        max-width: 60ch;
+    }
+}
+
+.pie {
+    padding: 1.25rem 1.5rem 2rem;
+    text-align: center;
+    font-size: .82rem;
+    color: var(--tinta-suave);
+}

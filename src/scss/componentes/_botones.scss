@@ -1,0 +1,32 @@
+@use '../base/tokens' as t;
+
+.boton {
+    display: inline-block;
+    padding: .55rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+
+    &--principal {
+        background: var(--acento);
+        color: #fff;
+
+        &:hover {
+            background: t.$azul-hover;
+        }
+    }
+
+    &--tenue {
+        background: var(--papel);
+        border-color: var(--borde);
+        color: var(--tinta-suave);
+
+        &:hover {
+            color: var(--tinta);
+            border-color: t.$borde-hover;
+        }
+    }
+}

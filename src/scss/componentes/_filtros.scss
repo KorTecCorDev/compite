@@ -1,0 +1,26 @@
+// Barra de búsqueda y filtros sobre los listados.
+
+.filtros {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+
+    // El buscador se estira; los <select> conservan su ancho natural.
+    input[type="search"] {
+        flex: 1 1 260px;
+        padding: .55rem .7rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font: inherit;
+        background: var(--papel);
+    }
+
+    select {
+        padding: .55rem .6rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font: inherit;
+        background: var(--papel);
+    }
+}

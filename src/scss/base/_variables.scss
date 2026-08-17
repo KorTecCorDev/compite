@@ -1,0 +1,23 @@
+// ---------------------------------------------------------------------------
+// Paleta y medidas base
+// ---------------------------------------------------------------------------
+// Custom properties de CSS, no variables de SASS: se resuelven en el navegador,
+// así que siguen disponibles en tiempo de ejecución. Ver la nota de _tokens.scss
+
+:root {
+    --tinta: #1b2430;
+    --tinta-suave: #5b6878;
+    --fondo: #f4f6f9;
+    --papel: #ffffff;
+    --borde: #dde3ea;
+    --acento: #1d4ed8;
+    --acento-suave: #eef2ff;
+    --exito: #0f7b4f;
+    --exito-suave: #e7f6ee;
+    --error: #b4232c;
+    --error-suave: #fdecec;
+    --aviso: #9a6300;
+    --aviso-suave: #fdf4e3;
+    --radio: 10px;
+    --sombra: 0 1px 2px rgba(27, 36, 48, .06), 0 4px 14px rgba(27, 36, 48, .05);
+}

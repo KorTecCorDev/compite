@@ -253,7 +253,8 @@ foreach ($inscripciones as $ins) {
 </form>
 
 <!-- Anulación definitiva: formulario aparte, para que no viaje con el cobro. -->
-<form method="post" id="form-anular" class="oculto">
+<form method="post" id="form-anular" class="oculto"
+      data-url-base="<?= View::e(View::url('/inscripciones/')) ?>">
     <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
     <input type="hidden" name="motivo" id="motivo-anulacion">
 </form>
@@ -264,78 +265,6 @@ foreach ($inscripciones as $ins) {
     «Anular» es definitiva y, si ya estaba pagada, suma el monto al fondo de devoluciones.
 </p>
 
-<script>
-(function () {
-    const casillas = Array.from(document.querySelectorAll('.casilla-pago'));
-    const barra = document.getElementById('barra-cobro');
-    const cantidad = document.getElementById('cobro-cantidad');
-    const total = document.getElementById('cobro-total');
-    const medio = document.getElementById('medio-pago');
-    const campoYape = document.getElementById('campo-yape');
-    const inputYape = document.getElementById('yape-codigo');
-    const marcarTodas = document.getElementById('marcar-todas');
-
-    function actualizar() {
-        const marcadas = casillas.filter(c => c.checked);
-        const suma = marcadas.reduce((acc, c) => acc + parseFloat(c.dataset.monto || '0'), 0);
-
-        if (cantidad) cantidad.textContent = String(marcadas.length);
-        if (total) total.textContent = 'S/ ' + suma.toFixed(2);
-        if (barra) barra.hidden = marcadas.length === 0;
-    }
-
-    casillas.forEach(c => c.addEventListener('change', actualizar));
-
-    if (marcarTodas) {
-        marcarTodas.addEventListener('change', function () {
-            casillas.forEach(c => { c.checked = marcarTodas.checked; });
-            actualizar();
-        });
-    }
-
-    /*
-     * El código de seguridad solo tiene sentido con Yape, y aun así es
-     * opcional: lo obligatorio es el medio de pago. El campo se ofrece, no
-     * se exige, para no detener la caja por un dato de respaldo.
-     */
-    if (medio) {
-        medio.addEventListener('change', function () {
-            const esYape = medio.value === 'yape';
-            if (campoYape) campoYape.hidden = !esYape;
-            if (inputYape && !esYape) inputYape.value = '';
-        });
-    }
-
-    /* Anulación definitiva: pide motivo y confirma, avisando de la devolución. */
-    const formAnular = document.getElementById('form-anular');
-    const campoMotivo = document.getElementById('motivo-anulacion');
-
-    document.querySelectorAll('.boton-anular').forEach(function (boton) {
-        boton.addEventListener('click', function () {
-            const pagada = boton.dataset.pagada === '1';
-            let aviso = 'Anular definitivamente la inscripción de ' + boton.dataset.nombre + '.';
-
-            if (pagada) {
-                aviso += '\n\nTiene pago confirmado: S/ ' + boton.dataset.monto +
-                         ' se sumará al fondo de devoluciones.';
-            }
-
-            aviso += '\n\nSi solo quieres cambiar la categoría, cancela y usa ' +
-                     '«Corregir categoría»: así conserva su pago y su código.' +
-                     '\n\nMotivo de la anulación:';
-
-            const motivo = window.prompt(aviso, '');
-            if (motivo === null || motivo.trim() === '') return;
-
-            campoMotivo.value = motivo.trim();
-            formAnular.action = <?= json_encode(View::url('/inscripciones/')) ?> +
-                                boton.dataset.id + '/anular';
-            formAnular.submit();
-        });
-    });
-
-    actualizar();
-})();
-</script>
+<script src="<?= View::e(View::url('build/js/inscripciones.js')) ?>" defer></script>
 
 <?php endif; ?>

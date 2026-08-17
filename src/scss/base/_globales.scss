@@ -1,0 +1,29 @@
+@use 'tokens' as t;
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--fondo);
+    color: var(--tinta);
+    font: 16px/1.55 "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    // Pantallas sin barra de navegación (login, carné público): la tarjeta
+    // queda centrada en el alto completo de la ventana.
+    &.centrado {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        padding: 1.5rem;
+    }
+}
+
+code {
+    padding: .1rem .35rem;
+    background: t.$gris-suave;
+    border-radius: 4px;
+    font-size: .88em;
+}

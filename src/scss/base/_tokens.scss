@@ -1,0 +1,37 @@
+// ---------------------------------------------------------------------------
+// Tokens de color en SASS
+// ---------------------------------------------------------------------------
+// Este archivo NO emite CSS: solo declara variables que se resuelven en tiempo
+// de compilación.
+//
+// La paleta principal vive en `_variables.scss` como custom properties de CSS
+// (--tinta, --acento, ...) y ahí se queda: se leen en tiempo de ejecución, que
+// es lo que permitiría un modo oscuro o un tema por organización más adelante.
+// Pasarlas a SASS sería perder eso a cambio de nada.
+//
+// Lo que sí se recoge aquí son los hexadecimales sueltos que estaban repetidos
+// a mano por toda la hoja: bordes de estado, grises de tabla y colores de las
+// etiquetas de tipo de institución. Los valores son idénticos a los originales.
+
+// Estados de botón
+$azul-hover: #1740b8; // .boton--principal:hover
+$borde-hover: #c4ced9; // .boton--tenue:hover
+
+// Bordes de los bloques de estado
+$borde-acento: #c9d6fb;
+$borde-exito: #bfe3d0;
+$borde-error: #f3c9cb;
+$borde-aviso: #ecd9ae;
+
+// Grises de apoyo
+$gris-suave: #eef1f5; // fondo de <code>, etiqueta neutra, borde de celda
+$gris-cabecera: #fafbfc; // encabezado de tabla
+$gris-fila-hover: #fbfcfd; // fila de tabla al pasar el cursor
+$fondo-campo-error: #fffafa;
+
+// Etiquetas
+$verde-etiqueta: #d6f0e2;
+$publica-fondo: #e4f1fb;
+$publica-texto: #14608f;
+$privada-fondo: #f3ecfd;
+$privada-texto: #6b3fa0;

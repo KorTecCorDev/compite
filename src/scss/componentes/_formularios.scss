@@ -1,0 +1,123 @@
+@use '../base/tokens' as t;
+
+// Formularios: desde el login (dos campos) hasta la ficha de institución
+// educativa (varios grupos con rejilla).
+
+.formulario {
+    display: grid;
+    gap: 1rem;
+}
+
+.formulario-largo {
+    display: grid;
+    gap: 1.25rem;
+}
+
+// <fieldset> con aspecto de tarjeta.
+.grupo {
+    margin: 0;
+    padding: 1.25rem 1.5rem 1.5rem;
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+
+    &__titulo {
+        padding: 0 .4rem;
+        font-size: .8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .05em;
+        color: var(--acento);
+    }
+
+    // Aclaración dentro del <legend>, que no debe ir en mayúsculas.
+    &__nota {
+        font-weight: 600;
+        color: var(--tinta-suave);
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    &__ayuda {
+        margin: 0 0 1rem;
+        font-size: .85rem;
+        color: var(--tinta-suave);
+    }
+}
+
+.rejilla {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+}
+
+.campo {
+    display: grid;
+    gap: .35rem;
+
+    &__etiqueta {
+        font-size: .85rem;
+        font-weight: 600;
+        color: var(--tinta-suave);
+    }
+
+    input,
+    select {
+        padding: .6rem .7rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font: inherit;
+        background: var(--papel);
+        color: var(--tinta);
+    }
+
+    input:focus {
+        outline: 2px solid var(--acento);
+        outline-offset: 1px;
+        border-color: var(--acento);
+    }
+
+    &__ayuda {
+        font-size: .78rem;
+        color: var(--tinta-suave);
+    }
+
+    &__error {
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--error);
+    }
+
+    // Ocupa la fila completa de la rejilla.
+    &--ancho {
+        grid-column: 1 / -1;
+    }
+
+    // Va después de la regla base a propósito: misma especificidad, así que
+    // solo gana por orden de aparición.
+    &--error {
+        input,
+        select {
+            border-color: var(--error);
+            background: t.$fondo-campo-error;
+        }
+    }
+}
+
+// Errores de validación devueltos por el backend.
+.lista-errores {
+    margin: .5rem 0 0;
+    padding-left: 1.2rem;
+    font-weight: 400;
+
+    li {
+        margin-bottom: .2rem;
+    }
+}
+
+.acciones {
+    display: flex;
+    gap: .7rem;
+    flex-wrap: wrap;
+}

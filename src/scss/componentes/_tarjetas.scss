@@ -1,0 +1,27 @@
+// Tarjeta: contenedor blanco usado en login, panel y carné público.
+
+.tarjeta {
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 380px;
+
+    // Para listados y formularios largos, que no deben quedar angostos.
+    &--ancha {
+        max-width: none;
+    }
+
+    &__titulo {
+        margin: 0 0 .25rem;
+        font-size: 1.05rem;
+    }
+
+    &__meta {
+        margin: 0 0 1rem;
+        font-size: .88rem;
+        color: var(--tinta-suave);
+    }
+}

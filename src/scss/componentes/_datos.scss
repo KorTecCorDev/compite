@@ -1,0 +1,25 @@
+// Lista de pares etiqueta/valor (<dl>) para mostrar fichas en solo lectura.
+
+.datos {
+    margin: 0;
+    display: grid;
+    gap: .7rem;
+
+    &__par {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: .6rem;
+
+        dt {
+            min-width: 190px;
+            font-size: .86rem;
+            color: var(--tinta-suave);
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 600;
+        }
+    }
+}

@@ -61,6 +61,7 @@ $msg = static fn (string $c): string => isset($errores[$c])
             <label class="campo<?= $err('ap_dni') ?>">
                 <span class="campo__etiqueta">DNI o C.E. *</span>
                 <input type="text" name="ap_dni" id="ap-dni" maxlength="12" required
+                       data-url-buscar="<?= View::e(View::url('/api/apoderados/buscar')) ?>"
                        value="<?= $v('ap_dni') ?>">
                 <span class="campo__ayuda" id="ap-estado"></span>
                 <?= $msg('ap_dni') ?>
@@ -146,49 +147,4 @@ $msg = static fn (string $c): string => isset($errores[$c])
     </div>
 </form>
 
-<script>
-(function () {
-    const campoDni = document.getElementById('ap-dni');
-    const estado = document.getElementById('ap-estado');
-    const campos = {
-        ap_paterno: document.getElementById('ap-paterno'),
-        ap_materno: document.getElementById('ap-materno'),
-        nombres: document.getElementById('ap-nombres'),
-        celular: document.getElementById('ap-celular')
-    };
-
-    let temporizador = null;
-
-    campoDni.addEventListener('input', function () {
-        clearTimeout(temporizador);
-        const dni = campoDni.value.trim();
-
-        if (dni.length < 8) { estado.textContent = ''; return; }
-
-        temporizador = setTimeout(async function () {
-            try {
-                const url = <?= json_encode(View::url('/api/apoderados/buscar')) ?> +
-                            '?dni=' + encodeURIComponent(dni);
-                const r = await fetch(url, { headers: { 'Accept': 'application/json' } });
-                if (!r.ok) { estado.textContent = ''; return; }
-
-                const datos = await r.json();
-
-                if (!datos.encontrado) {
-                    estado.textContent = 'Apoderado nuevo: completa sus datos.';
-                    return;
-                }
-
-                /* Se autocompleta para reutilizar el registro existente. */
-                Object.keys(campos).forEach(function (clave) {
-                    if (campos[clave] && datos.apoderado[clave]) {
-                        campos[clave].value = datos.apoderado[clave];
-                    }
-                });
-
-                estado.textContent = 'Ya registrado: se reutilizará el mismo apoderado.';
-            } catch (e) { estado.textContent = ''; }
-        }, 400);
-    });
-})();
-</script>
+<script src="<?= View::e(View::url('build/js/libre.js')) ?>" defer></script>
