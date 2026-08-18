@@ -15,6 +15,7 @@ use App\Controllers\AnulacionController;
 use App\Controllers\ApoderadoController;
 use App\Controllers\AuthController;
 use App\Controllers\CarneController;
+use App\Controllers\ControlController;
 use App\Controllers\InscripcionController;
 use App\Controllers\InstitucionController;
 use App\Controllers\PagoController;
@@ -74,8 +75,25 @@ $router->post('/inscripciones/{id}/anular', [AnulacionController::class, 'anular
 
 $router->get('/inscripciones/{id}/carne.pdf', [CarneController::class, 'descargar']);
 
-// Vista digital del carné: PÚBLICA, sin sesión. Es lo que abre el QR.
+// Hoja A4 con los carnés de una delegación entera, 10 por página. Es el flujo
+// real de la secretaría: un colegio paga por sus treinta y se imprimen juntos.
+$router->get('/delegaciones/{id}/carnes.pdf', [CarneController::class, 'delegacion']);
+
+// Vista digital del carné: PÚBLICA, sin sesión.
 $router->get('/carne/{codigo}', [CarneController::class, 'publico']);
+
+// La misma vista por la ruta corta que codifica el QR. Corta por necesidad
+// física: a 15 mm impresos, cada carácter de más encoge los módulos del QR
+// hasta que la cámara de un celular deja de leerlo. Ver GeneradorCarne.
+$router->get('/c/{sufijo}', [CarneController::class, 'publicoCorto']);
+
+// ---------------------------------------------------------------------
+// Control de ingreso — el día del concurso
+// ---------------------------------------------------------------------
+// Pantalla de búsqueda para la mesa de la puerta. Es la respuesta al carné
+// perdido, que con estudiantes de primaria no es un riesgo sino una certeza:
+// el papel acelera la fila, pero la fuente de verdad es esta consulta.
+$router->get('/control', [ControlController::class, 'index']);
 
 // ---------------------------------------------------------------------
 // Fase 5 — Reportes                        (pendiente)

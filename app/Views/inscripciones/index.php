@@ -100,6 +100,32 @@ foreach ($inscripciones as $ins) {
     <a class="enlace-tenue" href="<?= View::e(View::url('/inscripciones')) ?>">Limpiar</a>
 </form>
 
+<?php if (!empty($filtros['institucion_id'])): ?>
+    <?php
+    /*
+     * Solo aparece con una delegación elegida, porque solo entonces la hoja
+     * tiene un destinatario claro. Imprimir «todos los carnés del concurso»
+     * sería otra cosa: cientos de páginas y un PDF que en hosting compartido
+     * se queda sin tiempo de ejecución a medio generar.
+     */
+    $confirmadas = 0;
+    foreach ($inscripciones as $ins) {
+        if ($ins['estado'] === 'confirmada') { $confirmadas++; }
+    }
+    ?>
+    <?php if ($confirmadas > 0): ?>
+        <p class="acciones-delegacion">
+            <a class="boton boton--principal"
+               href="<?= View::e(View::url('/delegaciones/' . (int) $filtros['institucion_id'] . '/carnes.pdf')) ?>">
+                Imprimir carnés de esta delegación
+            </a>
+            <span class="acciones-delegacion__nota">
+                <?= (int) $confirmadas ?> confirmada(s) · hoja A4, 10 carnés por página, con guías de corte
+            </span>
+        </p>
+    <?php endif; ?>
+<?php endif; ?>
+
 <?php if ($inscripciones === []): ?>
 
     <div class="vacio">

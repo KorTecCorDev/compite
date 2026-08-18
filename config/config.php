@@ -41,8 +41,10 @@ return [
     ],
 
     // Rutas de almacenamiento, relativas a la raíz del proyecto.
+    //
+    // `carnes` ya no está: desde D-24 el PDF del carné se genera al vuelo en
+    // cada descarga y no se escribe en disco.
     'rutas' => [
-        'carnes' => 'storage/carnes',
-        'logs'   => 'storage/logs',
+        'logs' => 'storage/logs',
     ],
 ];

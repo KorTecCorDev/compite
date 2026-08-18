@@ -1,0 +1,127 @@
+// Control de ingreso del día del concurso.
+//
+// Esta pantalla no se usa sentado frente a un escritorio: se usa de pie, en la
+// puerta, con cola detrás y con el celular o una laptop apoyada donde se pueda.
+// Todo lo de aquí sale de esa restricción —campos grandes, veredicto legible a
+// un brazo de distancia y colores que se distinguen antes de leer el texto.
+
+.control-busqueda {
+    display: flex;
+    gap: .6rem;
+    margin-bottom: .5rem;
+
+    &__campo {
+        flex: 1;
+        // Deliberadamente más grande que el resto de campos del sistema: se
+        // escribe con prisa y a menudo con una sola mano.
+        padding: .85rem 1rem;
+        font-size: 1.15rem;
+        border: 2px solid var(--borde);
+        border-radius: var(--radio);
+        background: var(--papel);
+        color: var(--tinta);
+
+        &:focus {
+            outline: none;
+            border-color: var(--acento);
+        }
+    }
+}
+
+.control-ayuda {
+    margin: 0 0 1.25rem;
+    font-size: .9rem;
+    color: var(--tinta-suave);
+}
+
+.control-lista {
+    display: grid;
+    gap: .85rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.control-ficha {
+    padding: 1rem 1.15rem;
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    // La banda lateral es la que se ve de reojo, antes de leer el veredicto.
+    border-left: 6px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+
+    &__veredicto {
+        margin: 0 0 .35rem;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: .01em;
+    }
+
+    &__nombre {
+        margin: 0 0 .75rem;
+        font-size: 1.3rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--tinta);
+    }
+
+    &__datos {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .4rem 1.75rem;
+        margin: 0;
+
+        dt {
+            font-size: .7rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--tinta-suave);
+        }
+
+        dd {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+    }
+
+    &__codigo {
+        font-variant-numeric: tabular-nums;
+        letter-spacing: .02em;
+    }
+
+    &__nota {
+        margin: .75rem 0 0;
+        padding-top: .65rem;
+        border-top: 1px solid var(--borde);
+        font-size: .9rem;
+        color: var(--tinta-suave);
+    }
+
+    // --- Estados ---------------------------------------------------------
+    // Verde, ámbar y rojo, en ese orden, porque es el código que cualquiera
+    // interpreta sin que se lo expliquen. El texto del veredicto está igualmente
+    // escrito: el color acompaña la lectura, no la sustituye —hay gente que no
+    // distingue el rojo del verde.
+
+    &--valido {
+        border-left-color: var(--exito);
+
+        .control-ficha__veredicto { color: var(--exito); }
+    }
+
+    &--pendiente {
+        border-left-color: var(--aviso);
+        background: var(--aviso-suave);
+
+        .control-ficha__veredicto { color: var(--aviso); }
+    }
+
+    &--anulado {
+        border-left-color: var(--error);
+        background: var(--error-suave);
+
+        .control-ficha__veredicto { color: var(--error); }
+    }
+}

@@ -7,8 +7,6 @@ namespace App\Controllers;
 use App\Models\Carne;
 use App\Models\Concurso;
 use App\Models\Inscripcion;
-use App\Models\Participante;
-use App\Servicios\GeneradorCarne;
 use Core\Auth;
 use Core\Controller;
 use Core\Database;
@@ -129,9 +127,11 @@ final class PagoController extends Controller
     }
 
     /**
-     * Regenera el carné de una inscripción confirmada.
+     * Vuelve a emitir el carné de una inscripción confirmada.
      *
-     * Sirve si el PDF se perdió del disco o si cambió algún dato de la ficha.
+     * Con el PDF generándose al vuelo (D-24) el diseño y los datos ya salen
+     * siempre al día, así que esto solo hace falta en un caso: que el pago se
+     * confirmara pero el registro del carné no llegara a escribirse.
      */
     public function regenerarCarne(string $id): void
     {
@@ -147,18 +147,25 @@ final class PagoController extends Controller
 
         try {
             self::emitirCarne((int) $id);
-            Sesion::flash('exito', 'Carné regenerado.');
+            Sesion::flash('exito', 'Carné emitido.');
         } catch (Throwable $e) {
             error_log((string) $e);
-            Sesion::flash('error', 'No se pudo generar el carné.');
+            Sesion::flash('error', 'No se pudo emitir el carné.');
         }
 
         $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
     }
 
     /**
-     * Crea el PDF y lo registra. Compartido por la confirmación y la
-     * regeneración, para que no existan dos caminos que puedan divergir.
+     * Deja constancia de que la inscripción ya tiene carné.
+     *
+     * Desde D-24 esto no escribe ningún archivo: el PDF se arma al vuelo cuando
+     * alguien lo descarga. Emitir el carné es, por tanto, una operación de
+     * registro —y por eso ya no puede fallar por permisos de disco ni dejar el
+     * pago confirmado sin carné.
+     *
+     * Se guarda el código, no la URL: la URL depende del entorno y se deriva
+     * cuando hace falta con GeneradorCarne::urlPublica(). Ver D-21.
      */
     private static function emitirCarne(int $inscripcionId): void
     {
@@ -168,20 +175,6 @@ final class PagoController extends Controller
             return;
         }
 
-        $ficha = Participante::porCodigo((string) $inscripcion['codigo_correlativo']);
-
-        if ($ficha === null) {
-            return;
-        }
-
-        $ruta = GeneradorCarne::generar($ficha);
-
-        // Se guarda el código, no la URL: la URL depende del entorno y se
-        // deriva cuando hace falta con GeneradorCarne::urlPublica(). Ver D-21.
-        Carne::registrar(
-            $inscripcionId,
-            (string) $inscripcion['codigo_correlativo'],
-            $ruta
-        );
+        Carne::registrar($inscripcionId, (string) $inscripcion['codigo_correlativo']);
     }
 }

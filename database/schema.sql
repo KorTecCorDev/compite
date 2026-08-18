@@ -234,15 +234,17 @@ CREATE TABLE inscripciones (
 -- Nada de lo que se guarda aquí puede depender del entorno: la misma base
 -- tiene que servir en XAMPP y en Hostinger sin reescribir filas (D-21).
 --
--- codigo_qr: el CÓDIGO que el QR codifica, no la URL. La URL se arma al
---   vuelo con GeneradorCarne::urlPublica(), que lee `app.url_base`.
--- ruta_pdf: ruta RELATIVA a la raíz del proyecto (storage/carnes/...).
+-- El PDF NO se guarda: se genera al vuelo en cada descarga (D-24). Lo que se
+-- registra aquí es el hecho de negocio —esta inscripción tiene carné emitido,
+-- y desde cuándo—, que es lo único que no se puede recalcular.
+--
+-- codigo_qr: el CÓDIGO que el QR resuelve, no la URL. La URL se arma al vuelo
+--   con GeneradorCarne::urlPublica(), que lee `app.url_base`.
 -- ---------------------------------------------------------------------
 CREATE TABLE carnes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     inscripcion_id INT UNSIGNED NOT NULL UNIQUE,
     codigo_qr VARCHAR(100) NOT NULL,
-    ruta_pdf VARCHAR(255) NOT NULL,
     generado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_carne_inscripcion
         FOREIGN KEY (inscripcion_id) REFERENCES inscripciones(id)

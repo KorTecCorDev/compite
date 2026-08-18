@@ -32,3 +32,18 @@
     margin-top: 1rem;
     align-items: center;
 }
+
+// Acción de imprimir la delegación completa. Aparece bajo los filtros, y solo
+// cuando hay una delegación elegida: es lo que le da sentido a la hoja.
+.acciones-delegacion {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    flex-wrap: wrap;
+    margin: 0 0 1.25rem;
+
+    &__nota {
+        font-size: .85rem;
+        color: var(--tinta-suave);
+    }
+}

@@ -62,7 +62,30 @@ final class Participante
             ]
         );
 
-        $codigo = Correlativo::generar($prefijoConcurso, $id);
+        /*
+         * El sufijo aleatorio tiene que ser único por sí solo, no solo dentro
+         * del código completo: es lo que viaja en la URL corta del QR (`/c/K7M9X3`)
+         * y lo que resuelve el carné. Dos sufijos iguales harían ambigua esa ruta.
+         *
+         * La colisión es improbabilísima —hay 30^6 combinaciones— pero «improbable»
+         * no es «imposible», y el precio de comprobarlo es una sola consulta
+         * contra un puñado de filas. Se reintenta un número acotado de veces para
+         * que un fallo de la base no se convierta en un bucle infinito.
+         */
+        $codigo = null;
+
+        for ($intento = 0; $intento < 5; $intento++) {
+            $candidato = Correlativo::generar($prefijoConcurso, $id);
+
+            if (!self::existeSufijo((string) Correlativo::sufijoDe($candidato))) {
+                $codigo = $candidato;
+                break;
+            }
+        }
+
+        if ($codigo === null) {
+            throw new RuntimeException('No se pudo generar un código único para el participante.');
+        }
 
         Database::ejecutar(
             'UPDATE participantes SET codigo_correlativo = :codigo WHERE id = :id',
@@ -151,5 +174,54 @@ final class Participante
         }
 
         return (string) $fila['codigo'];
+    }
+
+    /**
+     * ¿Ya hay algún participante cuyo código termine en este sufijo?
+     *
+     * Deliberadamente global, sin filtrar por concurso: la ruta corta del QR
+     * (`/c/{sufijo}`) no lleva el concurso encima, así que el sufijo tiene que
+     * ser único en toda la tabla para que esa ruta nunca sea ambigua.
+     */
+    public static function existeSufijo(string $sufijo): bool
+    {
+        if (!Correlativo::esSufijoValido($sufijo)) {
+            return false;
+        }
+
+        $fila = Database::uno(
+            'SELECT 1 AS existe FROM participantes WHERE codigo_correlativo LIKE :patron LIMIT 1',
+            ['patron' => '%-' . $sufijo]
+        );
+
+        return $fila !== null;
+    }
+
+    /**
+     * Ficha completa a partir del sufijo corto del QR.
+     *
+     * Resuelve el sufijo a su código correlativo y delega en porCodigo(), que
+     * es donde vive la lógica de qué inscripción mostrar. Si por lo que fuera
+     * hubiera dos coincidencias, devuelve null en vez de elegir una al azar:
+     * ante ambigüedad, es preferible un «no encontrado» honesto que enseñar la
+     * ficha del estudiante equivocado.
+     */
+    public static function porSufijo(string $sufijo): ?array
+    {
+        if (!Correlativo::esSufijoValido($sufijo)) {
+            return null;
+        }
+
+        $filas = Database::todos(
+            'SELECT codigo_correlativo FROM participantes
+              WHERE codigo_correlativo LIKE :patron LIMIT 2',
+            ['patron' => '%-' . $sufijo]
+        );
+
+        if (count($filas) !== 1) {
+            return null;
+        }
+
+        return self::porCodigo((string) $filas[0]['codigo_correlativo']);
     }
 }

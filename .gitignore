@@ -45,6 +45,11 @@
 # depurar en local y no tienen nada que hacer en producción.
 /public/build/**/*.map
 
+# Imágenes: `resources/img/` guarda los originales que manda el propietario y
+# `public/img/` los derivados que sirve la web. Ambos se versionan. El original
+# del escudo (748 × 898) permite regenerar el optimizado si cambian las medidas
+# del carné; el derivado es el que carga Dompdf y el navegador.
+
 /node_modules/
 /.sass-cache/
 

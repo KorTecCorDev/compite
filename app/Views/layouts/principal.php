@@ -31,6 +31,7 @@ $flash = Sesion::tomarFlash();
         '/inscripciones'  => 'Inscripciones',
         '/instituciones'  => 'Instituciones',
         '/apoderados'     => 'Apoderados',
+        '/control'        => 'Control de ingreso',
     ];
     ?>
     <nav class="barra__menu">

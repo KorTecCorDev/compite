@@ -83,4 +83,40 @@ final class Correlativo
             $codigo
         ) === 1;
     }
+
+    /**
+     * Extrae el sufijo aleatorio de un código correlativo completo.
+     *
+     * Es la pieza que viaja en la URL corta del QR (`/c/K7M9X3`). Se separa
+     * por el último guion y no por posición fija: el prefijo del concurso
+     * puede tener guiones y el número puede crecer de 4 a más dígitos.
+     */
+    public static function sufijoDe(string $codigo): ?string
+    {
+        $posicion = strrpos($codigo, '-');
+
+        if ($posicion === false) {
+            return null;
+        }
+
+        $sufijo = substr($codigo, $posicion + 1);
+
+        return self::esSufijoValido($sufijo) ? $sufijo : null;
+    }
+
+    /**
+     * Comprueba que una cadena tenga la forma de un sufijo.
+     *
+     * Igual que esValido(), sirve para descartar basura antes de tocar la base:
+     * la ruta corta del QR es pública y recibe escaneos automáticos.
+     */
+    public static function esSufijoValido(string $sufijo): bool
+    {
+        $alfabeto = preg_quote(self::ALFABETO, '/');
+
+        return preg_match(
+            '/^[' . $alfabeto . ']{' . self::LARGO_SUFIJO . '}$/',
+            $sufijo
+        ) === 1;
+    }
 }

@@ -786,6 +786,139 @@ colegio; no es un mecanismo de publicación. Conviene retirar la regla al termin
 
 ---
 
+### D-23 — El carné adopta el tamaño ID-1 y se imprime por hojas A4
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario
+
+El carné medía **100 × 70 mm**, que no corresponde a ningún estándar: ningún portacarné
+comercial le calza. Pasa a **ID-1 (85.6 × 53.98 mm)**, el del DNI y las tarjetas bancarias.
+
+**Por qué ID-1 y no A7 (105 × 74):** por la aritmética de la hoja A4.
+
+| Tamaño | Grilla A4 | Por hoja | Margen lateral |
+|---|---|---|---|
+| **ID-1** | 2 × 5 | **10** | 18.5 mm ✅ |
+| 100 × 70 (anterior) | 2 × 4 | 8 | 5 mm ⚠️ zona no imprimible |
+| A7 | 2 × 4 | 8 | 0 mm ❌ |
+
+Para 500 participantes son 50 hojas en lugar de 63.
+
+**El PDF se maqueta siempre sobre A4, incluso para un solo carné.** Un PDF del tamaño exacto
+del carné obliga a la impresora a escalarlo (~94%) para que entre en su área imprimible: el
+carné dejaría de medir lo que dice, y el QR con él. Sobre A4 el tamaño impreso es fiel.
+
+**Impresión por delegación**, no «todos los del concurso»: Dompdf tarda ~0.4 s cada diez carnés,
+y quinientos de una sentada se comen el `max_execution_time` de un hosting compartido. Ruta
+`/delegaciones/{id}/carnes.pdf`, con guías de corte punteadas y **solo inscripciones
+confirmadas** —imprimir el carné de una pendiente o anulada pone a circular un documento que
+parece válido y no lo es.
+
+**Escudo institucional** (`public/img/logo-cociap.png`) a 12.5 mm de alto en la cabecera. Su
+texto perimetral es ilegible a ese tamaño —mediría 0.6 mm, contra los 1.5 mm que necesita
+cualquier texto impreso—, así que el nombre del colegio se repite **como texto real** al lado:
+el escudo aporta el reconocimiento visual, el texto la información.
+
+**Apellidos y nombres van en líneas separadas, como en el DNI.** No es estética: un nombre
+peruano completo pasa de 29 caracteres, saltaba a una segunda línea y el carné crecía lo justo
+para que la quinta fila no entrara en la hoja. Partido en dos, la altura es constante. Para los
+casos extremos, `GeneradorCarne::tamanoQueQuepa()` encoge la letra hasta un 70% antes que
+truncar el nombre, que es el dato más importante del carné.
+
+**Calibración:** los umbrales (29 caracteres para el nombre, 46 para la procedencia) se midieron
+generando hojas de 10 carnés y alargando el texto hasta que la hoja se partía. En el código se
+usan 26 y 42 como margen, porque el ancho real depende de qué letras compongan el texto. **Si
+cambia el ancho del carné, el del QR o el cuerpo base, hay que volver a medirlos.**
+
+---
+
+### D-24 — El PDF del carné se genera al vuelo y deja de guardarse
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario
+
+Confirmar un pago escribía un PDF en `storage/carnes/` y `carnes.ruta_pdf` guardaba su ruta.
+Tres problemas:
+
+1. **El PDF quedaba congelado** con el diseño del día en que se emitió. Este mismo rediseño
+   habría dejado los carnés ya emitidos con la maqueta vieja.
+2. `storage/carnes/` **tenía que viajar al despliegue**, o los carnés desaparecían en producción.
+3. Si el archivo se borraba, la descarga fallaba y había que regenerarlo a mano.
+
+El PDF es un **derivado de la base**, no un documento con vida propia. Ahora se arma en cada
+descarga. La tabla `carnes` sigue registrando el hecho de negocio —qué inscripción tiene carné
+emitido y desde cuándo—, que es lo único que no se puede recalcular.
+
+Migración idempotente en `database/migraciones/2026-08-18-carne-sin-archivo.sql`, aplicada.
+`rutas.carnes` sale de `config/config.php`. Efecto colateral bienvenido: **emitir un carné ya no
+puede fallar por permisos de disco** ni dejar un pago confirmado sin carné.
+
+**Queda pendiente decidir** qué hacer con los cuatro PDF antiguos que siguen en
+`storage/carnes/`. Son huérfanos —ya nada los lee— pero no se han borrado sin consultar.
+
+---
+
+### D-25 — El QR codifica una ruta corta, y su tamaño se calcula
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario
+
+**Contexto:** el propietario confirmó que **no habrá verificación por QR en la puerta**. La
+pregunta era si el QR seguía teniendo sentido.
+
+**Se conserva, y por una sola razón que se sostiene:** el carné impreso es un artefacto
+irreversible. Si el día del concurso aparece un carné dudoso, o si una inscripción se anula
+*después* de imprimir el papel —caso que ya existe en la base—, el QR resuelve en cinco segundos
+lo que sin él no tiene solución, porque los 500 carnés ya están repartidos. La vista pública
+estampa el sello «Anulado»; el papel no puede. El costo de conservarlo son 15 mm²; el de no
+tenerlo, reimprimirlo todo.
+
+**Consecuencia:** deja de ser protagonista. Baja del 38% del ancho a una esquina.
+
+**Y eso obliga a acortar la URL**, porque cada carácter le añade módulos al QR:
+
+| URL | Caracteres | Módulos | A 15 mm |
+|---|---|---|---|
+| `/carne/COCIAP2026-0042-K7M9X3` | 46 | 37² | 0.405 mm ❌ |
+| `/c/K7M9X3` | 26 | 29² | **0.517 mm** ✅ |
+
+El umbral de lectura fiable con cámara de celular es 0.5 mm por módulo. De ahí la ruta `/c/{sufijo}`
+y que **el sufijo tenga que ser único por sí solo** (`Participante::existeSufijo()`, con reintento
+al crear el participante). La ruta larga `/carne/{codigo}` sigue viva por compatibilidad.
+
+**Corrección de errores: Quartile, no High.** Parece un downgrade y es lo contrario: más
+corrección significa más módulos en el mismo espacio impreso, y un QR de módulos diminutos con
+corrección alta se lee peor que uno de módulos grandes con corrección media.
+
+**El tamaño impreso no es fijo:** `GeneradorCarne::ladoQr()` lo calcula entre 15 y 17 mm según
+los módulos que pida la URL, para sostener los 0.5 mm/módulo. Si ni al máximo se llega, el carné
+se genera igual pero **queda constancia en el log**.
+
+> ⚠️ **Para el despliegue:** la longitud de `app.url_base` decide si el QR se lee.
+> `https://cociap.pe` da 0.52 mm/módulo (bien). Un dominio con subcarpeta como
+> `https://www.colegioaplicacion.edu.pe/cociap` baja a 0.46 mm y el sistema avisará en el log.
+> **Conviene elegir un dominio corto.**
+
+---
+
+### D-26 — Pantalla de control de ingreso para el día del concurso
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario
+
+Pregunta abierta: qué pasa si un estudiante pierde su carné impreso. Hasta ahora la única
+respuesta era que la secretaría lo reimprimiera.
+
+**Decisión del propietario:** una pantalla de búsqueda para la mesa de la puerta (`/control`).
+
+**El razonamiento:** con estudiantes de primaria y secundaria, la pérdida del carné no es un
+riesgo, es una certeza estadística. Diseñar el ingreso asumiendo que todos traerán su papel es
+diseñar para fallar. El carné pasa a ser lo que acelera la fila; **la fuente de verdad es esta
+consulta**, que además funciona aunque el internet esté lento porque es la red propia.
+
+Busca por apellido, documento o código. Muestra el veredicto —*Puede ingresar* / *Pago
+pendiente* / *No puede ingresar*— en verde, ámbar y rojo, con el texto escrito además del color,
+porque hay quien no distingue el rojo del verde. Exige al menos dos caracteres y corta a 25
+resultados: si hay más, la solución no es hacer scroll sino escribir el apellido completo.
+
+**Se descartó un buscador público por DNI**, que habría dado autoservicio total: convertiría el
+sistema en un consultador de datos de menores por número de documento, y sin fecha de nacimiento
+en `participantes` no hay segundo factor con qué protegerlo.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04** Origen del `tipo_origen` que selecciona la tarifa (presumiblemente
   `instituciones_educativas.tipo` para delegación y `'libre'` para libre — sin confirmar).
@@ -809,4 +942,3 @@ mismas 11 combinaciones que las categorías de COCIAP). No estaba mencionado en 
 
 **Decisión del propietario:** es un proyecto suyo pero **independiente**. COCIAP 2026 se
 construye standalone y `siga_cociap` no se toca ni se lee.
-
