@@ -1298,6 +1298,19 @@ el JS junto con la visibilidad, y el servidor lo exige igual aunque el JS no lle
   Hoy solo «Corregir categoría» lo recupera. Decidir si hace falta una pantalla propia antes
   del día del concurso.
 - **P-07** Aislamiento entre organizaciones en `apoderados` e `instituciones_educativas`.
+  **Comprobado el 2026-08-18** levantando un segundo inquilino con un concurso simultáneo, todo
+  dentro de una transacción revertida. Los estudiantes salen limpios: el mismo documento entra en
+  el concurso del otro inquilino sin chocar. Los adultos, no, y son tres fallos distintos:
+  *(a)* el listado de apoderados del inquilino B muestra los 8 del inquilino A, porque la consulta
+  no filtra por nada (`WHERE 1 = 1`); *(b)* al escribir un documento que ya existe en A, el
+  formulario de B autorrellena **nombre, celular y correo de una persona de la otra institución**;
+  *(c)* B no puede siquiera darla de alta por separado —`ERROR 1062, Duplicate entry` sobre
+  `apoderados.dni`—, así que la misma persona queda como **una sola fila compartida** y la última
+  edición gana: B reescribiendo el celular por el que A coordina su delegación entera.
+  `InstitucionEducativa::eliminar` tampoco distingue inquilino: cuenta participantes de cualquier
+  concurso, así que B podría borrar un colegio de A que aún no tenga inscritos.
+  **La raíz es P-05:** sin `organizacion_id` en `usuarios`, la sesión no sabe de qué inquilino es,
+  y sin eso no hay por dónde filtrar. Las dos preguntas son el mismo trabajo.
   Ninguna de las dos tablas tiene `organizacion_id`, y `apoderados.dni` es UNIQUE **global**.
   Hoy no se nota porque hay una sola organización, pero con dos: el apoderado que registre la
   segunda, si su documento ya existe, se «reconocerá» como el de la primera —viendo sus
