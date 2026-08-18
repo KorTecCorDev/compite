@@ -55,11 +55,26 @@ $flash = Sesion::tomarFlash();
 </header>
 
 <main class="contenido">
-    <?php foreach ($flash as $tipo => $mensajes): ?>
-        <?php foreach ($mensajes as $mensaje): ?>
-            <div class="aviso aviso--<?= View::e($tipo) ?>"><?= View::e($mensaje) ?></div>
-        <?php endforeach; ?>
-    <?php endforeach; ?>
+    <?php /*
+       Los avisos del resultado de una acción van en una franja pegajosa: al
+       desplazarse por una tabla larga o un formulario de veinte campos, el
+       mensaje seguía existiendo pero fuera de la pantalla. Se cierran a mano y
+       no solos: aquí se confirman cobros, y un mensaje de dinero que se
+       desvanece a los tres segundos es un mensaje que alguien no leyó. Ver D-30.
+    */ ?>
+    <?php if ($flash !== []): ?>
+        <div class="avisos" id="avisos-flash">
+            <?php foreach ($flash as $tipo => $mensajes): ?>
+                <?php foreach ($mensajes as $mensaje): ?>
+                    <div class="aviso aviso--<?= View::e($tipo) ?>"
+                         role="<?= $tipo === 'error' ? 'alert' : 'status' ?>">
+                        <span class="aviso__texto"><?= View::e($mensaje) ?></span>
+                        <button type="button" class="aviso__cerrar" aria-label="Cerrar aviso">&times;</button>
+                    </div>
+                <?php endforeach; ?>
+            <?php endforeach; ?>
+        </div>
+    <?php endif; ?>
 
     <?= $contenido ?>
 </main>
@@ -67,6 +82,8 @@ $flash = Sesion::tomarFlash();
 <footer class="pie">
     I.E. Víctor Valenzuela Guardia · IV Concurso Regional de Conocimientos
 </footer>
+
+<script src="<?= View::e(View::url('build/js/avisos.js')) ?>" defer></script>
 
 </body>
 </html>

@@ -9,8 +9,9 @@
 --         para no depender del default del servidor de Hostinger.
 --   D-04  codigo_correlativo con sufijo aleatorio (no enumerable), porque la
 --         vista pública del carné expone datos de menores de edad.
---   D-05  participantes.dni SIN UNIQUE: el duplicado se advierte, no se impide.
---         Se indexa (concurso_id, dni) para que esa advertencia sea barata.
+--   D-31  participantes.dni ÚNICO POR CONCURSO. Revierte D-05: el duplicado ya
+--         no se advierte, se impide. Por concurso y no absoluto, para que el
+--         mismo estudiante pueda competir el año que viene.
 --   D-28  el docente delegado deja de estar embebido en la I.E. y pasa a ser
 --         un `apoderados`: es el encargado de la delegación y, por tanto, el
 --         apoderado de los participantes que inscribe.
@@ -187,7 +188,9 @@ CREATE TABLE usuarios (
 --   aleatorio impide recorrer los carnés de todos los menores incrementando
 --   el número, dado que la vista pública del carné no tiene control de acceso.
 --
--- dni: SIN UNIQUE a propósito (D-05). El duplicado se advierte en la UI.
+-- dni: ÚNICO dentro del concurso (D-31). Un estudiante, un documento, una
+-- inscripción. La restricción vive aquí y no solo en la aplicación porque dos
+-- secretarias cobrando a la vez pueden pasar la misma validación en PHP.
 -- categoria_id ya NO vive aquí: se movió a `inscripciones` (D-01).
 -- ---------------------------------------------------------------------
 CREATE TABLE participantes (
@@ -212,7 +215,7 @@ CREATE TABLE participantes (
         FOREIGN KEY (apoderado_id) REFERENCES apoderados(id),
 
     -- Soporta la advertencia de duplicado sin recorrer toda la tabla.
-    INDEX idx_participante_dni (concurso_id, dni),
+    CONSTRAINT uq_participante_documento UNIQUE (concurso_id, dni),
     INDEX idx_participante_institucion (institucion_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

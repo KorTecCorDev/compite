@@ -121,3 +121,19 @@
     gap: .7rem;
     flex-wrap: wrap;
 }
+
+// Entrada de una tabla (la nómina de la delegación) marcada como incorrecta,
+// con su explicación en la misma celda. La nómina no usa `.campo`: son inputs
+// sueltos dentro de la tabla, así que necesitan su propio par de clases.
+.entrada--error {
+    border-color: var(--error);
+    background: var(--error-suave);
+}
+
+.entrada__error {
+    display: block;
+    margin-top: .25rem;
+    color: var(--error);
+    font-size: .78rem;
+    line-height: 1.35;
+}

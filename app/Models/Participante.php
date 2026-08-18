@@ -163,6 +163,27 @@ final class Participante
     }
 
     /**
+     * El participante ya registrado con ese documento en este concurso, si lo hay.
+     *
+     * Desde D-31 el documento identifica a una persona dentro del concurso y no
+     * puede repetirse. Devuelve la ficha existente —y no un simple booleano—
+     * porque el mensaje de rechazo tiene que decir *quién* la ocupa: sin eso, la
+     * secretaria no sabe si se equivocó de dígito o si el colegio ya lo mandó.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function porDocumento(int $concursoId, string $dni): ?array
+    {
+        return Database::uno(
+            'SELECT id, codigo_correlativo, ap_paterno, ap_materno, nombres
+               FROM participantes
+              WHERE concurso_id = :con AND dni = :dni
+              LIMIT 1',
+            ['con' => $concursoId, 'dni' => $dni]
+        );
+    }
+
+    /**
      * Prefijo del concurso, necesario para armar el código.
      */
     public static function prefijoConcurso(int $concursoId): string

@@ -33,16 +33,25 @@
     }
 
     /*
-     * El código de seguridad solo tiene sentido con Yape, y aun así es
-     * opcional: lo obligatorio es el medio de pago. El campo se ofrece, no
-     * se exige, para no detener la caja por un dato de respaldo.
+     * El código de seguridad solo existe con Yape, y con Yape es obligatorio
+     * (D-31). El `required` viaja con la visibilidad: exigirlo mientras el
+     * campo está oculto bloquearía el cobro en efectivo sin explicar nada,
+     * porque el navegador no puede enfocar un campo que no se ve.
      */
+    function alternarYape() {
+        const esYape = medio.value === 'yape';
+
+        if (campoYape) campoYape.hidden = !esYape;
+
+        if (inputYape) {
+            inputYape.required = esYape;
+            if (!esYape) inputYape.value = '';
+        }
+    }
+
     if (medio) {
-        medio.addEventListener('change', function () {
-            const esYape = medio.value === 'yape';
-            if (campoYape) campoYape.hidden = !esYape;
-            if (inputYape && !esYape) inputYape.value = '';
-        });
+        medio.addEventListener('change', alternarYape);
+        alternarYape();
     }
 
     /* Anulación definitiva: pide motivo y confirma, avisando de la devolución. */

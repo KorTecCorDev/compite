@@ -108,6 +108,14 @@ final class InscripcionController extends Controller
 
         $validadas = [];
 
+        /*
+         * Documentos ya vistos en este mismo formulario. El duplicado dentro
+         * del lote no lo detecta ninguna consulta a la base —todavía no se ha
+         * escrito nada— y es el caso más frecuente: la misma fila pegada dos
+         * veces al copiar la nómina del colegio. Ver D-31.
+         */
+        $vistos = [];
+
         foreach ($filas as $indice => $fila) {
             $v = new Validador($fila);
             $n = $indice + 1;
@@ -122,6 +130,32 @@ final class InscripcionController extends Controller
 
             if ($categoriaId > 0 && !Concurso::categoriaPertenece($categoriaId, $concursoId)) {
                 $v->fallar('categoria_id', "Fila {$n}: la categoría no pertenece a este concurso.");
+            }
+
+            /*
+             * El documento identifica a una persona dentro del concurso y no
+             * puede repetirse (D-31, decisión del propietario del 2026-08-18
+             * que revierte D-05). Se comprueba solo si el documento ya pasó su
+             * propia validación: reclamar por duplicado un documento de siete
+             * dígitos sería un segundo error sobre el mismo dato.
+             */
+            $documento = $v->limpio('dni');
+
+            if ($documento !== '' && !isset($v->errores()['dni'])) {
+                if (isset($vistos[$documento])) {
+                    $v->fallar('dni', "Fila {$n}: el documento {$documento} ya está en la fila "
+                        . $vistos[$documento] . ' de este mismo formulario.');
+                } else {
+                    $yaInscrito = Participante::porDocumento($concursoId, $documento);
+
+                    if ($yaInscrito !== null) {
+                        $v->fallar('dni', "Fila {$n}: el documento {$documento} ya está registrado en este "
+                            . 'concurso como ' . $yaInscrito['ap_paterno'] . ' ' . $yaInscrito['ap_materno']
+                            . ', ' . $yaInscrito['nombres'] . ' (' . $yaInscrito['codigo_correlativo'] . ').');
+                    } else {
+                        $vistos[$documento] = $n;
+                    }
+                }
             }
 
             foreach ($v->errores() as $mensaje) {
@@ -276,6 +310,24 @@ final class InscripcionController extends Controller
 
         if ($categoriaId > 0 && !Concurso::categoriaPertenece($categoriaId, $concursoId)) {
             $v->fallar('categoria_id', 'La categoría no pertenece a este concurso.');
+        }
+
+        /*
+         * Un documento, un estudiante por concurso (D-31). Aquí importa tanto o
+         * más que en la delegación: el mismo chico puede llegar por su colegio y
+         * volver a llegar por su cuenta, y sin este freno se inscribía dos veces
+         * y pagaba dos veces.
+         */
+        $documento = $v->limpio('dni');
+
+        if ($documento !== '' && !isset($v->errores()['dni'])) {
+            $yaInscrito = Participante::porDocumento($concursoId, $documento);
+
+            if ($yaInscrito !== null) {
+                $v->fallar('dni', "El documento {$documento} ya está registrado en este concurso como "
+                    . $yaInscrito['ap_paterno'] . ' ' . $yaInscrito['ap_materno'] . ', '
+                    . $yaInscrito['nombres'] . ' (' . $yaInscrito['codigo_correlativo'] . ').');
+            }
         }
 
         if ($v->tieneErrores()) {

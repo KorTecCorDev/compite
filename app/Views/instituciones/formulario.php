@@ -64,6 +64,16 @@ $msg = static function (string $campo) use ($errores): string {
                 <?= $msg('nombre') ?>
             </label>
 
+            <?php /* Pegado al campo que lo dispara, no al pie del formulario.
+                     Un aviso que aparece a pantalla y media de distancia del
+                     dato que lo provoca no lo lee nadie: para cuando la
+                     secretaria llega abajo, ya escribió los otros diecisiete
+                     campos. Ver D-30. */ ?>
+            <?php if ($esNueva): ?>
+                <div id="aviso-duplicados" class="aviso aviso--aviso aviso--campo campo--ancho"
+                     role="status" hidden></div>
+            <?php endif; ?>
+
             <label class="campo<?= $err('tipo') ?>">
                 <span class="campo__etiqueta">Tipo *</span>
                 <select name="tipo" required>
@@ -227,12 +237,6 @@ $msg = static function (string $campo) use ($errores): string {
         <a class="boton boton--tenue" href="<?= View::e(View::url('/instituciones')) ?>">Cancelar</a>
     </div>
 </form>
-
-<?php /* El aviso de duplicados solo tiene sentido al crear: al editar, el
-         parecido con otra I.E. es con una misma que ya se decidió conservar. */ ?>
-<?php if ($esNueva): ?>
-<div id="aviso-duplicados" class="aviso aviso--aviso" hidden></div>
-<?php endif; ?>
 
 <?php /* Los scripts, en cambio, se cargan SIEMPRE. Antes vivían dentro del
          `if` de arriba, y eso dejaba el reconocimiento del docente delegado

@@ -231,13 +231,22 @@ foreach ($inscripciones as $ins) {
                             <!--
                                 Regenerar sirve si el PDF se perdió del disco o si
                                 se corrigió algún dato de la ficha después de emitirlo.
+
+                                El botón está dentro de la tabla pero pertenece al
+                                formulario `form-regenerar`, que vive fuera del de
+                                cobro. Aquí había un formulario anidado, que no es
+                                HTML válido: el navegador ignora su etiqueta de
+                                apertura y su etiqueta de cierre cierra el
+                                formulario de cobro en la primera fila confirmada. Todo lo que venía después
+                                —el resto de casillas y el botón de confirmar—
+                                quedaba fuera de cualquier formulario, y por eso no
+                                se podía cobrar nada desde el listado completo.
                             -->
-                            <form method="post"
-                                  action="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne/regenerar')) ?>"
-                                  onsubmit="return confirm('¿Volver a generar el PDF de este carné?');">
-                                <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
-                                <button type="submit" class="enlace-tenue enlace-boton">Regenerar</button>
-                            </form>
+                            <button type="submit" class="enlace-tenue enlace-boton"
+                                    form="form-regenerar"
+                                    formaction="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne/regenerar')) ?>">
+                                Regenerar
+                            </button>
                         <?php endif; ?>
                     </td>
                 </tr>
@@ -263,12 +272,16 @@ foreach ($inscripciones as $ins) {
             </select>
         </label>
 
+        <!--
+            El `required` no está en el HTML: lo pone y lo quita el JS junto con
+            la visibilidad. Un campo obligatorio dentro de un bloque oculto
+            bloquea el envío sin decir por qué —el navegador intenta enfocar algo
+            que no se ve— y dejaría la caja parada al cobrar en efectivo.
+        -->
         <label class="barra-cobro__campo" id="campo-yape" hidden>
-            <span class="campo__etiqueta">
-                Código de seguridad <span class="tenue">(opcional)</span>
-            </span>
+            <span class="campo__etiqueta">Código de seguridad *</span>
             <input type="text" name="yape_codigo" id="yape-codigo" maxlength="3"
-                   inputmode="numeric" placeholder="3 dígitos">
+                   inputmode="numeric" pattern="[0-9]{3}" placeholder="3 dígitos">
         </label>
 
         <button type="submit" class="boton boton--principal">
@@ -276,6 +289,16 @@ foreach ($inscripciones as $ins) {
         </button>
     </div>
     <?php endif; ?>
+</form>
+
+<!--
+    Regeneración del carné: un solo formulario para todas las filas. La acción
+    concreta la pone cada botón con `formaction`, así no hace falta un formulario
+    por fila dentro del de cobro.
+-->
+<form method="post" id="form-regenerar" class="oculto"
+      onsubmit="return confirm('¿Volver a generar el PDF de este carné?');">
+    <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
 </form>
 
 <!-- Anulación definitiva: formulario aparte, para que no viaje con el cobro. -->

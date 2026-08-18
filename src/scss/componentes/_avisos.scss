@@ -2,7 +2,27 @@
 
 // Mensajes flash de la sesión (guardado con éxito, error de validación...).
 
+// Franja pegajosa: el resultado de una acción no puede perderse de vista al
+// desplazarse por una tabla larga. Lleva fondo propio porque el contenido pasa
+// por debajo, y un aviso translúcido sobre una tabla es ilegible. Ver D-30.
+.avisos {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: grid;
+    gap: .5rem;
+    padding: .75rem 0;
+    background: var(--fondo);
+
+    .aviso {
+        margin-bottom: 0;
+    }
+}
+
 .aviso {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
     padding: .7rem .9rem;
     border-radius: 8px;
     border: 1px solid;
@@ -25,5 +45,33 @@
         background: var(--aviso-suave);
         border-color: t.$borde-aviso;
         color: var(--aviso);
+    }
+
+    // Aviso pegado al campo que lo dispara, no al pie del formulario: más
+    // pequeño y sin separación, para que se lea como parte de ese campo.
+    &--campo {
+        margin: 0;
+        font-size: .85rem;
+    }
+
+    &__texto {
+        flex: 1 1 auto;
+    }
+
+    &__cerrar {
+        flex: 0 0 auto;
+        padding: 0 .15rem;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: 1.15rem;
+        line-height: 1;
+        opacity: .6;
+        cursor: pointer;
+
+        &:hover,
+        &:focus-visible {
+            opacity: 1;
+        }
     }
 }

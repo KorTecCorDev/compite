@@ -145,8 +145,6 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
         </div>
     </fieldset>
 
-    <div id="avisos-documento"></div>
-
     <div class="acciones">
         <button type="submit" class="boton boton--principal">Registrar delegación</button>
         <a class="boton boton--tenue" href="<?= View::e(View::url('/inscripciones')) ?>">Cancelar</a>

@@ -70,17 +70,62 @@
     cuerpo.addEventListener('input', contarLlenas);
     contarLlenas();
 
-    /* --- Aviso de documento repetido (D-05: avisa, no bloquea) --- */
-    const avisos = document.getElementById('avisos-documento');
+    /* --- Documento repetido: se marca la celda y se rechaza (D-31) --- */
     const urlVerificar = cuerpo.dataset.urlVerificar;
     let temporizador = null;
 
+    /*
+     * El mensaje vive pegado al documento que lo provoca, dentro de su misma
+     * celda, y no en una caja al pie del formulario: en una nómina de treinta
+     * filas, un aviso abajo del todo no dice *cuál* de los treinta está
+     * repetido, que es justo lo único que hace falta saber. Ver D-30.
+     */
+    function marcar(entrada, texto) {
+        limpiar(entrada);
+
+        if (!texto) return;
+
+        entrada.classList.add('entrada--error');
+        entrada.setAttribute('aria-invalid', 'true');
+
+        const nota = document.createElement('span');
+        nota.className = 'entrada__error';
+        nota.setAttribute('role', 'alert');
+        nota.textContent = texto;
+        entrada.insertAdjacentElement('afterend', nota);
+    }
+
+    function limpiar(entrada) {
+        entrada.classList.remove('entrada--error');
+        entrada.removeAttribute('aria-invalid');
+
+        const nota = entrada.nextElementSibling;
+        if (nota && nota.classList.contains('entrada__error')) nota.remove();
+    }
+
+    /* Repetido dentro del propio formulario: la fila pegada dos veces. */
+    function repetidoEnElFormulario(entrada, doc) {
+        return Array.from(cuerpo.querySelectorAll('.entrada-documento')).some(function (otra) {
+            return otra !== entrada && otra.value.trim().toUpperCase() === doc;
+        });
+    }
+
     cuerpo.addEventListener('input', function (evento) {
-        if (!evento.target.classList.contains('entrada-documento')) return;
+        const entrada = evento.target;
+        if (!entrada.classList.contains('entrada-documento')) return;
 
         clearTimeout(temporizador);
-        const doc = evento.target.value.trim();
-        if (doc.length < 8) return;
+        const doc = entrada.value.trim().toUpperCase();
+
+        if (doc.length < 8) {
+            limpiar(entrada);
+            return;
+        }
+
+        if (repetidoEnElFormulario(entrada, doc)) {
+            marcar(entrada, 'Repetido en este mismo formulario.');
+            return;
+        }
 
         temporizador = setTimeout(async function () {
             try {
@@ -89,16 +134,16 @@
                 if (!r.ok) return;
 
                 const datos = await r.json();
-                if (!datos.repetidos || datos.repetidos.length === 0) return;
 
-                const caja = document.createElement('div');
-                caja.className = 'aviso aviso--aviso';
-                caja.textContent = 'El documento ' + doc + ' ya está registrado en este concurso (' +
-                                   datos.repetidos.length + ' coincidencia(s)). ' +
-                                   'Puedes continuar si es correcto.';
-                avisos.innerHTML = '';
-                avisos.appendChild(caja);
-            } catch (e) { /* la ayuda falla en silencio, el formulario sigue */ }
+                if (!datos.repetidos || datos.repetidos.length === 0) {
+                    limpiar(entrada);
+                    return;
+                }
+
+                const quien = datos.repetidos[0];
+                marcar(entrada, 'Ya inscrito: ' + quien.ap_paterno + ' ' + quien.nombres +
+                                ' (' + quien.codigo_correlativo + ').');
+            } catch (e) { /* la ayuda falla en silencio, el servidor sigue validando */ }
         }, 400);
     });
 })();

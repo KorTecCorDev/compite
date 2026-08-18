@@ -40,21 +40,23 @@ final class PagoController extends Controller
         $medioPago = $v->limpio('medio_pago');
 
         /*
-         * Lo obligatorio es el medio de pago. El código de seguridad de Yape es
-         * OPCIONAL (decisión del propietario, 2026-08-17): la secretaria no
-         * siempre lo tiene a la vista al momento de confirmar, y bloquear el
-         * cobro por un dato de respaldo detendría la caja sin motivo.
-         *
-         * Si lo escribe, sí se valida el formato: un código a medias es peor que
-         * ninguno, porque da falsa confianza al cuadrar después.
+         * Con Yape, el código de seguridad es OBLIGATORIO (decisión del
+         * propietario, 2026-08-18, que revierte D-16). Es el único dato que
+         * ata el cobro a una operación concreta en la aplicación del banco:
+         * sin él, cuadrar la caja al final del día es la palabra de quien
+         * cobró contra un extracto sin forma de emparejar.
          *
          * Para transferencia y efectivo queda NULL: pedirlo sería inventar un
          * dato que no existe.
          */
         $codigoYape = $v->limpio('yape_codigo');
 
-        if ($medioPago === 'yape' && $codigoYape !== '' && preg_match('/^\d{3}$/', $codigoYape) !== 1) {
-            $v->fallar('yape_codigo', 'Si anotas el código de seguridad de Yape, deben ser 3 dígitos.');
+        if ($medioPago === 'yape') {
+            if ($codigoYape === '') {
+                $v->fallar('yape_codigo', 'Con Yape, el código de seguridad de 3 dígitos es obligatorio.');
+            } elseif (preg_match('/^\d{3}$/', $codigoYape) !== 1) {
+                $v->fallar('yape_codigo', 'El código de seguridad de Yape son 3 dígitos.');
+            }
         }
 
         if ($ids === []) {
@@ -75,8 +77,8 @@ final class PagoController extends Controller
             $this->redirigir('/inscripciones?estado=pendiente');
         }
 
-        // Cadena vacía se guarda como NULL: '' en la columna ensuciaría el cuadre.
-        $yapeCodigo = ($medioPago === 'yape' && $codigoYape !== '') ? $codigoYape : null;
+        // Solo Yape trae código; en transferencia y efectivo la columna queda NULL.
+        $yapeCodigo = $medioPago === 'yape' ? $codigoYape : null;
 
         $confirmadas = 0;
         $total       = 0.0;
@@ -116,10 +118,21 @@ final class PagoController extends Controller
         }
 
         if ($fallosCarne !== []) {
+            /*
+             * El mensaje tiene que distinguir los dos casos. Decir «el resto sí
+             * quedó confirmado» cuando no se confirmó ninguna es peor que no
+             * decir nada: la secretaria se queda sin saber si cobró o no, y con
+             * dinero de por medio esa duda se resuelve mirando la caja.
+             */
+            $mensaje = $confirmadas > 0
+                ? 'No se pudieron procesar ' . count($fallosCarne) . ' inscripción(es); '
+                  . "las otras {$confirmadas} sí quedaron confirmadas."
+                : 'No se pudo procesar ninguna de las ' . count($fallosCarne)
+                  . ' inscripción(es): siguen pendientes y no se cobró nada.';
+
             Sesion::flash(
                 'error',
-                'No se pudieron procesar ' . count($fallosCarne) . ' inscripción(es). '
-                . 'Revisa el log del servidor; el resto sí quedó confirmado.'
+                $mensaje . ' El detalle está en storage/logs/php-error.log.'
             );
         }
 

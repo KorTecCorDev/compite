@@ -397,7 +397,7 @@ elimina la enumeración.
 
 ---
 
-### D-05 — Duplicados por DNI: se advierten, no se impiden
+### D-05 — Duplicados por DNI: se advierten, no se impiden `[REVERTIDA POR D-31]`
 **Fecha:** 2026-08-16 · **Estado:** aprobado por el propietario · **Afecta:** sección 5
 
 `participantes.dni` queda **sin** `UNIQUE`. Se añade el índice `(concurso_id, dni)` para que
@@ -558,7 +558,7 @@ desde el formulario: una inscripción pendiente jamás cobró nada, así que no 
 
 ---
 
-### D-16 — El código de seguridad de Yape es opcional
+### D-16 — El código de seguridad de Yape es opcional `[REVERTIDA POR D-32]`
 **Fecha:** 2026-08-17 · **Estado:** resuelto por el propietario · **Afecta:** secciones 3 y 6
 
 Lo **obligatorio** al confirmar un pago es el **medio de pago**. El código de seguridad de 3
@@ -850,12 +850,27 @@ El PDF es un **derivado de la base**, no un documento con vida propia. Ahora se 
 descarga. La tabla `carnes` sigue registrando el hecho de negocio —qué inscripción tiene carné
 emitido y desde cuándo—, que es lo único que no se puede recalcular.
 
-Migración idempotente en `database/migraciones/2026-08-18-carne-sin-archivo.sql`, aplicada.
+Migración idempotente en `database/migraciones/2026-08-18-carne-sin-archivo.sql`.
 `rutas.carnes` sale de `config/config.php`. Efecto colateral bienvenido: **emitir un carné ya no
 puede fallar por permisos de disco** ni dejar un pago confirmado sin carné.
 
 **Queda pendiente decidir** qué hacer con los cuatro PDF antiguos que siguen en
 `storage/carnes/`. Son huérfanos —ya nada los lee— pero no se han borrado sin consultar.
+
+**Corrección del 18 de agosto: esta migración no estaba aplicada, aunque aquí se afirmaba que
+sí.** Salió a la luz probando el cobro: `carnes.ruta_pdf` seguía existiendo como `NOT NULL` sin
+valor por defecto, el `INSERT` que ya no la escribe fallaba con el error 1364 de MySQL y ninguna
+de las tres inscripciones llegó a confirmarse. La causa más probable es la restauración del
+respaldo previo hecha para verificar D-28: ese respaldo era anterior a esta migración y la
+deshizo sin que nadie lo notara. Ya está aplicada y comprobada dos veces sobre la base local,
+con las cuatro filas de `carnes` intactas.
+
+**Dos lecciones, y una queda abierta.** La primera se corrigió: el mensaje de error del cobro
+decía «el resto sí quedó confirmado» incluso cuando no se había confirmado ninguna, que con
+dinero de por medio es peor que no decir nada; ahora distingue los dos casos y nombra el archivo
+de log. La segunda no tiene solución todavía: **nada comprueba qué migraciones tiene puesta una
+base**. Un registro de migraciones aplicadas evitaría que el despliegue en Hostinger repita este
+mismo susto, esta vez en producción y con la secretaria delante.
 
 ---
 
@@ -1112,12 +1127,184 @@ correo no borra el correo.
 
 ---
 
+### D-29 — Dos fallos de maquetación que apagaban la caja
+
+**Fecha:** 2026-08-18 · **Estado:** corregido · **Afecta:** listado de inscripciones, D-16, D-28
+
+Dos reportes del propietario —el botón «Editar sus datos» visible antes de reconocer a
+nadie y «no se puede confirmar ningún pago»— resultaron ser dos defectos distintos, ambos
+en el HTML/CSS y ninguno en la lógica de negocio, que ya era correcta.
+
+**1. El atributo `hidden` perdía contra el `display` del componente.** El navegador trae
+`[hidden] { display: none }`, una regla de especificidad mínima: cualquier clase con
+`display: flex` o `grid` la gana. Tres bloques que el JS oculta se maquetan así, y por
+eso salían siempre, sin importar lo que el JS dijera:
+
+- el aviso de apoderado reutilizado con su botón «Editar sus datos» (`.reutilizado`,
+  `display: flex`) — el reporte C.7, en los dos formularios de D-28;
+- el código de seguridad de Yape (`.barra-cobro__campo`, `display: grid`) — visible con
+  transferencia y efectivo, cuando D-16 lo reserva a Yape;
+- la barra de cobro entera (`.barra-cobro`, `display: flex`), que debía aparecer solo al
+  marcar inscripciones.
+
+Se corrige una vez, en `base/_globales.scss`, con `[hidden] { display: none !important; }`.
+El `!important` no es negociable aquí: sin él la regla vuelve a perder contra cualquier
+clase, que es exactamente el fallo. Se descartó apagar el `display` componente por
+componente —tres parches hoy y el mismo error la próxima vez que algo se oculte con JS—
+y se descartó cambiar el JS a una clase `.oculto` propia: obligaría a recordar la
+convención en cada pantalla, cuando el atributo estándar ya expresa la intención y lo
+leen los lectores de pantalla.
+
+**2. Un formulario anidado cerraba el de cobro antes de tiempo.** El listado envuelve la
+tabla en `#form-cobro`, y la fila de cada inscripción confirmada llevaba dentro su propio
+`<form>` para «Regenerar». Anidar formularios no es HTML válido: el navegador ignora la
+etiqueta de apertura del interior, pero su cierre **cierra el formulario de cobro**. Desde
+la primera fila confirmada en adelante, las casillas restantes y el botón «Confirmar pago
+y emitir carnés» quedaban fuera de todo formulario, y un botón sin formulario no envía
+nada: el clic no hacía absolutamente nada, sin error ni mensaje.
+
+Explica por qué el fallo parecía intermitente: filtrando por «pendiente» no hay filas
+confirmadas, no hay anidamiento y la caja funciona. Es en el listado completo —el uso
+normal— donde se rompe.
+
+Ahora hay **un solo** `#form-regenerar` fuera del formulario de cobro, y el botón de cada
+fila se asocia a él con `form="form-regenerar"` y pone su destino con `formaction`. Se
+descartó sacar la regeneración a un enlace `GET`: cambia el estado del sistema y quedaría
+sin token CSRF, expuesta a que la dispare cualquier recarga o precarga del navegador.
+
+Verificado parseando el HTML antes y después: con el formulario anidado, el botón
+«Confirmar» tenía como ancestros `body < html` —ningún formulario—; ya no. Queda por
+comprobar en el navegador con la base real, junto con el resto del banco de pruebas.
+
+---
+
+### D-30 — Los avisos van donde está mirando quien los necesita
+
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario · **Afecta:** todas las pantallas
+
+Petición del propietario tras probar IE-6: el aviso de institución duplicada aparecía al pie del
+formulario, a pantalla y media del campo del nombre que lo dispara. Pidió además un criterio
+general, no un parche: **ningún banner de alerta puede quedar fuera de la vista**.
+
+El criterio que se adopta tiene tres reglas y una prohibición.
+
+**1. El mensaje de un campo vive pegado a ese campo.** No al pie del formulario, no en una caja
+al principio. La ficha de institución tiene veinte campos en cuatro grupos: un aviso al final no
+dice *cuál* de los veinte lo provocó, que es lo único que hace falta saber. Se movió
+`#aviso-duplicados` junto al nombre, y el aviso de documento repetido de la delegación pasó de
+una caja al pie de la nómina a marcar **la celda concreta** de la fila repetida. En una nómina de
+treinta filas, esa diferencia es la que separa un aviso útil de uno decorativo.
+
+**2. El resultado de una acción va en una franja pegajosa.** «Se confirmaron 3 pagos por
+S/ 30.00» aparecía arriba del listado y se perdía en cuanto la secretaria bajaba a comprobar las
+filas. Ahora la franja de avisos queda fija en el borde superior mientras se desplaza.
+
+**3. Cuando el servidor devuelve errores de campo, el foco viaja al primero.** Antes la página
+volvía arriba y el error podía estar a dos pantallas de distancia. El desplazamiento deja el
+campo centrado, no pegado al borde: la franja pegajosa lo taparía.
+
+**Lo que se descartó: los toast que se desvanecen solos.** Es la solución de moda y aquí es la
+equivocada. En estas pantallas se confirman cobros, y un mensaje de dinero que desaparece a los
+tres segundos es un mensaje que alguien no llegó a leer, sin forma de recuperarlo. Los avisos se
+cierran a mano, con su botón, o se quedan.
+
+Implementación: `.avisos` en `_avisos.scss` y el layout, `src/js/avisos.js` cargado en todas las
+páginas, `.entrada--error` para las celdas de la nómina.
+
+---
+
+### D-31 — Un documento, un participante por concurso
+
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario · **Afecta:** sección 5, D-05
+
+**Revierte D-05**, que decidía advertir el duplicado sin impedirlo, con el argumento de que la
+secretaria tenía delante más contexto que el sistema. La decisión del propietario ahora es
+literal: *cada estudiante tiene un DNI único y NUNCA debe repetirse*.
+
+**La prueba le dio la razón antes de discutirlo.** En la base de pruebas quedó la misma
+estudiante —Jimena Elizabeth Gonzáles, DNI 20000014— inscrita **cinco veces**, cada una con su
+código, su carné emitido y sus S/ 15.00 confirmados: S/ 75.00 de recaudación por una sola
+persona. Nadie ignoró el aviso a propósito. Con la nómina de un colegio delante, un aviso que no
+frena es una línea más que se lee de pasada.
+
+**La unicidad es por concurso, no absoluta.** `participantes` guarda una fila por concurso y por
+persona, así que un `UNIQUE` solo sobre `dni` habría dejado la edición 2027 sin poder registrar a
+nadie que ya compitiera en 2026. La restricción es `UNIQUE (concurso_id, dni)`.
+
+**En la base y en la aplicación, no en uno de los dos.** La validación en PHP da el mensaje que
+la secretaria puede entender —dice *quién* ocupa ese documento, con su código, para que sepa si
+se equivocó de dígito o si el colegio ya lo mandó—. La restricción de la base es la que aguanta
+lo que PHP no puede: dos secretarias registrando a la vez pasan las dos la misma comprobación y
+solo una debe entrar.
+
+**Tres casos que había que cubrir y no eran obvios:**
+
+- *El duplicado dentro del mismo formulario.* Ninguna consulta a la base lo detecta —todavía no
+  se ha escrito nada— y es el más frecuente de todos: la fila pegada dos veces al copiar la
+  nómina del colegio. Se comprueba contra las filas ya validadas del propio lote.
+- *«Corregir categoría» no se rompe.* Reutiliza el mismo participante y solo crea otra
+  inscripción, así que el UNIQUE no lo toca. Se verificó antes de escribir la restricción.
+- *El documento mal escrito no genera dos quejas.* El duplicado solo se comprueba si el documento
+  ya pasó su propia validación de formato.
+
+**Lo que esta regla cierra, y el propietario debe saber:** tras una anulación definitiva, ese
+estudiante **ya no puede volver a registrarse** desde el formulario, porque su participante sigue
+existiendo. Hoy el único camino de vuelta es «Corregir categoría». Si eso llega a hacer falta el
+día del concurso, hace falta una pantalla para reinscribir a un participante existente; queda
+anotado, no construido.
+
+**Migración** en `database/migraciones/2026-08-18-documento-unico-por-participante.sql`,
+idempotente, con el diagnóstico primero y **aplicada el 2026-08-18**. Se detuvo en el primer
+intento, como estaba previsto, porque la base de pruebas tenía cuatro grupos duplicados —los
+cinco de Jimena y tres filas de basura sobre documentos de estudiantes reales—. El propietario
+autorizó borrarlos por tratarse de datos de prueba: se conservó la fila más antigua de cada grupo
+y se soltaron 7 participantes con sus 8 inscripciones y 4 carnés, en orden de clave foránea y
+dentro de una transacción, con respaldo completo previo de la base.
+
+Comprobado después sobre la base real, las dos mitades de la regla: insertar el mismo documento
+en el **mismo** concurso lo rechaza MySQL con el error 1062, e insertarlo en un concurso de 2027
+entra sin problema. Las dos pruebas se hicieron con `ROLLBACK`, sin dejar datos detrás.
+
+---
+
+### D-32 — El código de seguridad de Yape vuelve a ser obligatorio
+
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario · **Afecta:** D-16
+
+**Revierte D-16.** El 17 de agosto se decidió que el código era opcional para no detener la caja
+por un dato de respaldo. El propietario lo revierte: con Yape, los tres dígitos son obligatorios.
+
+Es defendible y probablemente mejor: el código es lo único que ata un cobro a una operación
+concreta en la aplicación del banco. Sin él, cuadrar la caja al final del día es la palabra de
+quien cobró contra un extracto que no se puede emparejar. El costo que D-16 temía —la secretaria
+sin el dato a la vista— se paga una vez, al pedirle que mire el celular antes de confirmar.
+
+**El detalle que lo habría roto en silencio:** el campo está oculto salvo con Yape, y un campo
+`required` dentro de un bloque oculto **bloquea el envío sin explicar por qué** —el navegador
+intenta enfocar algo que no se ve y no muestra ningún mensaje—. Cobrar en efectivo se habría
+quedado colgado sin error visible. Por eso el `required` no está en el HTML: lo pone y lo quita
+el JS junto con la visibilidad, y el servidor lo exige igual aunque el JS no llegue a cargar.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04** Origen del `tipo_origen` que selecciona la tarifa (presumiblemente
   `instituciones_educativas.tipo` para delegación y `'libre'` para libre — sin confirmar).
   **Subió de prioridad con D-27:** el carné ahora imprime esa misma correspondencia
   bajo el rótulo «Modalidad». Deja de ser un cálculo interno corregible y pasa a un
   documento en papel que ya está en manos del estudiante. Necesita un sí explícito.
+- **P-06** Reinscribir a un participante ya registrado. Con D-31, un estudiante anulado
+  definitivamente no puede volver a darse de alta desde el formulario: su documento ya existe.
+  Hoy solo «Corregir categoría» lo recupera. Decidir si hace falta una pantalla propia antes
+  del día del concurso.
+- **P-07** Aislamiento entre organizaciones en `apoderados` e `instituciones_educativas`.
+  Ninguna de las dos tablas tiene `organizacion_id`, y `apoderados.dni` es UNIQUE **global**.
+  Hoy no se nota porque hay una sola organización, pero con dos: el apoderado que registre la
+  segunda, si su documento ya existe, se «reconocerá» como el de la primera —viendo sus
+  nombres, su celular y su correo— y al guardar lo sobrescribirá. El catálogo de colegios
+  también quedaría compartido y borrable por cualquiera de las dos. Los participantes **no**
+  tienen este problema: cuelgan de `concurso_id`, y cada concurso es de una organización.
+  Decidir si el multi-tenant entra de verdad o se declara fuera de alcance del MVP.
 - **P-05** `usuarios` carece de `organizacion_id` pese al diseño multi-tenant declarado.
   Se respeta el plan tal como está; añadirlo después es un `ALTER TABLE` aditivo.
 

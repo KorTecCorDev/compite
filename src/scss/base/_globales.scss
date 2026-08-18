@@ -21,6 +21,18 @@ body {
     }
 }
 
+// El atributo `hidden` tiene que ganarle al `display` del componente.
+//
+// La regla del navegador es `[hidden] { display: none }`, y por especificidad
+// pierde contra cualquier clase. Todo bloque que el JS oculta con `.hidden` y
+// que además se maqueta con `display: flex/grid` se quedaba visible siempre: la
+// barra de cobro sin nada marcado, el código de seguridad de Yape con cualquier
+// medio de pago y el aviso de apoderado reutilizado con su botón «Editar sus
+// datos» antes de reconocer a nadie.
+[hidden] {
+    display: none !important;
+}
+
 code {
     padding: .1rem .35rem;
     background: t.$gris-suave;

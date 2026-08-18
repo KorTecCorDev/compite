@@ -501,6 +501,7 @@ code, .cod {
 }
 </style>
 
+
 <div class="envoltura">
 
     <header class="portada">
@@ -508,27 +509,27 @@ code, .cod {
         <h1>Protocolo de pruebas en el navegador</h1>
         <p class="entradilla">
             Dos partes. Primero la <strong>ruta feliz</strong>: los pasos exactos para meter una
-            delegación completa, con los valores ya escritos para que no tengas que inventarlos.
-            Después el <strong>banco de pruebas</strong>: 53 comprobaciones en 9 bloques, cada una
-            con lo que debe pasar. Marca cada casilla conforme avances.
+            delegaci&oacute;n completa, con los valores ya escritos para que no tengas que
+            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 82 comprobaciones en
+            11 bloques, cada una con lo que debe pasar. Marca cada casilla conforme avances.
         </p>
 
         <div class="ficha">
             <div class="ficha__celda">
-                <span class="ficha__rotulo">Dirección</span>
+                <span class="ficha__rotulo">Direcci&oacute;n local</span>
                 <button class="dato ficha__valor" type="button">http://localhost/compite</button>
             </div>
             <div class="ficha__celda">
-                <span class="ficha__rotulo">Tu usuario</span>
-                <button class="dato ficha__valor" type="button">robertokar97@gmail.com</button>
+                <span class="ficha__rotulo">Alcance</span>
+                <span class="ficha__valor">Fases 1 a 4 + control de ingreso</span>
             </div>
             <div class="ficha__celda">
-                <span class="ficha__rotulo">Estado de la base</span>
-                <span class="ficha__valor">1 I.E. · 4 pendientes</span>
+                <span class="ficha__rotulo">Bloques nuevos</span>
+                <span class="ficha__valor">CAR &middot; CTL</span>
             </div>
             <div class="ficha__celda">
-                <span class="ficha__rotulo">Última revisión</span>
-                <span class="ficha__valor">17 ago 2026</span>
+                <span class="ficha__rotulo">&Uacute;ltima revisi&oacute;n</span>
+                <span class="ficha__valor">18 ago 2026 &middot; 2.&ordf;</span>
             </div>
         </div>
     </header>
@@ -543,40 +544,62 @@ code, .cod {
         <span class="aviso__titulo">Antes de empezar</span>
         <p>
             Abre el <strong>XAMPP Control Panel</strong> y confirma que <strong>Apache</strong> y
-            <strong>MySQL</strong> estén en verde. La base ya trae el concurso, las 11 categorías
-            y las 3 tarifas. Todo lo que registres aquí son datos de prueba: al terminar puedes
-            borrarlos y te digo cómo.
+            <strong>MySQL</strong> est&eacute;n en verde. Todo lo que registres aqu&iacute; son
+            datos de prueba: al terminar puedes borrarlos y te digo c&oacute;mo.
+        </p>
+        <p>
+            Las marcas se guardan en tu navegador, pero <strong>se reiniciaron con esta
+            revisi&oacute;n</strong>: el banco de pruebas cambi&oacute; lo suficiente como para que
+            arrastrar las viejas fuera enga&ntilde;oso.
         </p>
     </div>
 
     <div class="aviso aviso--ojo">
-        <span class="aviso__titulo">Cambios del 17 de agosto &mdash; léelo antes de probar</span>
+        <span class="aviso__titulo">Cambios del 18 de agosto &mdash; l&eacute;elo antes de probar</span>
         <p>
-            <strong>El código de seguridad de Yape ahora es opcional.</strong> Lo obligatorio es
-            el medio de pago. Si escribes el código, se sigue validando que sean 3 dígitos.
+            <strong>El cobro estaba roto y ya no lo est&aacute;.</strong> Desde el listado completo,
+            el bot&oacute;n de confirmar no hac&iacute;a nada: cada fila confirmada llevaba dentro
+            un formulario anidado que cerraba antes de tiempo el de cobro. Empieza por
+            <span class="cod">PAG-1</span>.
         </p>
         <p>
-            <strong>Todos los listados ordenan en español peruano.</strong> La Ñ va después de la
-            N, no mezclada entre ellas. Hay un bloque nuevo de pruebas, <span class="cod">ORD</span>,
-            dedicado a esto.
+            <strong>Tres cosas que se ve&iacute;an siempre y no deb&iacute;an.</strong> La barra de
+            cobro sin nada marcado, el c&oacute;digo de seguridad de Yape con cualquier medio de
+            pago y el bot&oacute;n &laquo;Editar sus datos&raquo; antes de reconocer a nadie. Era un
+            mismo fallo de CSS, corregido de una vez para todo el sistema.
         </p>
         <p>
-            <strong>Ya no arrancas de cero:</strong> la base tiene la I.E. «JOSÉ MARTÍ» (privada,
-            Huaraz) con 4 inscripciones pendientes &mdash; Manrique, Nolasco, Ñiquen y Xenofia.
-            Puedes usarlas para el bloque ORD y para el cobro sin registrar nada nuevo.
+            <strong>El docente delegado ahora es un apoderado.</strong> Su DNI pas&oacute; a ser
+            obligatorio, su correo es opcional en los dos formularios, y al inscribir una
+            delegaci&oacute;n queda asignado como encargado de cada participante. Bloques
+            <span class="cod">IE</span>, <span class="cod">APO</span>,
+            <span class="cod">DEL</span> y <span class="cod">LIB</span>.
+        </p>
+        <p>
+            <strong>Tres reglas nuevas, de la primera ronda de pruebas.</strong> El documento de un
+            participante <strong>ya no puede repetirse</strong> dentro del concurso: antes avisaba y
+            dejaba seguir (<span class="cod">DEL-6</span>, <span class="cod">LIB-7</span>). Con Yape, el
+            c&oacute;digo de seguridad <strong>es obligatorio</strong> (<span class="cod">PAG-6</span>). Y
+            los avisos ahora salen pegados al campo que los provoca, con la franja de resultados fija
+            arriba (<span class="cod">IE-6</span>, <span class="cod">IE-10</span>,
+            <span class="cod">PAG-13</span>).
+        </p>
+        <p>
+            <strong>El carn&eacute; cambi&oacute; de tama&ntilde;o y de fondo.</strong> Ahora es
+            ID-1, se imprime por hojas A4 de 10 y lleva marca de agua institucional: bloque nuevo
+            <span class="cod">CAR</span>. Y hay pantalla de control de ingreso para el d&iacute;a del
+            concurso: bloque <span class="cod">CTL</span>.
         </p>
     </div>
 
-    <!-- =========================================================
-         PARTE A
-         ========================================================= -->
     <section>
         <div class="seccion__cabecera">
-            <h2>Parte A &middot; Insertar una delegación, paso a paso</h2>
+            <h2>Parte A &middot; Insertar una delegaci&oacute;n, paso a paso</h2>
             <p class="seccion__nota">
-                El orden importa: no puedes registrar una delegación sin que su institución exista
-                antes, porque el formulario solo ofrece las que ya están en el catálogo. Los valores
-                en <span class="cod">mono</span> se copian al hacer clic.
+                El orden importa: no puedes registrar una delegaci&oacute;n sin que su
+                instituci&oacute;n exista antes, porque el formulario solo ofrece las que ya
+                est&aacute;n en el cat&aacute;logo. Los valores en <span class="cod">mono</span> se
+                copian al hacer clic.
             </p>
         </div>
 
@@ -585,96 +608,96 @@ code, .cod {
             <article class="paso">
                 <h3 class="paso__titulo">Entrar al sistema</h3>
                 <p class="paso__cuerpo">
-                    Abre <span class="cod">http://localhost/compite</span>. Te va a mandar
-                    directo al login, porque ninguna página interna es accesible sin sesión.
-                    Ingresa con tu correo y tu contraseña.
+                    Abre el sistema en el navegador. Te va a mandar directo al login, porque ninguna
+                    p&aacute;gina interna es accesible sin sesi&oacute;n. Ingresa con tu correo y tu
+                    contrase&ntilde;a.
                 </p>
                 <p class="paso__cuerpo">
-                    Deberías caer en el <strong>Panel</strong>, con el concurso, la cuenta regresiva
-                    al 22 de agosto y todas las métricas en cero.
+                    Deber&iacute;as caer en el <strong>Panel</strong>, con el concurso, la cuenta
+                    regresiva y las m&eacute;tricas.
                 </p>
             </article>
 
             <article class="paso">
-                <h3 class="paso__titulo">Registrar la institución educativa</h3>
+                <h3 class="paso__titulo">Registrar la instituci&oacute;n educativa</h3>
                 <p class="paso__cuerpo">
-                    Menú <strong>Instituciones</strong> &rarr; botón <strong>Nueva institución</strong>.
-                    Llena así:
+                    Men&uacute; <strong>Instituciones</strong> &rarr; bot&oacute;n
+                    <strong>Nueva instituci&oacute;n</strong>. Llena as&iacute;:
                 </p>
                 <div class="valores">
                     <div class="valores__fila">
                         <span class="valores__campo">Nombre de la I.E.</span>
-                        <button class="dato" type="button">I.E. 86002 Virgen de Fátima</button>
+                        <span><button class="dato" type="button">I.E. 86002 Virgen de F&aacute;tima</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Tipo</span>
-                        <span class="dato" style="cursor:default">Pública</span>
+                        <span><strong>P&uacute;blica</strong></span>
                     </div>
                     <div class="valores__fila">
-                        <span class="valores__campo">Departamento</span>
-                        <span class="vacio-nota">ya viene con Áncash, no lo toques</span>
-                    </div>
-                    <div class="valores__fila">
-                        <span class="valores__campo">Provincia</span>
-                        <span class="vacio-nota">ya viene con Huaraz</span>
+                        <span class="valores__campo">Departamento / Provincia</span>
+                        <span>ya vienen con &Aacute;ncash y Huaraz, no los toques</span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Distrito</span>
-                        <button class="dato" type="button">Independencia</button>
+                        <span><button class="dato" type="button">Independencia</button></span>
                     </div>
                     <div class="valores__fila">
-                        <span class="valores__campo">Dirección</span>
-                        <button class="dato" type="button">Av. Confraternidad Internacional Oeste 1250</button>
+                        <span class="valores__campo">Direcci&oacute;n</span>
+                        <span><button class="dato" type="button">Av. Confraternidad Internacional Oeste 1250</button></span>
+                    </div>
+                    <div class="valores__fila">
+                        <span class="valores__campo">Delegado &middot; DNI</span>
+                        <span><button class="dato" type="button">40123456</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Delegado &middot; ap. paterno</span>
-                        <button class="dato" type="button">Quiñónez</button>
+                        <span><button class="dato" type="button">Qui&ntilde;&oacute;nez</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Delegado &middot; ap. materno</span>
-                        <button class="dato" type="button">Ñañez</button>
+                        <span><button class="dato" type="button">&Ntilde;a&ntilde;ez</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Delegado &middot; nombres</span>
-                        <button class="dato" type="button">Rosa Elena</button>
+                        <span><button class="dato" type="button">Rosa Elena</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Delegado &middot; celular</span>
-                        <button class="dato" type="button">987654321</button>
+                        <span><button class="dato" type="button">987654321</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Delegado &middot; correo</span>
-                        <button class="dato" type="button">rosa.quinonez@ejemplo.pe</button>
+                        <span><button class="dato" type="button">rosa.quinonez@ejemplo.pe</button></span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Director (todo el bloque)</span>
-                        <span class="vacio-nota">déjalo vacío a propósito: es opcional</span>
+                        <span>d&eacute;jalo vac&iacute;o a prop&oacute;sito: es opcional</span>
                     </div>
                 </div>
                 <p class="paso__cuerpo">
-                    Guarda. Los apellidos llevan <strong>ñ y tildes</strong> deliberadamente: si al
-                    volver a abrir la ficha se ven correctos, la codificación de la base está bien.
+                    <strong>El DNI del delegado es nuevo y es obligatorio.</strong> Con &eacute;l,
+                    esta persona queda registrada como apoderado y podr&aacute;s encontrarla en
+                    <span class="cod">/apoderados</span> al terminar. Los apellidos llevan &ntilde; y
+                    tildes deliberadamente: si al volver a abrir la ficha se ven correctos, la
+                    codificaci&oacute;n de la base est&aacute; bien.
                 </p>
             </article>
 
             <article class="paso">
-                <h3 class="paso__titulo">Abrir el formulario de delegación</h3>
+                <h3 class="paso__titulo">Abrir el formulario de delegaci&oacute;n</h3>
                 <p class="paso__cuerpo">
-                    Menú <strong>Inscripciones</strong> &rarr; botón <strong>Nueva delegación</strong>.
+                    Men&uacute; <strong>Inscripciones</strong> &rarr; bot&oacute;n
+                    <strong>Nueva delegaci&oacute;n</strong>. F&iacute;jate en que <strong>no se
+                    pide ning&uacute;n apoderado</strong>: el encargado sale de la ficha del colegio.
                 </p>
             </article>
 
             <article class="paso">
-                <h3 class="paso__titulo">Elegir la delegación y confirmar la tarifa</h3>
+                <h3 class="paso__titulo">Elegir la delegaci&oacute;n y confirmar la tarifa</h3>
                 <p class="paso__cuerpo">
-                    En el desplegable, selecciona <span class="cod">I.E. 86002 Virgen de Fátima</span>.
-                    Al hacerlo debe aparecer una caja azul que dice
-                    <strong>«Tarifa aplicada: S/ 10.00 por estudiante»</strong>.
-                </p>
-                <p class="paso__cuerpo">
-                    Esa caja no es informativa nada más: confirma que el sistema dedujo solo el monto
-                    a partir del tipo de institución. No hay ningún campo donde escribir el precio,
-                    y es intencional.
+                    En el desplegable, selecciona la I.E. que acabas de crear. Debe aparecer una caja
+                    azul: <strong>&laquo;Tarifa aplicada: S/ 10.00 por estudiante&raquo;</strong>. No
+                    hay ning&uacute;n campo donde escribir el precio, y es intencional.
                 </p>
             </article>
 
@@ -687,82 +710,81 @@ code, .cod {
                 <div class="valores">
                     <div class="valores__fila">
                         <span class="valores__campo">Fila 1</span>
-                        <button class="dato" type="button">71234567 · Ñañez · Quiñónez · María Belén · Primaria 3°</button>
+                        <span><button class="dato" type="button">71234567</button> &middot; &Ntilde;a&ntilde;ez &middot; Qui&ntilde;&oacute;nez &middot; Mar&iacute;a Bel&eacute;n &middot; Primaria 3&deg;</span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Fila 2</span>
-                        <button class="dato" type="button">71234568 · Rímac · Huayllán · José Antonio · Primaria 5°</button>
+                        <span><button class="dato" type="button">71234568</button> &middot; R&iacute;mac &middot; Huayll&aacute;n &middot; Jos&eacute; Antonio &middot; Primaria 5&deg;</span>
                     </div>
                     <div class="valores__fila">
                         <span class="valores__campo">Fila 3</span>
-                        <button class="dato" type="button">71234569 · Vega · Ríos · Diego Alonso · Secundaria 2°</button>
+                        <span><button class="dato" type="button">71234569</button> &middot; Vega &middot; R&iacute;os &middot; Diego Alonso &middot; Secundaria 2&deg;</span>
                     </div>
                 </div>
                 <p class="paso__cuerpo">
                     Abajo debe ir apareciendo el contador
-                    <strong>«3 participante(s) por registrar»</strong> conforme escribes.
+                    <strong>&laquo;3 participante(s) por registrar&raquo;</strong> conforme escribes.
                 </p>
             </article>
 
             <article class="paso">
-                <h3 class="paso__titulo">Registrar</h3>
+                <h3 class="paso__titulo">Registrar y verificar</h3>
                 <p class="paso__cuerpo">
-                    Botón <strong>Registrar delegación</strong>. Te lleva al listado con el mensaje:
+                    Bot&oacute;n <strong>Registrar delegaci&oacute;n</strong>. Te lleva al listado
+                    con &laquo;Se registraron 3 participante(s) &hellip; Total por cobrar: S/
+                    30.00&raquo;, y las 3 filas con su c&oacute;digo, monto S/ 10.00 y estado
+                    <strong>pendiente</strong>.
                 </p>
                 <p class="paso__cuerpo">
-                    <span class="cod">Se registraron 3 participante(s) de «I.E. 86002 Virgen de Fátima». Total por cobrar: S/ 30.00.</span>
-                </p>
-            </article>
-
-            <article class="paso">
-                <h3 class="paso__titulo">Verificar lo que quedó</h3>
-                <p class="paso__cuerpo">
-                    En el listado deben salir <strong>3 filas</strong>, cada una con su código
-                    <span class="cod">COCIAP2026-0001-XXXXXX</span>, monto S/ 10.00 y estado
-                    <strong>pendiente</strong>. Arriba, «por cobrar S/ 30.00».
-                </p>
-                <p class="paso__cuerpo">
-                    Fíjate en los sufijos de los tres códigos: son distintos y no siguen ningún
-                    patrón. Eso es lo que impide que alguien recorra los carnés de todos los chicos
-                    cambiando un número en la URL.
+                    Los sufijos de los tres c&oacute;digos son distintos y no siguen ning&uacute;n
+                    patr&oacute;n: eso es lo que impide que alguien recorra los carn&eacute;s de
+                    todos los chicos cambiando un n&uacute;mero en la URL.
                 </p>
             </article>
 
             <article class="paso">
-                <h3 class="paso__titulo">Cobrar y emitir los carnés</h3>
+                <h3 class="paso__titulo">Cobrar y emitir los carn&eacute;s</h3>
                 <p class="paso__cuerpo">
-                    Marca la casilla del encabezado para seleccionar las tres. Aparece abajo la barra
-                    de cobro con «3 seleccionada(s) · total S/ 30.00». Elige medio de pago
-                    <strong>Yape</strong>, escribe el código <span class="cod">742</span> y confirma.
+                    Marca la casilla del encabezado. <strong>Solo entonces</strong> debe aparecer
+                    abajo la barra de cobro con &laquo;3 seleccionada(s) &middot; total S/
+                    30.00&raquo;. Elige <strong>Yape</strong>, escribe el c&oacute;digo
+                    <span class="cod">742</span> y confirma.
                 </p>
                 <p class="paso__cuerpo">
-                    Las tres pasan a <strong>confirmada</strong>, el recaudado sube a S/ 30.00 y
-                    cada fila gana los enlaces <strong>ver carné</strong>, <strong>PDF</strong> y
+                    Las tres pasan a <strong>confirmada</strong>, el recaudado sube a S/ 30.00 y cada
+                    fila gana <strong>ver carn&eacute;</strong>, <strong>PDF</strong> y
                     <strong>Regenerar</strong>.
+                </p>
+            </article>
+
+            <article class="paso">
+                <h3 class="paso__titulo">Imprimir la hoja y probar la puerta</h3>
+                <p class="paso__cuerpo">
+                    Filtra el listado por esta delegaci&oacute;n y pulsa <strong>Imprimir
+                    carn&eacute;s de esta delegaci&oacute;n</strong>: sale una hoja A4 con los tres
+                    carn&eacute;s y sus gu&iacute;as de corte. Luego abre
+                    <span class="cod">/control</span> y busca a uno de ellos por su apellido: debe
+                    decir <strong>&laquo;Puede ingresar&raquo;</strong>.
                 </p>
             </article>
 
         </div>
     </section>
 
-    <!-- =========================================================
-         PARTE B
-         ========================================================= -->
     <section>
         <div class="seccion__cabecera">
             <h2>Parte B &middot; Banco de pruebas</h2>
             <p class="seccion__nota">
                 A la izquierda lo que haces; a la derecha lo que <em>debe</em> pasar. Si no coincide,
-                anótalo y pásamelo. Las filas con fondo rojo son las que no pueden fallar bajo ningún
-                concepto: tocan dinero o datos de menores de edad.
+                an&oacute;talo y p&aacute;samelo. Las filas con fondo rojo son las que no pueden
+                fallar bajo ning&uacute;n concepto: tocan dinero o datos de menores de edad.
             </p>
         </div>
 
-        <!-- ACCESO -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">ACC</span>
-                <h3 class="bloque__nombre">Acceso y sesión</h3>
+                <h3 class="bloque__nombre">Acceso y sesi&oacute;n</h3>
                 <span class="bloque__pista">4 pruebas</span>
             </div>
 
@@ -770,7 +792,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="acc1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ACC-1</span>
-                    <p class="prueba__texto">Con la sesión cerrada, escribe <span class="cod">/panel</span> en la barra de direcciones.</p>
+                    <p class="prueba__texto">Con la sesi&oacute;n cerrada, escribe <span class="cod">/panel</span> en la barra de direcciones.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -782,12 +804,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="acc2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ACC-2</span>
-                    <p class="prueba__texto">Intenta entrar con tu correo y una contraseña equivocada.</p>
+                    <p class="prueba__texto">Intenta entrar con tu correo y una contrase&ntilde;a equivocada.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Decir solo «Las credenciales no son correctas».</p>
-                    <p class="prueba__porque">Nunca debe distinguir entre «ese correo no existe» y «la clave está mal»: eso revelaría qué cuentas existen.</p>
+                    <p class="prueba__texto">Decir solo &laquo;Las credenciales no son correctas&raquo;.</p>
+                    <p class="prueba__porque">Nunca debe distinguir entre &laquo;ese correo no existe&raquo; y &laquo;la clave est&aacute; mal&raquo;: eso revelar&iacute;a qu&eacute; cuentas existen.</p>
                 </div>
             </div>
 
@@ -799,7 +821,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Mostrar exactamente el mismo mensaje que ACC-2, y tardar más o menos lo mismo.</p>
+                    <p class="prueba__texto">Mostrar exactamente el mismo mensaje que ACC-2, y tardar m&aacute;s o menos lo mismo.</p>
                 </div>
             </div>
 
@@ -807,7 +829,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="acc4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ACC-4</span>
-                    <p class="prueba__texto">Ya dentro, pulsa <strong>Salir</strong> y luego el botón «atrás» del navegador.</p>
+                    <p class="prueba__texto">Ya dentro, pulsa <strong>Salir</strong> y luego el bot&oacute;n &laquo;atr&aacute;s&raquo; del navegador.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -816,24 +838,23 @@ code, .cod {
             </div>
         </div>
 
-        <!-- INSTITUCIONES -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">IE</span>
-                <h3 class="bloque__nombre">Instituciones educativas</h3>
-                <span class="bloque__pista">7 pruebas</span>
+                <h3 class="bloque__nombre">Instituciones educativas y su encargado</h3>
+                <span class="bloque__pista">10 pruebas &middot; 4 nuevas</span>
             </div>
 
             <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="ie1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">IE-1</span>
-                    <p class="prueba__texto">Envía el formulario de nueva institución completamente vacío.</p>
+                    <p class="prueba__texto">Env&iacute;a el formulario de nueva instituci&oacute;n completamente vac&iacute;o.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Listar <em>todos</em> los errores juntos, no uno solo.</p>
-                    <p class="prueba__porque">Con 18 campos, cortar en el primer error obligaría a la secretaria a enviar el formulario diez veces.</p>
+                    <p class="prueba__texto">Listar todos los errores juntos, no uno solo.</p>
+                    <p class="prueba__porque">Con tantos campos, cortar en el primer error obligar&iacute;a a la secretaria a enviar el formulario diez veces.</p>
                 </div>
             </div>
 
@@ -845,7 +866,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazarlo pidiendo 9 dígitos que empiecen en 9, <strong>y conservar todo lo demás que ya escribiste</strong>.</p>
+                    <p class="prueba__texto">Rechazarlo pidiendo 9 d&iacute;gitos que empiecen en 9, y <strong>conservar todo lo dem&aacute;s que ya escribiste</strong>.</p>
                 </div>
             </div>
 
@@ -865,11 +886,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ie4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">IE-4</span>
-                    <p class="prueba__texto">Guarda una institución sin ningún dato del director.</p>
+                    <p class="prueba__texto">Guarda una instituci&oacute;n sin ning&uacute;n dato del director.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Guardarla sin protestar. El director es opcional.</p>
+                    <p class="prueba__texto">Guardarla sin protestar. El director sigue siendo opcional.</p>
+                    <p class="prueba__porque">El director no es apoderado de nadie, as&iacute; que se qued&oacute; embebido en la ficha del colegio y sin datos obligatorios.</p>
                 </div>
             </div>
 
@@ -877,11 +899,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ie5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">IE-5</span>
-                    <p class="prueba__texto">Ahora pon <em>solo</em> el correo del director como <span class="cod">esto-no-es-correo</span>.</p>
+                    <p class="prueba__texto">Ahora pon solo el correo del director como <span class="cod">esto-no-es-correo</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazarlo. Opcional significa «puedes dejarlo vacío», no «puedes ponerlo mal».</p>
+                    <p class="prueba__texto">Rechazarlo. Opcional significa &laquo;puedes dejarlo vac&iacute;o&raquo;, no &laquo;puedes ponerlo mal&raquo;.</p>
                 </div>
             </div>
 
@@ -889,12 +911,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ie6"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">IE-6</span>
-                    <p class="prueba__texto">Empieza a crear otra institución y escribe en el nombre <span class="cod">Virgen</span>.</p>
+                    <p class="prueba__texto">Empieza a crear otra instituci&oacute;n y escribe en el nombre <span class="cod">Virgen</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Avisar de que ya existe una parecida, con enlace a ella &mdash; <strong>pero dejarte continuar</strong>.</p>
-                    <p class="prueba__porque">Dos colegios distintos pueden llamarse igual en distritos distintos. Aviso, no bloqueo.</p>
+                    <p class="prueba__texto">Salir el aviso <strong>junto al campo del nombre</strong> mientras escribes, con enlace a la que ya existe &mdash; pero <strong>dejarte continuar</strong>.</p>
+                    <p class="prueba__porque">Dos colegios distintos pueden llamarse igual en distritos distintos: aviso, no bloqueo. Vivía al pie del formulario, a pantalla y media del campo que lo dispara, y por eso no lo leía nadie.</p>
                 </div>
             </div>
 
@@ -902,32 +924,70 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ie7"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">IE-7</span>
-                    <p class="prueba__texto">Intenta eliminar la institución que ya tiene la delegación inscrita.</p>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Llena la ficha entera pero deja vac&iacute;o el <strong>DNI del docente delegado</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Negarse, diciendo cuántos participantes dependen de ella.</p>
+                    <p class="prueba__texto">Rechazarlo: ahora es obligatorio.</p>
+                    <p class="prueba__porque">Cambi&oacute; el 18 de agosto. El docente delegado pas&oacute; a ser un apoderado m&aacute;s, y el documento es lo &uacute;nico que permite reconocer a la persona en vez de duplicarla.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-8</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> En el DNI del docente delegado escribe uno que ya est&eacute; registrado como apoderado.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Autorrellenar sus datos, <strong>bloquearlos en solo lectura</strong> y solo entonces mostrar el bot&oacute;n &laquo;Editar sus datos&raquo;.</p>
+                    <p class="prueba__porque">Antes ese bot&oacute;n sal&iacute;a siempre, incluso sin haber reconocido a nadie: era un fallo de CSS, corregido hoy.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie9"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-9</span>
+                    <p class="prueba__texto">Intenta eliminar la instituci&oacute;n que ya tiene la delegaci&oacute;n inscrita.</p>
+        
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ie10"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">IE-10</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Baja hasta el final de la ficha, deja mal un campo del primer grupo &mdash;el celular del delegado, por ejemplo&mdash; y guarda.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Llevarte sola la vista hasta ese campo, centrado en pantalla y con el cursor dentro.</p>
+                    <p class="prueba__porque">Antes la página volvía arriba del todo y el error podía quedar a dos pantallas de donde estabas mirando.</p>
+                </div>
+            </div>
+        </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Negarse, diciendo cu&aacute;ntos participantes dependen de ella.</p>
                 </div>
             </div>
         </div>
 
-        <!-- APODERADOS -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">APO</span>
-                <h3 class="bloque__nombre">Apoderados</h3>
-                <span class="bloque__pista">3 pruebas</span>
+                <h3 class="bloque__nombre">Apoderados &mdash; una sola tabla para los dos casos</h3>
+                <span class="bloque__pista">7 pruebas &middot; 4 nuevas</span>
             </div>
 
             <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="apo1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">APO-1</span>
-                    <p class="prueba__texto">Crea un apoderado con DNI <span class="cod">44112233</span>, apellidos <span class="cod">Vega</span> / <span class="cod">Luna</span>, nombres <span class="cod">Carmen Rosa</span>, celular <span class="cod">987111222</span>.</p>
+                    <p class="prueba__texto">Crea un apoderado con DNI <button class="dato" type="button">44112233</button>, apellidos <span class="cod">Vega</span> / <span class="cod">Luna</span>, nombres <span class="cod">Carmen Rosa</span>, celular <button class="dato" type="button">987111222</button>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Guardarlo y mostrarlo en la lista con «0 vinculados».</p>
+                    <p class="prueba__texto">Guardarlo y mostrarlo en la lista con &laquo;0 vinculados&raquo; y la etiqueta <strong>Sin usar</strong>.</p>
                 </div>
             </div>
 
@@ -939,8 +999,8 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazarlo diciendo quién es el que ya existe, y sugerir reutilizarlo.</p>
-                    <p class="prueba__porque">Aquí sí se bloquea, al revés que con las instituciones: un DNI es una persona.</p>
+                    <p class="prueba__texto">Rechazarlo diciendo qui&eacute;n es el que ya existe, y sugerir reutilizarlo.</p>
+                    <p class="prueba__porque">Aqu&iacute; s&iacute; se bloquea, al rev&eacute;s que con las instituciones: un DNI es una persona.</p>
                 </div>
             </div>
 
@@ -948,32 +1008,83 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="apo3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">APO-3</span>
-                    <p class="prueba__texto">Prueba un DNI de 7 dígitos, y luego un carné de extranjería como <span class="cod">CE12345678</span>.</p>
+                    <p class="prueba__texto">Prueba un DNI de 7 d&iacute;gitos, y luego un carn&eacute; de extranjer&iacute;a como <span class="cod">CE12345678</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazar el de 7 dígitos y aceptar el carné de extranjería.</p>
+                    <p class="prueba__texto">Rechazar el de 7 d&iacute;gitos y aceptar el carn&eacute; de extranjer&iacute;a.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-4</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Con ese carn&eacute; de extranjer&iacute;a ya registrado, escr&iacute;belo en el DNI del apoderado de una inscripci&oacute;n libre.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Reconocerlo y reutilizarlo.</p>
+                    <p class="prueba__porque">Hasta hoy el buscador exig&iacute;a exactamente 8 d&iacute;gitos: a un apoderado con carn&eacute; de extranjer&iacute;a era imposible encontrarlo, y se duplicaba cada vez que volv&iacute;a.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-5</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Abre <span class="cod">/apoderados</span> y busca al docente delegado de la Parte A.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Estar ah&iacute;, con la etiqueta <strong>Encargado de delegaci&oacute;n</strong>.</p>
+                    <p class="prueba__porque">El docente delegado ya no vive embebido en la ficha del colegio: es un apoderado, el mismo registro que si inscribiera a su propio hijo como libre.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-6</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Intenta eliminarlo desde el listado de apoderados.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Negarse <strong>nombrando la delegaci&oacute;n que encabeza</strong> y pidiendo que le asignes otro encargado primero.</p>
+                    <p class="prueba__porque">La clave for&aacute;nea lo impedir&iacute;a igual, pero mostrar&iacute;a un error de MySQL en vez de una explicaci&oacute;n.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="apo7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">APO-7</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Edita a ese docente desde <span class="cod">/apoderados</span>, borra su correo y guarda.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Guardarlo vac&iacute;o. Desde esta pantalla s&iacute; se puede borrar un correo equivocado.</p>
+                    <p class="prueba__porque">Es la contraparte de LIB-5: esta ficha existe para editar a esa persona; el formulario de inscripci&oacute;n, no.</p>
                 </div>
             </div>
         </div>
 
-        <!-- DELEGACIÓN -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">DEL</span>
-                <h3 class="bloque__nombre">Inscripción por delegación</h3>
-                <span class="bloque__pista">7 pruebas</span>
+                <h3 class="bloque__nombre">Inscripci&oacute;n por delegaci&oacute;n</h3>
+                <span class="bloque__pista">8 pruebas &middot; 1 nueva</span>
             </div>
 
             <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="del1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-1</span>
-                    <p class="prueba__texto">Registra la delegación de la Parte A y observa el mensaje final.</p>
+                    <p class="prueba__texto">Registra la delegaci&oacute;n de la Parte A y observa el mensaje final.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Decir «3 participante(s)» y «Total por cobrar: S/ 30.00».</p>
+                    <p class="prueba__texto">Decir &laquo;3 participante(s)&raquo; y &laquo;Total por cobrar: S/ 30.00&raquo;.</p>
                 </div>
             </div>
 
@@ -981,24 +1092,24 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="del2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-2</span>
-                    <p class="prueba__texto">Intenta registrar sin elegir institución.</p>
+                    <p class="prueba__texto">Intenta registrar sin elegir instituci&oacute;n.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Avisar y, textualmente, decir que <strong>no se guardó nada</strong>.</p>
+                    <p class="prueba__texto">Avisar y, textualmente, decir que <strong>no se guard&oacute; nada</strong>.</p>
                 </div>
             </div>
 
-            <div class="prueba" data-critico="1">
+            <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="del3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-3</span>
-                    <p class="prueba__texto">Llena 3 filas correctas y deja la 4.ª con <em>solo el DNI</em>, sin nombres ni categoría.</p>
+                    <p class="prueba__texto">Llena 3 filas correctas y deja la 4.&ordf; <strong>con solo el DNI</strong>, sin nombres ni categor&iacute;a.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazar todo el lote señalando «Fila 4: …», y <strong>no registrar ni siquiera las 3 buenas</strong>.</p>
-                    <p class="prueba__porque">Es todo o nada. A media delegación cargada, un guardado parcial dejaría a la secretaria sin saber por dónde iba.</p>
+                    <p class="prueba__texto">Rechazar todo el lote se&ntilde;alando &laquo;Fila 4: &hellip;&raquo;, y <strong>no registrar ni siquiera las 3 buenas</strong>.</p>
+                    <p class="prueba__porque">Es todo o nada. A media delegaci&oacute;n cargada, un guardado parcial dejar&iacute;a a la secretaria sin saber por d&oacute;nde iba.</p>
                 </div>
             </div>
 
@@ -1006,7 +1117,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="del4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-4</span>
-                    <p class="prueba__texto">Registra una institución <strong>privada</strong> y empieza una delegación con ella.</p>
+                    <p class="prueba__texto">Registra una instituci&oacute;n privada y empieza una delegaci&oacute;n con ella.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -1022,7 +1133,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Llegar a 15 filas numeradas correlativamente, todas vacías y utilizables.</p>
+                    <p class="prueba__texto">Llegar a 15 filas numeradas correlativamente, todas vac&iacute;as y utilizables.</p>
                 </div>
             </div>
 
@@ -1030,11 +1141,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="del6"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-6</span>
-                    <p class="prueba__texto">En una fila nueva escribe el DNI <span class="cod">71234567</span>, que ya inscribiste antes.</p>
+                    <p class="prueba__texto"><strong>Cambió.</strong> En una fila nueva escribe el DNI <span class="cod">71234567</span>, que ya inscribiste antes.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Avisar de que ese documento ya está registrado, <strong>sin impedirte continuar</strong>.</p>
+                    <p class="prueba__texto">Marcar <strong>esa celda en rojo</strong> mientras escribes, diciendo quién la ocupa, y <strong>rechazar el registro</strong> si insistes.</p>
+                    <p class="prueba__porque">Hasta el 18 de agosto solo avisaba. En la base de pruebas eso dejó a la misma estudiante inscrita cinco veces, con cinco carnés y S/ 75.00 cobrados a una sola persona.</p>
                 </div>
             </div>
 
@@ -1042,21 +1154,33 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="del7"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">DEL-7</span>
-                    <p class="prueba__texto">En el listado, combina filtros: delegación + nivel Primaria + estado pendiente.</p>
+                    <p class="prueba__texto">En el listado, combina filtros: delegaci&oacute;n + nivel Primaria + estado pendiente.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Filtrar por los tres a la vez, y «Limpiar» debe devolver la lista completa.</p>
+                    <p class="prueba__texto">Filtrar por los tres a la vez, y &laquo;Limpiar&raquo; debe devolver la lista completa.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="del8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">DEL-8</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Despu&eacute;s de registrar la delegaci&oacute;n, vuelve a <span class="cod">/apoderados</span> y mira al docente delegado.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Figurar ahora con <strong>3 vinculados</strong>, sin que t&uacute; hayas escrito sus datos en el formulario de delegaci&oacute;n.</p>
+                    <p class="prueba__porque">El encargado se guarda en cada participante al inscribir, no se deduce despu&eacute;s: si el a&ntilde;o que viene encabeza otro docente, estas inscripciones seguir&aacute;n diciendo qui&eacute;n las hizo.</p>
                 </div>
             </div>
         </div>
 
-        <!-- LIBRE -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">LIB</span>
-                <h3 class="bloque__nombre">Estudiante libre y reutilización del apoderado</h3>
-                <span class="bloque__pista">4 pruebas</span>
+                <h3 class="bloque__nombre">Estudiante libre y reutilizaci&oacute;n del apoderado</h3>
+                <span class="bloque__pista">7 pruebas &middot; 4 nuevas</span>
             </div>
 
             <div class="prueba">
@@ -1067,7 +1191,8 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Autocompletar solo apellidos, nombres y celular, y avisar «Ya registrado: se reutilizará el mismo apoderado».</p>
+                    <p class="prueba__texto">Autorrellenar apellidos, nombres y celular, <strong>dejarlos en solo lectura</strong> y avisar de que se reutilizar&aacute; esa persona.</p>
+                    <p class="prueba__porque">El formulario actualiza la ficha del apoderado al guardar, y esa ficha la comparten todos sus participantes: un tipeo al inscribir al tercer hijo reescribir&iacute;a el apoderado de los otros dos.</p>
                 </div>
             </div>
 
@@ -1075,11 +1200,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="lib2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">LIB-2</span>
-                    <p class="prueba__texto">Completa el estudiante: <span class="cod">71234570 · Vega · Ríos · Sofía Milagros · Secundaria 1°</span> y registra.</p>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Borra un d&iacute;gito de ese documento, hasta que ya no reconozca a nadie.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Cobrar <strong>S/ 15.00</strong>, no S/ 10.00, y darte su código.</p>
+                    <p class="prueba__texto">Vaciar los campos que hab&iacute;a autorrellenado y desbloquearlos.</p>
+                    <p class="prueba__porque">Conservar el nombre de una persona bajo el documento de otra habr&iacute;a creado un registro nuevo con datos ajenos.</p>
                 </div>
             </div>
 
@@ -1087,11 +1213,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="lib3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">LIB-3</span>
-                    <p class="prueba__texto">Repite con otro hermano: mismo apoderado, estudiante <span class="cod">71234571 · Vega · Ríos · Luis Fernando</span>.</p>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Vuelve a escribir el documento completo y pulsa <strong>Editar sus datos</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">En <strong>Apoderados</strong>, Carmen Rosa debe figurar ahora con <strong>2 vinculados</strong>, sin haberse duplicado.</p>
+                    <p class="prueba__texto">Desbloquear los campos <strong>sin vaciarlos</strong>, y avisar de que al guardar se actualizar&aacute;n los datos de esa persona.</p>
+                    <p class="prueba__porque">Ese bot&oacute;n no debe existir en pantalla antes de reconocer a alguien: comprueba de paso que aparece solo ahora.</p>
                 </div>
             </div>
 
@@ -1099,32 +1226,70 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="lib4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">LIB-4</span>
-                    <p class="prueba__texto">En el listado de inscripciones, filtra por origen <strong>Estudiante libre</strong>.</p>
+                    <p class="prueba__texto">Registra dos hermanos con el mismo apoderado: <span class="cod">71234570</span> y <span class="cod">71234571</span>, ambos <span class="cod">Vega</span> / <span class="cod">R&iacute;os</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Salir solo los dos hermanos, con la etiqueta gris «libre» en vez de un colegio.</p>
+                    <p class="prueba__texto">Cobrar <strong>S/ 15.00</strong> cada uno y dejar a Carmen Rosa con <strong>2 vinculados</strong>, sin haberse duplicado.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-5</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Inscribe un libre poniendo como apoderado al <strong>docente delegado</strong> de la Parte A, y deja el correo en blanco.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Registrar la inscripci&oacute;n y <strong>no borrarle el correo</strong> que ya ten&iacute;a.</p>
+                    <p class="prueba__porque">Es la misma persona que coordina una delegaci&oacute;n entera. Un formulario que est&aacute; haciendo otra cosa puede a&ntilde;adir un dato, no vaciarlo.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-6</span>
+                    <p class="prueba__texto">En el listado de inscripciones, filtra por origen <strong>Estudiante libre</strong>.</p>
+        
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="lib7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">LIB-7</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Inscribe como libre a un estudiante con el DNI de alguien que ya está inscrito por su delegación.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo diciendo <strong>quién ocupa ese documento</strong> y con qué código, y llevarte la vista al campo.</p>
+                    <p class="prueba__porque">Es el caso que más caro sale: el mismo chico llega por su colegio y vuelve a llegar por su cuenta. Antes se inscribía dos veces y pagaba dos veces.</p>
+                </div>
+            </div>
+        </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Salir solo los libres, con la etiqueta gris &laquo;libre&raquo; en vez de un colegio.</p>
                 </div>
             </div>
         </div>
 
-        <!-- PAGOS Y CARNÉ -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">PAG</span>
-                <h3 class="bloque__nombre">Cobro y emisión del carné</h3>
-                <span class="bloque__pista">10 pruebas</span>
+                <h3 class="bloque__nombre">Cobro &mdash; el fallo corregido hoy</h3>
+                <span class="bloque__pista">13 pruebas &middot; 6 cambiadas o nuevas</span>
             </div>
 
-            <div class="prueba">
+            <div class="prueba" data-critico="1">
                 <div class="prueba__marca"><input type="checkbox" data-id="pag1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-1</span>
-                    <p class="prueba__texto">Marca una sola casilla y observa la barra que aparece abajo.</p>
+                    <p class="prueba__texto"><strong>Nuevo y cr&iacute;tico.</strong> Abre <span class="cod">/inscripciones</span> <strong>sin ning&uacute;n filtro</strong>, con filas confirmadas y pendientes mezcladas. Marca una pendiente y pulsa <strong>Confirmar pago y emitir carn&eacute;s</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Mostrar «1 seleccionada(s)» y el total correcto; al desmarcar, desaparecer.</p>
+                    <p class="prueba__texto">Cobrar. Antes el bot&oacute;n no hac&iacute;a absolutamente nada: ni error, ni mensaje, ni recarga.</p>
+                    <p class="prueba__porque">Este era el fallo del 18 de agosto. Cada fila confirmada llevaba dentro un formulario anidado que cerraba el de cobro antes de tiempo, y el bot&oacute;n quedaba fuera de todo formulario. Filtrando por &laquo;pendiente&raquo; no hab&iacute;a filas confirmadas, y por eso a veces s&iacute; funcionaba.</p>
                 </div>
             </div>
 
@@ -1132,11 +1297,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-2</span>
-                    <p class="prueba__texto">Marca la casilla del encabezado de la tabla.</p>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Entra al listado sin marcar nada, y luego marca y desmarca una casilla.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Seleccionar solo las <strong>pendientes</strong>, y sumar bien el total.</p>
+                    <p class="prueba__texto">La barra de cobro <strong>no debe verse hasta que marques algo</strong>, y debe desaparecer al desmarcar.</p>
+                    <p class="prueba__porque">Tambi&eacute;n sal&iacute;a siempre por el mismo error de CSS: el atributo que la ocultaba perd&iacute;a contra el maquetado.</p>
                 </div>
             </div>
 
@@ -1144,60 +1310,36 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-3</span>
-                    <p class="prueba__texto">Elige medio de pago <strong>Efectivo</strong>, y luego cámbialo a <strong>Yape</strong>.</p>
+                    <p class="prueba__texto">Marca la casilla del encabezado de la tabla.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">El campo del código aparece solo con Yape, se esconde con los otros medios, y su etiqueta dice <strong>(opcional)</strong>.</p>
+                    <p class="prueba__texto">Seleccionar <strong>solo las pendientes</strong>, y sumar bien el total.</p>
                 </div>
             </div>
 
-            <div class="prueba" data-critico="1">
+            <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="pag4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-4</span>
-                    <p class="prueba__texto">Marca una inscripción y pulsa confirmar <strong>sin elegir medio de pago</strong>.</p>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Elige medio de pago <strong>Efectivo</strong>, luego <strong>Yape</strong>, luego <strong>Transferencia</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Impedirlo. El medio de pago es lo único obligatorio del cobro.</p>
-                </div>
-            </div>
-
-            <div class="prueba">
-                <div class="prueba__marca"><input type="checkbox" data-id="pag9"></div>
-                <div class="prueba__accion">
-                    <span class="prueba__id">PAG-9</span>
-                    <p class="prueba__texto">Elige <strong>Yape</strong>, deja el código <strong>vacío</strong> y confirma.</p>
-                </div>
-                <div class="prueba__espera">
-                    <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Confirmar sin problema. El código es un dato de respaldo, no puede detener la caja.</p>
-                    <p class="prueba__porque">Cambió el 17 de agosto: antes era obligatorio.</p>
+                    <p class="prueba__texto">El campo del c&oacute;digo debe aparecer <strong>solo con Yape</strong> y marcado con asterisco, esconderse con los otros dos y borrar lo que hubieras escrito. Con Efectivo, el cobro debe enviarse <strong>sin quedarse colgado</strong>.</p>
+                    <p class="prueba__porque">Lo segundo importa tanto como lo primero: un campo obligatorio dentro de un bloque oculto bloquea el env&iacute;o sin decir por qu&eacute;, y habr&iacute;a dejado la caja parada al cobrar en efectivo.</p>
                 </div>
             </div>
 
             <div class="prueba" data-critico="1">
-                <div class="prueba__marca"><input type="checkbox" data-id="pag10"></div>
-                <div class="prueba__accion">
-                    <span class="prueba__id">PAG-10</span>
-                    <p class="prueba__texto">Con Yape elegido, escribe un código de <strong>4</strong> dígitos e intenta confirmar.</p>
-                </div>
-                <div class="prueba__espera">
-                    <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Rechazarlo y dejar las inscripciones <strong>en pendiente</strong>. Opcional no significa que valga cualquier cosa.</p>
-                </div>
-            </div>
-
-            <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="pag5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-5</span>
-                    <p class="prueba__texto">Confirma las 3 de la delegación con Yape y código <span class="cod">742</span>.</p>
+                    <p class="prueba__texto">Marca una inscripci&oacute;n y pulsa confirmar <strong>sin elegir medio de pago</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Decir «Se confirmaron 3 pago(s) por S/ 30.00», y el recaudado del panel subir a S/ 30.00.</p>
+                    <p class="prueba__texto">Impedirlo. El medio de pago es lo &uacute;nico obligatorio del cobro.</p>
                 </div>
             </div>
 
@@ -1205,11 +1347,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag6"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-6</span>
-                    <p class="prueba__texto">Pulsa <strong>PDF</strong> en una fila confirmada y abre el archivo.</p>
+                    <p class="prueba__texto"><strong>Cambió.</strong> Elige <strong>Yape</strong>, deja el c&oacute;digo vac&iacute;o y confirma.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Descargar un carné con el QR, el nombre completo <strong>con tildes correctas</strong> y el código legible.</p>
+                    <p class="prueba__texto"><strong>Impedirlo.</strong> Con Yape, los tres d&iacute;gitos son obligatorios.</p>
+                    <p class="prueba__porque">Al rev&eacute;s que el 17 de agosto, cuando era opcional. Es lo &uacute;nico que ata el cobro a una operaci&oacute;n concreta del banco: sin &eacute;l, cuadrar la caja es la palabra de quien cobr&oacute; contra un extracto que no se puede emparejar.</p>
                 </div>
             </div>
 
@@ -1217,45 +1360,298 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag7"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-7</span>
-                    <p class="prueba__texto">Escanea ese QR con tu celular, o pulsa <strong>ver carné</strong>.</p>
+                    <p class="prueba__texto">Con Yape elegido, escribe un c&oacute;digo de <strong>4 d&iacute;gitos</strong> e intenta confirmar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Abrir la vista pública con el sello verde <strong>«Inscripción válida»</strong> y los datos correctos.</p>
-                    <p class="prueba__porque">Si el celular no resuelve <code>localhost</code>, prueba desde el navegador de la misma máquina.</p>
+                    <p class="prueba__texto">Rechazarlo y dejar las inscripciones en <strong>pendiente</strong>. Opcional no significa que valga cualquier cosa.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-8</span>
+                    <p class="prueba__texto">Confirma las 3 de la delegaci&oacute;n con Yape y c&oacute;digo <span class="cod">742</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir &laquo;Se confirmaron 3 pago(s) por S/ 30.00&raquo;, y el recaudado del panel subir a S/ 30.00.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag9"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-9</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Pulsa el bot&oacute;n &laquo;atr&aacute;s&raquo; y reenv&iacute;a ese mismo cobro.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir &laquo;Ninguna de las inscripciones seleccionadas sigue pendiente&raquo;, sin volver a cobrar.</p>
+                    <p class="prueba__porque">Nadie paga dos veces por una recarga.</p>
                 </div>
             </div>
 
             <div class="prueba">
-                <div class="prueba__marca"><input type="checkbox" data-id="pag8"></div>
+                <div class="prueba__marca"><input type="checkbox" data-id="pag10"></div>
                 <div class="prueba__accion">
-                    <span class="prueba__id">PAG-8</span>
-                    <p class="prueba__texto">Pulsa <strong>Regenerar</strong> en esa misma fila y vuelve a descargar el PDF.</p>
+                    <span class="prueba__id">PAG-10</span>
+                    <p class="prueba__texto">Pulsa <strong>PDF</strong> en una fila confirmada y abre el archivo.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Avisar «Carné regenerado» y entregar un PDF nuevo con el mismo código.</p>
+                    <p class="prueba__texto">Descargar el carn&eacute; con el QR, el nombre completo con tildes correctas y el c&oacute;digo legible.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag11"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-11</span>
+                    <p class="prueba__texto">Pulsa <strong>Regenerar</strong> en esa misma fila.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Pedirte confirmaci&oacute;n y luego avisar <strong>&laquo;Carn&eacute; emitido&raquo;</strong>, dej&aacute;ndote en la fila de ese estudiante.</p>
+                    <p class="prueba__porque">Este bot&oacute;n se rehizo hoy: ya no lleva su propio formulario dentro de la tabla, sino que se asocia a uno de fuera.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag12"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-12</span>
+                    <p class="prueba__texto">Despu&eacute;s de regenerar, vuelve a marcar casillas y cobra otra inscripci&oacute;n.</p>
+        
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="pag13"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">PAG-13</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Con el mensaje de «Se confirmaron N pago(s)» en pantalla, baja hasta el final del listado.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">El mensaje debe <strong>quedarse fijo arriba</strong> y no desaparecer solo. Se cierra con su aspa.</p>
+                    <p class="prueba__porque">Un mensaje de dinero que se desvanece a los tres segundos es un mensaje que alguien no lleg&oacute; a leer, y sin forma de recuperarlo.</p>
+                </div>
+            </div>
+        </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Seguir funcionando igual. Regenerar no puede dejar el listado sin cobro.</p>
                 </div>
             </div>
         </div>
 
-        <!-- ANULACIÓN -->
         <div class="bloque">
             <div class="bloque__cabecera">
-                <span class="bloque__clave">ANU</span>
-                <h3 class="bloque__nombre">Corrección y anulación</h3>
-                <span class="bloque__pista">6 pruebas</span>
+                <span class="bloque__clave">CAR</span>
+                <h3 class="bloque__nombre">El carn&eacute;, en papel y en pantalla</h3>
+                <span class="bloque__pista">8 pruebas &middot; bloque nuevo</span>
             </div>
 
-            <div class="prueba" data-critico="1">
-                <div class="prueba__marca"><input type="checkbox" data-id="anu1"></div>
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car1"></div>
                 <div class="prueba__accion">
-                    <span class="prueba__id">ANU-1</span>
-                    <p class="prueba__texto">En una inscripción <strong>ya pagada</strong>, pulsa <strong>Corregir categoría</strong> y anota su código antes de seguir.</p>
+                    <span class="prueba__id">CAR-1</span>
+                    <p class="prueba__texto">Imprime el PDF de un carn&eacute; <strong>a escala real</strong> (100 %, sin &laquo;ajustar a p&aacute;gina&raquo;) y m&iacute;delo con una regla.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">La pantalla debe explicarte por adelantado qué va a pasar, incluido que la nueva <strong>nace pagada</strong>.</p>
+                    <p class="prueba__texto">Medir 85.6 &times; 54 mm: el tama&ntilde;o del DNI. Debe entrar en cualquier portacarn&eacute; comercial.</p>
+                    <p class="prueba__porque">Se maqueta siempre sobre A4, incluso para un solo carn&eacute;: un PDF del tama&ntilde;o exacto de la tarjeta lo reescala cualquier impresora.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-2</span>
+                    <p class="prueba__texto">Filtra el listado por una delegaci&oacute;n con confirmadas y pulsa <strong>Imprimir carn&eacute;s de esta delegaci&oacute;n</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Una hoja A4 con hasta <strong>10 carn&eacute;s por p&aacute;gina</strong> y gu&iacute;as de corte.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-3</span>
+                    <p class="prueba__texto">Quita el filtro de delegaci&oacute;n y busca ese bot&oacute;n.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">No estar. Solo aparece con una delegaci&oacute;n elegida y con al menos una confirmada.</p>
+                    <p class="prueba__porque">Imprimir &laquo;todos los carn&eacute;s del concurso&raquo; ser&iacute;an cientos de p&aacute;ginas y un PDF que en hosting compartido se queda sin tiempo a medio generar.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-4</span>
+                    <p class="prueba__texto">Mira el fondo del carn&eacute; impreso.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Verse el logo de aniversario como <strong>marca de agua</strong>, tenue, sin comerse la legibilidad de ning&uacute;n dato.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-5</span>
+                    <p class="prueba__texto">Lee los campos del carn&eacute; uno por uno.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Estar <strong>Apellidos, Nombres, DNI, Grado, Modalidad y Procedencia</strong>, cada uno con su r&oacute;tulo.</p>
+                    <p class="prueba__porque">Modalidad dice libre, p&uacute;blica o privada: es la misma correspondencia con la que se calcula la tarifa. Sigue pendiente de tu confirmaci&oacute;n (P-04) y ahora ya est&aacute; impresa en papel.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-6</span>
+                    <p class="prueba__texto">Escanea el QR con el celular, o pulsa <strong>ver carn&eacute;</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Abrir la vista p&uacute;blica con el sello verde <strong>&laquo;Inscripci&oacute;n v&aacute;lida&raquo;</strong> y los datos correctos.</p>
+                    <p class="prueba__porque">El QR codifica una ruta corta (<span class="cod">/c/&hellip;</span>), no la larga: a 15 mm impresos, cada car&aacute;cter de m&aacute;s encoge los m&oacute;dulos hasta que la c&aacute;mara deja de leerlos.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="car7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-7</span>
+                    <p class="prueba__texto">Abre el carn&eacute; p&uacute;blico de una inscripci&oacute;n <strong>anulada</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mostrar el sello rojo <strong>ANULADO</strong>, el c&oacute;digo tachado y el motivo &mdash; nunca un 404.</p>
+                    <p class="prueba__porque">Quien escanea en la puerta necesita ver por qu&eacute; no vale, no una p&aacute;gina de error que parezca un problema del sistema.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="car8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CAR-8</span>
+                    <p class="prueba__texto">Pide la hoja de una delegaci&oacute;n que no tenga ninguna confirmada.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir &laquo;Esa delegaci&oacute;n todav&iacute;a no tiene inscripciones confirmadas&raquo;, no entregar una hoja en blanco.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">CTL</span>
+                <h3 class="bloque__nombre">Control de ingreso &mdash; el d&iacute;a del concurso</h3>
+                <span class="bloque__pista">6 pruebas &middot; bloque nuevo</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-1</span>
+                    <p class="prueba__texto">Abre <span class="cod">/control</span> y escribe una sola letra.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir &laquo;Escribe al menos dos caracteres&raquo;, sin buscar.</p>
+                    <p class="prueba__porque">Una sola letra devuelve media base y no ayuda a nadie con una fila de estudiantes esperando.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-2</span>
+                    <p class="prueba__texto">Busca por un apellido completo.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Salir fichas grandes, legibles de pie y a un brazo de distancia, con el veredicto arriba del todo.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-3</span>
+                    <p class="prueba__texto">Busca a un estudiante con el pago <strong>confirmado</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir <strong>&laquo;Puede ingresar&raquo;</strong>.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-4</span>
+                    <p class="prueba__texto">Busca a uno <strong>pendiente</strong> de pago.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir <strong>&laquo;Pago pendiente&raquo;</strong> y pedir que lo derives a la mesa de inscripciones antes de dejarlo pasar.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-5</span>
+                    <p class="prueba__texto">Busca a uno <strong>anulado</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Decir <strong>&laquo;No puede ingresar&raquo;</strong> y advertir de que, si trae un carn&eacute; impreso, ese carn&eacute; ya no vale.</p>
+                    <p class="prueba__porque">El papel se imprime una vez; la anulaci&oacute;n pasa despu&eacute;s. La pantalla es la fuente de verdad, no el carn&eacute;.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ctl6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">CTL-6</span>
+                    <p class="prueba__texto">Busca por <strong>c&oacute;digo completo</strong> y luego por <strong>n&uacute;mero de documento</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Encontrarlo igual por los tres caminos: apellido, documento y c&oacute;digo.</p>
+                    <p class="prueba__porque">Es la respuesta al carn&eacute; perdido, que con estudiantes de primaria no es un riesgo sino una certeza.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">ANU</span>
+                <h3 class="bloque__nombre">Correcci&oacute;n y anulaci&oacute;n</h3>
+                <span class="bloque__pista">6 pruebas</span>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="anu1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ANU-1</span>
+                    <p class="prueba__texto">En una inscripci&oacute;n <strong>ya pagada</strong>, pulsa <strong>Corregir categor&iacute;a</strong> y anota su c&oacute;digo antes de seguir.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">La pantalla debe explicarte por adelantado qu&eacute; va a pasar, incluido que la nueva nace <strong>pagada</strong>.</p>
                 </div>
             </div>
 
@@ -1263,12 +1659,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-2</span>
-                    <p class="prueba__texto">Cambia la categoría a otra y confirma.</p>
+                    <p class="prueba__texto">Cambia la categor&iacute;a a otra y confirma.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">El participante <strong>conserva exactamente el mismo código</strong>, la nueva inscripción sale confirmada y el recaudado <strong>no cambia</strong>.</p>
-                    <p class="prueba__porque">Nadie paga dos veces porque el colegio informó mal el grado.</p>
+                    <p class="prueba__texto">El participante conserva <strong>el mismo c&oacute;digo</strong>, la nueva inscripci&oacute;n sale confirmada y <strong>el recaudado no cambia</strong>.</p>
+                    <p class="prueba__porque">Nadie paga dos veces porque el colegio inform&oacute; mal el grado.</p>
                 </div>
             </div>
 
@@ -1276,11 +1672,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-3</span>
-                    <p class="prueba__texto">Abre otra vez el carné público de ese estudiante.</p>
+                    <p class="prueba__texto">Abre otra vez el carn&eacute; p&uacute;blico de ese estudiante.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Seguir <strong>válido</strong> y mostrar ya la categoría corregida, no la vieja.</p>
+                    <p class="prueba__texto">Seguir v&aacute;lido y mostrar ya la categor&iacute;a corregida, no la vieja.</p>
                 </div>
             </div>
 
@@ -1288,11 +1684,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-4</span>
-                    <p class="prueba__texto">En otra inscripción pagada, pulsa <strong>Anular</strong> y lee el aviso antes de aceptar.</p>
+                    <p class="prueba__texto">En otra inscripci&oacute;n pagada, pulsa <strong>Anular</strong> y lee el aviso antes de aceptar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Advertirte del monto que irá al fondo de devoluciones y recordarte que existe «Corregir categoría».</p>
+                    <p class="prueba__texto">Advertirte del monto que ir&aacute; al fondo de devoluciones y recordarte que existe &laquo;Corregir categor&iacute;a&raquo;.</p>
                 </div>
             </div>
 
@@ -1300,12 +1696,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-5</span>
-                    <p class="prueba__texto">Escribe un motivo y confirma la anulación. Luego abre su carné público.</p>
+                    <p class="prueba__texto">Escribe un motivo y confirma la anulaci&oacute;n.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Mostrar el sello rojo <strong>ANULADO</strong>, el código tachado, el motivo, y decir que no vale para el ingreso.</p>
-                    <p class="prueba__porque">Nunca un 404: quien escanea en la puerta necesita ver <em>por qué</em> no vale.</p>
+                    <p class="prueba__texto">Marcarla como anulada, mostrar la etiqueta <strong>por devolver</strong> en el listado y dejar el carn&eacute; p&uacute;blico con el sello rojo.</p>
                 </div>
             </div>
 
@@ -1313,21 +1708,20 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu6"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-6</span>
-                    <p class="prueba__texto">Anula ahora una inscripción que esté <strong>pendiente</strong>, sin pagar.</p>
+                    <p class="prueba__texto">Anula ahora una inscripci&oacute;n que est&eacute; <strong>pendiente</strong>, sin pagar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto"><strong>No</strong> mostrar la etiqueta «por devolver». Nunca se cobró nada, así que no hay qué devolver.</p>
+                    <p class="prueba__texto">No mostrar la etiqueta &laquo;por devolver&raquo;. Nunca se cobr&oacute; nada, as&iacute; que no hay qu&eacute; devolver.</p>
                 </div>
             </div>
         </div>
 
-        <!-- ORDENAMIENTO -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">ORD</span>
-                <h3 class="bloque__nombre">Orden alfabético en español peruano</h3>
-                <span class="bloque__pista">7 pruebas &middot; nuevo</span>
+                <h3 class="bloque__nombre">Orden alfab&eacute;tico en espa&ntilde;ol peruano</h3>
+                <span class="bloque__pista">7 pruebas</span>
             </div>
 
             <div class="prueba">
@@ -1338,20 +1732,20 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Manrique, Nolasco, <strong>Ñiquen</strong>, Xenofia. La Ñ después de la N, la X al final.</p>
+                    <p class="prueba__texto">Las &Ntilde; despu&eacute;s de todas las N, y la X al final.</p>
                 </div>
             </div>
 
-            <div class="prueba" data-critico="1">
+            <div class="prueba">
                 <div class="prueba__marca"><input type="checkbox" data-id="ord2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-2</span>
-                    <p class="prueba__texto">Crea tres instituciones llamadas <span class="cod">Prueba Navarro</span>, <span class="cod">Prueba Ñahui</span> y <span class="cod">Prueba Núñez</span>, en ese desorden.</p>
+                    <p class="prueba__texto">Crea tres instituciones: <span class="cod">Prueba Navarro</span>, <span class="cod">Prueba &Ntilde;ahui</span> y <span class="cod">Prueba N&uacute;&ntilde;ez</span>, en ese desorden.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Listarlas como Navarro, Núñez, <strong>Ñahui</strong>. Todas las N antes de cualquier Ñ.</p>
-                    <p class="prueba__porque">Este es el fallo que corregimos: antes salía Ñahui, Navarro, Núñez.</p>
+                    <p class="prueba__texto">Listarlas como <strong>Navarro, N&uacute;&ntilde;ez, &Ntilde;ahui</strong>.</p>
+                    <p class="prueba__porque">Este es el fallo que corregimos: antes sal&iacute;a &Ntilde;ahui, Navarro, N&uacute;&ntilde;ez.</p>
                 </div>
             </div>
 
@@ -1359,12 +1753,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ord3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-3</span>
-                    <p class="prueba__texto">En el buscador de instituciones escribe <span class="cod">Nahui</span>, <strong>sin la eñe</strong>.</p>
+                    <p class="prueba__texto">En el buscador de instituciones escribe <span class="cod">Nahui</span>, <strong>sin la e&ntilde;e</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Encontrar «Prueba Ñahui» igualmente.</p>
-                    <p class="prueba__porque">Ordenar bien no puede costar la tolerancia al buscar. Si esta falla, el arreglo salió caro.</p>
+                    <p class="prueba__texto">Encontrar &laquo;Prueba &Ntilde;ahui&raquo; igualmente.</p>
+                    <p class="prueba__porque">Ordenar bien no puede costar la tolerancia al buscar. Si esta falla, el arreglo sali&oacute; caro.</p>
                 </div>
             </div>
 
@@ -1372,11 +1766,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ord4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-4</span>
-                    <p class="prueba__texto">Busca <span class="cod">nunez</span> en minúscula y sin tilde.</p>
+                    <p class="prueba__texto">Busca <span class="cod">nunez</span> en min&uacute;scula y sin tilde.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Encontrar «Prueba Núñez».</p>
+                    <p class="prueba__texto">Encontrar &laquo;Prueba N&uacute;&ntilde;ez&raquo;.</p>
                 </div>
             </div>
 
@@ -1384,11 +1778,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ord5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-5</span>
-                    <p class="prueba__texto">Crea instituciones <span class="cod">Prueba Chávez</span>, <span class="cod">Prueba Cortez</span> y <span class="cod">Prueba Ccahuana</span>.</p>
+                    <p class="prueba__texto">Crea <span class="cod">Prueba Ch&aacute;vez</span>, <span class="cod">Prueba Cortez</span> y <span class="cod">Prueba Ccahuana</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Ordenarlas Ccahuana, Chávez, Cortez. La CH se alfabetiza como C+H, no como letra aparte.</p>
+                    <p class="prueba__texto">Ordenarlas <strong>Ccahuana, Ch&aacute;vez, Cortez</strong>. La CH se alfabetiza como C+H, no como letra aparte.</p>
                 </div>
             </div>
 
@@ -1396,7 +1790,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ord6"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-6</span>
-                    <p class="prueba__texto">Registra dos apoderados con el mismo apellido paterno <span class="cod">Ñañez</span> y maternos <span class="cod">Rojas</span> y <span class="cod">Alva</span>.</p>
+                    <p class="prueba__texto">Registra dos apoderados con el mismo apellido paterno <span class="cod">&Ntilde;a&ntilde;ez</span> y maternos <span class="cod">Rojas</span> y <span class="cod">Alva</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -1408,32 +1802,31 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="ord7"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ORD-7</span>
-                    <p class="prueba__texto">Corrige la categoría de «Ñiquen» y vuelve al listado.</p>
+                    <p class="prueba__texto">Corrige la categor&iacute;a de un apellido con &Ntilde; y vuelve al listado.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Las dos filas de Ñiquen (la anulada y la vigente) quedan <strong>juntas</strong>, con la anulada primero.</p>
+                    <p class="prueba__texto">Las dos filas del mismo estudiante quedan <strong>juntas</strong>, con la anulada primero.</p>
                 </div>
             </div>
         </div>
 
-        <!-- SEGURIDAD -->
         <div class="bloque">
             <div class="bloque__cabecera">
                 <span class="bloque__clave">SEG</span>
                 <h3 class="bloque__nombre">Fronteras de seguridad</h3>
-                <span class="bloque__pista">5 pruebas &middot; todas críticas</span>
+                <span class="bloque__pista">6 pruebas &middot; todas cr&iacute;ticas</span>
             </div>
 
             <div class="prueba" data-critico="1">
                 <div class="prueba__marca"><input type="checkbox" data-id="seg1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">SEG-1</span>
-                    <p class="prueba__texto">Copia la URL de un carné público y ábrela en una <strong>ventana de incógnito</strong>.</p>
+                    <p class="prueba__texto">Copia la URL de un carn&eacute; p&uacute;blico y &aacute;brela en una <strong>ventana de inc&oacute;gnito</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Verse perfectamente sin sesión, y <strong>sin ningún menú del sistema interno</strong>.</p>
+                    <p class="prueba__texto">Verse perfectamente sin sesi&oacute;n, y <strong>sin ning&uacute;n men&uacute; del sistema interno</strong>.</p>
                 </div>
             </div>
 
@@ -1441,12 +1834,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="seg2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">SEG-2</span>
-                    <p class="prueba__texto">En esa misma ventana de incógnito, pega
-                    <span class="cod">http://localhost/compite/inscripciones/1/carne.pdf</span>.</p>
+                    <p class="prueba__texto">En esa misma ventana de inc&oacute;gnito, pide el PDF de una inscripci&oacute;n: <span class="cod">/inscripciones/1/carne.pdf</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Mandarte al login. El PDF nunca se entrega sin sesión.</p>
+                    <p class="prueba__texto">Mandarte al login. El PDF nunca se entrega sin sesi&oacute;n.</p>
                 </div>
             </div>
 
@@ -1454,11 +1846,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="seg3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">SEG-3</span>
-                    <p class="prueba__texto">Abre <span class="cod">http://localhost/compite/config/config.local.php</span>.</p>
+                    <p class="prueba__texto">Abre <span class="cod">/config/config.local.php</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Dar error, <strong>nunca</strong> mostrar las credenciales de la base de datos.</p>
+                    <p class="prueba__texto">Dar error, nunca mostrar las credenciales de la base de datos.</p>
                 </div>
             </div>
 
@@ -1466,11 +1858,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="seg4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">SEG-4</span>
-                    <p class="prueba__texto">Abre <span class="cod">/storage/carnes/</span> y también <span class="cod">/database/schema.sql</span>.</p>
+                    <p class="prueba__texto">Abre <span class="cod">/storage/</span> y tambi&eacute;n <span class="cod">/database/schema.sql</span>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Ambos bloqueados. Los PDFs solo se sirven a través del sistema, nunca por URL directa.</p>
+                    <p class="prueba__texto">Ambos bloqueados. Nada de fuera de <span class="cod">public/</span> se sirve por URL directa.</p>
                 </div>
             </div>
 
@@ -1478,78 +1870,96 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="seg5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">SEG-5</span>
-                    <p class="prueba__texto">Toma un código real y cámbiale un dígito al número: <span class="cod">COCIAP2026-0002-…</span> con el mismo sufijo.</p>
+                    <p class="prueba__texto">Toma un c&oacute;digo real y c&aacute;mbiale el n&uacute;mero dejando el mismo sufijo.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Dar «Carné no encontrado». Sin el sufijo correcto no se llega a ningún otro estudiante.</p>
+                    <p class="prueba__texto">Dar &laquo;Carn&eacute; no encontrado&raquo;. Sin el sufijo correcto no se llega a ning&uacute;n otro estudiante.</p>
                     <p class="prueba__porque">Esta es la prueba que protege los datos de todos los menores del concurso.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="seg6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">SEG-6</span>
+                    <p class="prueba__texto"><strong>Nuevo.</strong> Cierra sesi&oacute;n y abre <span class="cod">/control</span>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Mandarte al login. La mesa de la puerta tambi&eacute;n trabaja con sesi&oacute;n iniciada.</p>
+                    <p class="prueba__porque">Muestra nombres, documentos y colegios de menores: es tan interna como el listado de inscripciones.</p>
                 </div>
             </div>
         </div>
 
     </section>
 
-    <!-- =========================================================
-         FUERA DE ALCANCE
-         ========================================================= -->
     <section>
         <div class="seccion__cabecera">
-            <h2>Lo que todavía no vas a encontrar</h2>
+            <h2>Lo que todav&iacute;a no vas a encontrar</h2>
             <p class="seccion__nota">
-                Para que no lo busques ni lo reportes como fallo. Está construido hasta la Fase 4.
+                Para que no lo busques ni lo reportes como fallo. Est&aacute; construido hasta la
+                Fase 4, m&aacute;s la pantalla de control de ingreso.
             </p>
         </div>
-
         <ul class="pendientes">
             <li class="pendiente">
                 <span class="pendiente__fase">Fase 5</span>
-                <span>Exportación a Excel del listado de inscritos con filtros combinables.</span>
+                Exportaci&oacute;n a Excel del listado de inscritos con filtros combinables.
             </li>
             <li class="pendiente">
                 <span class="pendiente__fase">Fase 5</span>
-                <span>Pantalla del fondo de devoluciones. El cálculo ya funciona &mdash; verás la etiqueta «por devolver» en el listado &mdash; pero aún no tiene su reporte propio.</span>
+                Pantalla del fondo de devoluciones. El c&aacute;lculo ya funciona &mdash; ver&aacute;s
+                la etiqueta &laquo;por devolver&raquo; en el listado &mdash; pero a&uacute;n no tiene
+                su reporte propio.
             </li>
             <li class="pendiente">
                 <span class="pendiente__fase">Fase 6</span>
-                <span>Compilación de SASS y despliegue en Hostinger.</span>
+                Despliegue en Hostinger. La compilaci&oacute;n de assets ya est&aacute; hecha y
+                automatizada.
             </li>
             <li class="pendiente">
                 <span class="pendiente__fase">Admin</span>
-                <span>Pantallas para gestionar concurso, categorías, tarifas y usuarios. Hoy se hacen por consola.</span>
+                Pantallas para gestionar concurso, categor&iacute;as, tarifas y usuarios. Hoy se
+                hacen por consola.
+            </li>
+            <li class="pendiente">
+                <span class="pendiente__fase">Tu decisi&oacute;n</span>
+                <strong>P-04:</strong> confirmar que &laquo;Modalidad&raquo; (libre / p&uacute;blica
+                / privada) es efectivamente el criterio que elige la tarifa. Ya est&aacute; impreso
+                en los carn&eacute;s.
             </li>
         </ul>
-
-        <div class="aviso aviso--ojo">
-            <span class="aviso__titulo">Cuando termines de probar</span>
-            <p>
-                Dime y te dejo los datos de prueba borrados en un solo comando, para que la base
-                arranque limpia el día que la secretaria empiece a usarla de verdad. No borres
-                nada a mano desde phpMyAdmin: los carnés y las inscripciones están enlazados por
-                claves foráneas y hay que respetar el orden.
-            </p>
-        </div>
     </section>
 
-    <section>
-        <div class="seccion__cabecera">
-            <h2>Cómo reportarme un fallo</h2>
-        </div>
-        <div class="aviso aviso--info">
-            <p>
-                Pásame tres cosas: el <strong>identificador de la prueba</strong> (por ejemplo
-                <span class="cod">PAG-4</span>), <strong>qué esperabas</strong> y <strong>qué
-                pasó en realidad</strong>. Si salió un error en pantalla, cópialo entero. Con eso
-                lo reproduzco de inmediato; sin eso, tengo que adivinar.
-            </p>
-        </div>
-    </section>
+    <div class="aviso aviso--info">
+        <span class="aviso__titulo">Cuando termines de probar</span>
+        <p>
+            Dime y te dejo los datos de prueba borrados en un solo comando, para que la base arranque
+            limpia el d&iacute;a que la secretaria empiece a usarla de verdad. No borres nada a mano
+            desde phpMyAdmin: los carn&eacute;s, las inscripciones y ahora tambi&eacute;n los
+            apoderados est&aacute;n enlazados por claves for&aacute;neas y hay que respetar el orden.
+        </p>
+    </div>
+
+    <div class="aviso aviso--critico">
+        <span class="aviso__titulo">C&oacute;mo reportarme un fallo</span>
+        <p>
+            P&aacute;same tres cosas: el <strong>identificador de la prueba</strong> (por ejemplo
+            <span class="cod">PAG-1</span>), <strong>qu&eacute; esperabas</strong> y <strong>qu&eacute;
+            pas&oacute; en realidad</strong>. Si sali&oacute; un error en pantalla, c&oacute;pialo
+            entero. Con eso lo reproduzco de inmediato; sin eso, tengo que adivinar.
+        </p>
+    </div>
 
     <footer class="pie">
         Compite &middot; Sistema de inscripciones COCIAP 2026 &middot;
-        I.E. Víctor Valenzuela Guardia, UNASAM &mdash; Huaraz, Áncash.
-        Protocolo generado el 16 de agosto de 2026 sobre las fases 1 a 4;
-        revisado el 17 de agosto con los cambios de cobro y ordenamiento.
+        I.E. V&iacute;ctor Valenzuela Guardia, UNASAM &mdash; Huaraz, &Aacute;ncash.
+        <br>
+        Protocolo generado el 16 de agosto de 2026 sobre las fases 1 a 4; revisado el 18 de agosto
+        con el carn&eacute; ID-1, el encargado de delegaci&oacute;n como apoderado y el cobro
+        corregido.
     </footer>
 
 </div>
@@ -1558,7 +1968,7 @@ code, .cod {
 (function () {
     'use strict';
 
-    var CLAVE = 'cociap-pruebas-v1';
+    var CLAVE = 'cociap-pruebas-v3';
     var casillas = Array.prototype.slice.call(document.querySelectorAll('.prueba input[type="checkbox"]'));
     var hechas = document.getElementById('hechas');
     var totales = document.getElementById('totales');
