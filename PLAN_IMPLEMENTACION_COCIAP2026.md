@@ -301,6 +301,11 @@ CREATE TABLE carnes (
 - Validación de asistencia el día del concurso (QR de verificación en el evento).
 - Módulo de calificación / resultados / premiación a la mejor institución (mencionado como necesidad futura que ya influyó en el diseño — cada Inscripción queda ligada a su Institución a través del Participante, para que ese módulo futuro pueda construirse sin rediseñar el dominio).
 - Onboarding self-service de nuevas Organizaciones, panel multi-tenant completo, facturación/planes SaaS.
+- **Aislamiento entre organizaciones. El sistema es de UN SOLO INQUILINO hasta nuevo aviso**
+  (decisión del propietario, 2026-08-18, por tiempo hasta la presentación). No es una carencia
+  teórica: está comprobada y detallada en P-07. Con una sola institución ninguno de esos fallos
+  puede ocurrir; **dar de alta a una segunda mezcla los apoderados y los colegios de las dos**.
+  Antes de que exista un segundo inquilino hay que hacer P-05 y P-07, en ese orden.
 - Pasarela de pago en línea.
 - Reemplazo del Google Form externo.
 
@@ -1297,7 +1302,9 @@ el JS junto con la visibilidad, y el servidor lo exige igual aunque el JS no lle
   definitivamente no puede volver a darse de alta desde el formulario: su documento ya existe.
   Hoy solo «Corregir categoría» lo recupera. Decidir si hace falta una pantalla propia antes
   del día del concurso.
-- **P-07** Aislamiento entre organizaciones en `apoderados` e `instituciones_educativas`.
+- **P-07 — APLAZADO** por decisión del propietario (2026-08-18): por tiempo, el fix no entra
+  antes de la presentación y el sistema queda declarado de un solo inquilino en la §9.
+  Aislamiento entre organizaciones en `apoderados` e `instituciones_educativas`.
   **Comprobado el 2026-08-18** levantando un segundo inquilino con un concurso simultáneo, todo
   dentro de una transacción revertida. Los estudiantes salen limpios: el mismo documento entra en
   el concurso del otro inquilino sin chocar. Los adultos, no, y son tres fallos distintos:
