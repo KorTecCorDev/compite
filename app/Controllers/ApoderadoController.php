@@ -72,6 +72,15 @@ final class ApoderadoController extends Controller
         $v->requerido('celular', 'El celular')->celular('celular', 'El celular');
 
         /*
+         * Correo opcional aquí y obligatorio en la ficha de la I.E.: es la misma
+         * persona y la misma columna, pero al docente delegado se le escribe
+         * para coordinar a su delegación y al apoderado de un estudiante libre
+         * no. Si viene, se valida el formato: un correo a medio escribir es peor
+         * que uno vacío, porque parece un canal de contacto y no lo es.
+         */
+        $v->correo('correo', 'El correo');
+
+        /*
          * El DNI es UNIQUE en apoderados: identifica a la persona, y esa
          * unicidad es justamente lo que permite reutilizar un apoderado entre
          * hermanos. Se comprueba antes de insertar para dar un mensaje claro
@@ -104,6 +113,14 @@ final class ApoderadoController extends Controller
             'ap_materno' => $v->limpio('ap_materno'),
             'nombres'    => $v->limpio('nombres'),
             'celular'    => $v->limpio('celular'),
+
+            /*
+             * Va siempre, incluso vacío, para que desde aquí SÍ se pueda borrar
+             * un correo equivocado. Esta pantalla existe para editar a esta
+             * persona; el formulario de inscripción libre, que hace otra cosa,
+             * solo lo manda cuando trae valor (ver InscripcionController).
+             */
+            'correo'     => $v->limpioONulo('correo'),
         ];
 
         if ($idNumerico === null) {
@@ -124,12 +141,32 @@ final class ApoderadoController extends Controller
         $this->exigirCsrf();
 
         $idNumerico = (int) $id;
+
+        /*
+         * Dos motivos distintos para no poder borrarlo, y conviene decir cuál
+         * es. El segundo apareció con D-28: un apoderado puede ser el docente
+         * delegado de un colegio, y la clave foránea lo impediría igual, pero
+         * la secretaria vería un fallo de integridad de MySQL en vez de una
+         * explicación.
+         */
+        $delegaciones = Apoderado::delegacionesQueEncabeza($idNumerico);
+
+        if ($delegaciones !== []) {
+            $nombres = implode(', ', array_column($delegaciones, 'nombre'));
+            Sesion::flash(
+                'error',
+                "No se puede eliminar: es el docente delegado de {$nombres}. "
+                . 'Asigna otro encargado a esa delegación primero.'
+            );
+            $this->redirigir('/apoderados');
+        }
+
         $vinculados = Apoderado::estudiantesVinculados($idNumerico);
 
         if ($vinculados > 0) {
             Sesion::flash(
                 'error',
-                "No se puede eliminar: tiene {$vinculados} estudiante(s) libre(s) vinculado(s)."
+                "No se puede eliminar: tiene {$vinculados} participante(s) vinculado(s)."
             );
             $this->redirigir('/apoderados');
         }
@@ -149,13 +186,24 @@ final class ApoderadoController extends Controller
     {
         Auth::exigirSesion();
 
-        $dni = preg_replace('/\s/', '', (string) ($_GET['dni'] ?? '')) ?? '';
+        $documento = mb_strtoupper(preg_replace('/[\s\-]/', '', (string) ($_GET['dni'] ?? '')) ?? '');
 
-        if (preg_match('/^\d{8}$/', $dni) !== 1) {
-            $this->json(['encontrado' => false, 'motivo' => 'DNI inválido'], 422);
+        /*
+         * Mismo criterio que Validador::dni(): DNI de 8 dígitos O carné de
+         * extranjería de 9 a 12 caracteres. Antes esta ruta exigía `^\d{8}$`,
+         * más estricto que la regla con la que se registran los apoderados: un
+         * apoderado dado de alta con carné de extranjería quedaba imposible de
+         * encontrar desde el formulario de inscripción, y se duplicaba cada vez
+         * que volvía a inscribir a otro hijo.
+         */
+        $esDni = preg_match('/^\d{8}$/', $documento) === 1;
+        $esCe  = preg_match('/^[A-Z0-9]{9,12}$/', $documento) === 1;
+
+        if (!$esDni && !$esCe) {
+            $this->json(['encontrado' => false, 'motivo' => 'Documento inválido'], 422);
         }
 
-        $apoderado = Apoderado::porDni($dni);
+        $apoderado = Apoderado::porDni($documento);
 
         $this->json([
             'encontrado' => $apoderado !== null,

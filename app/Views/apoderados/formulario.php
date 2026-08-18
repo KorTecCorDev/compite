@@ -24,8 +24,9 @@ $msg = static fn (string $c): string => isset($errores[$c])
     <div>
         <h1 class="titulo"><?= $esNuevo ? 'Nuevo apoderado' : 'Editar apoderado' ?></h1>
         <p class="subtitulo">
-            Un mismo apoderado puede quedar vinculado a varios estudiantes libres
-            —el caso típico son hermanos—, así que conviene reutilizarlo en vez de duplicarlo.
+            Un mismo apoderado puede quedar vinculado a varios participantes: hermanos
+            inscritos como libres, o la delegación entera de un colegio cuando es su docente
+            delegado. Conviene reutilizarlo en vez de duplicarlo — el DNI es lo que lo permite.
         </p>
     </div>
     <a class="boton boton--tenue" href="<?= View::e(View::url('/apoderados')) ?>">Volver</a>
@@ -79,10 +80,19 @@ $msg = static fn (string $c): string => isset($errores[$c])
                 <?= $msg('ap_materno') ?>
             </label>
 
-            <label class="campo campo--ancho<?= $err('nombres') ?>">
+            <label class="campo<?= $err('nombres') ?>">
                 <span class="campo__etiqueta">Nombres *</span>
                 <input type="text" name="nombres" maxlength="150" required value="<?= $v('nombres') ?>">
                 <?= $msg('nombres') ?>
+            </label>
+
+            <!-- Opcional aquí y obligatorio en la ficha de la I.E.: es la misma
+                 persona y el mismo campo, pero al docente delegado se le escribe
+                 para coordinar a su delegación y al apoderado de un libre no. -->
+            <label class="campo<?= $err('correo') ?>">
+                <span class="campo__etiqueta">Correo electrónico <span class="tenue">(opcional)</span></span>
+                <input type="email" name="correo" maxlength="150" value="<?= $v('correo') ?>">
+                <?= $msg('correo') ?>
             </label>
         </div>
     </fieldset>

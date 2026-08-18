@@ -14,7 +14,7 @@ use Core\View;
     <div>
         <h1 class="titulo">Apoderados</h1>
         <p class="subtitulo">
-            Solo para estudiantes libres ·
+            Apoderados de estudiantes libres y encargados de delegación ·
             <?= (int) $total ?> registrado<?= $total === 1 ? '' : 's' ?>
         </p>
     </div>
@@ -51,6 +51,7 @@ use Core\View;
                 <tr>
                     <th>DNI</th>
                     <th>Apellidos y nombres</th>
+                    <th>Modalidad</th>
                     <th>Celular</th>
                     <th>Estudiantes</th>
                     <th class="tabla__acciones">Acciones</th>
@@ -63,6 +64,31 @@ use Core\View;
                     <td>
                         <strong><?= View::e($a['ap_paterno'] . ' ' . $a['ap_materno']) ?></strong>,
                         <?= View::e($a['nombres']) ?>
+                    </td>
+                    <?php
+                    /*
+                     * Modalidad: no es excluyente. El docente que encabeza la
+                     * delegación de su colegio puede además haber inscrito a su
+                     * propio hijo como estudiante libre, y entonces lleva las
+                     * dos etiquetas. Un apoderado recién dado de alta todavía no
+                     * lleva ninguna, y verlo así es útil: es alguien que se
+                     * registró y todavía no se usó.
+                     */
+                    $delegaciones = (int) $a['delegaciones'];
+                    $libres       = (int) $a['estudiantes_libres'];
+                    ?>
+                    <td>
+                        <?php if ($delegaciones > 0): ?>
+                            <span class="etiqueta">Encargado de delegación<?= $delegaciones > 1 ? ' (' . $delegaciones . ')' : '' ?></span>
+                        <?php endif; ?>
+
+                        <?php if ($libres > 0): ?>
+                            <span class="etiqueta etiqueta--neutra">Apoderado libre</span>
+                        <?php endif; ?>
+
+                        <?php if ($delegaciones === 0 && $libres === 0): ?>
+                            <span class="tenue">Sin vincular</span>
+                        <?php endif; ?>
                     </td>
                     <td class="tenue"><?= View::e($a['celular']) ?></td>
                     <td>

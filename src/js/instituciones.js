@@ -53,3 +53,29 @@
         }, 350);
     });
 })();
+
+/*
+ * Docente delegado: reconocer y reutilizar a la persona por su documento.
+ *
+ * Es el encargado de la delegación y, desde D-28, el apoderado de todos los
+ * estudiantes que inscriba este colegio. Puede existir ya en el sistema —porque
+ * encabezó la delegación el año pasado, o porque inscribió a su propio hijo como
+ * estudiante libre—, y en ese caso hay que reutilizar su ficha, no duplicarla.
+ */
+(function () {
+    if (typeof window.apoderadoReutilizable !== 'function') return;
+
+    window.apoderadoReutilizable({
+        dni: 'dd-dni',
+        estado: 'dd-estado',
+        aviso: 'dd-reutilizado',
+        boton: 'dd-editar',
+        campos: {
+            celular: 'dd-celular',
+            ap_paterno: 'dd-paterno',
+            ap_materno: 'dd-materno',
+            nombres: 'dd-nombres',
+            correo: 'dd-correo'
+        }
+    });
+})();

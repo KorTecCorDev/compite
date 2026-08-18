@@ -67,6 +67,18 @@ $msg = static fn (string $c): string => isset($errores[$c])
                 <?= $msg('ap_dni') ?>
             </label>
 
+            <!-- Aparece solo cuando el documento reconoce a un apoderado ya
+                 registrado. Sus datos quedan en solo lectura: sin este freno, un
+                 tipeo al inscribir al tercer hijo reescribía en silencio el
+                 apoderado de los otros dos. Para corregirlo de verdad hay que
+                 pulsar aquí a conciencia. -->
+            <p class="campo campo--ancho reutilizado" id="ap-reutilizado" hidden>
+                <span class="reutilizado__texto"></span>
+                <button type="button" class="boton boton--tenue" id="ap-editar">
+                    Editar sus datos
+                </button>
+            </p>
+
             <label class="campo<?= $err('ap_celular') ?>">
                 <span class="campo__etiqueta">Celular *</span>
                 <input type="tel" name="ap_celular" id="ap-celular" maxlength="20" required
@@ -88,11 +100,18 @@ $msg = static fn (string $c): string => isset($errores[$c])
                 <?= $msg('ap_ap_materno') ?>
             </label>
 
-            <label class="campo campo--ancho<?= $err('ap_nombres') ?>">
+            <label class="campo<?= $err('ap_nombres') ?>">
                 <span class="campo__etiqueta">Nombres *</span>
                 <input type="text" name="ap_nombres" id="ap-nombres" maxlength="150" required
                        value="<?= $v('ap_nombres') ?>">
                 <?= $msg('ap_nombres') ?>
+            </label>
+
+            <label class="campo<?= $err('ap_correo') ?>">
+                <span class="campo__etiqueta">Correo electrónico <span class="tenue">(opcional)</span></span>
+                <input type="email" name="ap_correo" id="ap-correo" maxlength="150"
+                       value="<?= $v('ap_correo') ?>">
+                <?= $msg('ap_correo') ?>
             </label>
         </div>
     </fieldset>
@@ -147,4 +166,5 @@ $msg = static fn (string $c): string => isset($errores[$c])
     </div>
 </form>
 
+<script src="<?= View::e(View::url('build/js/apoderado-reutilizable.js')) ?>" defer></script>
 <script src="<?= View::e(View::url('build/js/libre.js')) ?>" defer></script>

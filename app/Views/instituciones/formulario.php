@@ -106,45 +106,68 @@ $msg = static function (string $campo) use ($errores): string {
     <fieldset class="grupo">
         <legend class="grupo__titulo">Docente delegado</legend>
 
+        <p class="grupo__ayuda">
+            Es el <strong>encargado de la delegación</strong>: queda registrado como apoderado
+            de todos los estudiantes que inscriba este colegio. Empieza por su documento — si ya
+            está en el sistema, sus datos se completan solos y se reutiliza la misma persona en
+            vez de duplicarla.
+        </p>
+
         <div class="rejilla">
+            <!-- El documento va primero porque es la llave: es lo que reconoce a
+                 la persona. Obligatorio desde D-28 — era el único campo opcional
+                 del bloque, y dejó de poder serlo cuando el docente delegado
+                 pasó a ser el apoderado de su delegación. -->
+            <label class="campo<?= $err('dd_dni') ?>">
+                <span class="campo__etiqueta">DNI o C.E. *</span>
+                <input type="text" name="dd_dni" id="dd-dni" maxlength="12" required
+                       data-url-buscar="<?= View::e(View::url('/api/apoderados/buscar')) ?>"
+                       value="<?= $v('docente_delegado_dni') ?: $v('dd_dni') ?>">
+                <span class="campo__ayuda" id="dd-estado">8 dígitos, o carné de extranjería.</span>
+                <?= $msg('dd_dni') ?>
+            </label>
+
+            <label class="campo<?= $err('dd_celular') ?>">
+                <span class="campo__etiqueta">Celular *</span>
+                <input type="tel" name="dd_celular" id="dd-celular" maxlength="20" required inputmode="numeric"
+                       placeholder="9########" value="<?= $v('docente_delegado_celular') ?: $v('dd_celular') ?>">
+                <?= $msg('dd_celular') ?>
+            </label>
+
             <label class="campo<?= $err('dd_ap_paterno') ?>">
                 <span class="campo__etiqueta">Apellido paterno *</span>
-                <input type="text" name="dd_ap_paterno" maxlength="100" required value="<?= $v('docente_delegado_ap_paterno') ?: $v('dd_ap_paterno') ?>">
+                <input type="text" name="dd_ap_paterno" id="dd-paterno" maxlength="100" required value="<?= $v('docente_delegado_ap_paterno') ?: $v('dd_ap_paterno') ?>">
                 <?= $msg('dd_ap_paterno') ?>
             </label>
 
             <label class="campo<?= $err('dd_ap_materno') ?>">
                 <span class="campo__etiqueta">Apellido materno *</span>
-                <input type="text" name="dd_ap_materno" maxlength="100" required value="<?= $v('docente_delegado_ap_materno') ?: $v('dd_ap_materno') ?>">
+                <input type="text" name="dd_ap_materno" id="dd-materno" maxlength="100" required value="<?= $v('docente_delegado_ap_materno') ?: $v('dd_ap_materno') ?>">
                 <?= $msg('dd_ap_materno') ?>
             </label>
 
             <label class="campo<?= $err('dd_nombres') ?>">
                 <span class="campo__etiqueta">Nombres *</span>
-                <input type="text" name="dd_nombres" maxlength="150" required value="<?= $v('docente_delegado_nombres') ?: $v('dd_nombres') ?>">
+                <input type="text" name="dd_nombres" id="dd-nombres" maxlength="150" required value="<?= $v('docente_delegado_nombres') ?: $v('dd_nombres') ?>">
                 <?= $msg('dd_nombres') ?>
             </label>
 
-            <label class="campo<?= $err('dd_celular') ?>">
-                <span class="campo__etiqueta">Celular *</span>
-                <input type="tel" name="dd_celular" maxlength="20" required inputmode="numeric"
-                       placeholder="9########" value="<?= $v('docente_delegado_celular') ?: $v('dd_celular') ?>">
-                <?= $msg('dd_celular') ?>
-            </label>
-
             <label class="campo<?= $err('dd_correo') ?>">
-                <span class="campo__etiqueta">Correo electrónico *</span>
-                <input type="email" name="dd_correo" maxlength="150" required value="<?= $v('docente_delegado_correo') ?: $v('dd_correo') ?>">
+                <span class="campo__etiqueta">Correo electrónico <span class="tenue">(opcional)</span></span>
+                <input type="email" name="dd_correo" id="dd-correo" maxlength="150" value="<?= $v('docente_delegado_correo') ?: $v('dd_correo') ?>">
                 <?= $msg('dd_correo') ?>
             </label>
 
-            <label class="campo<?= $err('dd_dni') ?>">
-                <span class="campo__etiqueta">DNI o C.E. <span class="tenue">(opcional)</span></span>
-                <input type="text" name="dd_dni" maxlength="12"
-                       value="<?= $v('docente_delegado_dni') ?: $v('dd_dni') ?>">
-                <span class="campo__ayuda">8 dígitos, o carné de extranjería.</span>
-                <?= $msg('dd_dni') ?>
-            </label>
+            <!-- Mismo freno que en la inscripción libre: al reconocer a la
+                 persona, sus datos quedan bloqueados. Aquí importa más todavía,
+                 porque un tipeo no afecta a un estudiante sino a la delegación
+                 entera que este docente encabeza. -->
+            <p class="campo campo--ancho reutilizado" id="dd-reutilizado" hidden>
+                <span class="reutilizado__texto"></span>
+                <button type="button" class="boton boton--tenue" id="dd-editar">
+                    Editar sus datos
+                </button>
+            </p>
         </div>
     </fieldset>
 
@@ -205,8 +228,17 @@ $msg = static function (string $campo) use ($errores): string {
     </div>
 </form>
 
+<?php /* El aviso de duplicados solo tiene sentido al crear: al editar, el
+         parecido con otra I.E. es con una misma que ya se decidió conservar. */ ?>
 <?php if ($esNueva): ?>
 <div id="aviso-duplicados" class="aviso aviso--aviso" hidden></div>
-
-<script src="<?= View::e(View::url('build/js/instituciones.js')) ?>" defer></script>
 <?php endif; ?>
+
+<?php /* Los scripts, en cambio, se cargan SIEMPRE. Antes vivían dentro del
+         `if` de arriba, y eso dejaba el reconocimiento del docente delegado
+         sin funcionar justo al editar una institución —que es donde se le
+         cambia el encargado—. Cada bloque de instituciones.js comprueba que
+         sus elementos existan antes de engancharse, así que cargarlo en las dos
+         pantallas no activa lo que no toca. */ ?>
+<script src="<?= View::e(View::url('build/js/apoderado-reutilizable.js')) ?>" defer></script>
+<script src="<?= View::e(View::url('build/js/instituciones.js')) ?>" defer></script>

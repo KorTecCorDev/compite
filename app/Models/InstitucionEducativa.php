@@ -13,9 +13,13 @@ use Core\Database;
  * si el mismo colegio participa en concursos de distintas organizaciones,
  * debe existir una sola vez.
  *
- * Los datos del docente delegado y del director viven aquí, no en cada
- * inscripción: son datos persistentes de la I.E. y si cambian, se actualizan
- * sobre el mismo registro.
+ * Los datos del director viven aquí, no en cada inscripción: son datos
+ * persistentes de la I.E. y si cambian, se actualizan sobre el mismo registro.
+ *
+ * El docente delegado ya no (D-28). Es el encargado de la delegación y por
+ * tanto el apoderado de los participantes que inscribe, así que vive en
+ * `apoderados` y aquí solo se guarda `docente_delegado_id`. El director se
+ * queda embebido porque no es apoderado de nadie.
  */
 final class InstitucionEducativa
 {
@@ -55,8 +59,27 @@ final class InstitucionEducativa
      */
     public static function porId(int $id): ?array
     {
+        /*
+         * El docente delegado ya no vive aquí (D-28): es una fila de
+         * `apoderados` y esta tabla solo guarda a cuál apunta. Se trae con un
+         * JOIN y se expone con los mismos nombres `docente_delegado_*` que
+         * usaban las columnas embebidas, para que el formulario y las vistas
+         * sigan leyendo lo mismo. El JOIN es interno y no externo a propósito:
+         * la columna es NOT NULL, así que una I.E. sin encargado es una
+         * inconsistencia que debe verse, no esconderse tras un LEFT JOIN.
+         */
         return Database::uno(
-            'SELECT * FROM instituciones_educativas WHERE id = :id LIMIT 1',
+            'SELECT ie.*,
+                    a.dni        AS docente_delegado_dni,
+                    a.ap_paterno AS docente_delegado_ap_paterno,
+                    a.ap_materno AS docente_delegado_ap_materno,
+                    a.nombres    AS docente_delegado_nombres,
+                    a.celular    AS docente_delegado_celular,
+                    a.correo     AS docente_delegado_correo
+               FROM instituciones_educativas ie
+               JOIN apoderados a ON a.id = ie.docente_delegado_id
+              WHERE ie.id = :id
+              LIMIT 1',
             ['id' => $id]
         );
     }
@@ -97,16 +120,13 @@ final class InstitucionEducativa
         return Database::insertar(
             'INSERT INTO instituciones_educativas (
                 nombre, distrito, provincia, departamento, tipo, direccion,
-                docente_delegado_ap_paterno, docente_delegado_ap_materno,
-                docente_delegado_nombres, docente_delegado_celular,
-                docente_delegado_correo, docente_delegado_dni,
+                docente_delegado_id,
                 director_ap_paterno, director_ap_materno,
                 director_nombres, director_celular,
                 director_correo, director_dni
              ) VALUES (
                 :nombre, :distrito, :provincia, :departamento, :tipo, :direccion,
-                :dd_ap_paterno, :dd_ap_materno, :dd_nombres, :dd_celular,
-                :dd_correo, :dd_dni,
+                :docente_delegado_id,
                 :di_ap_paterno, :di_ap_materno, :di_nombres, :di_celular,
                 :di_correo, :di_dni
              )',
@@ -127,12 +147,7 @@ final class InstitucionEducativa
                 departamento  = :departamento,
                 tipo          = :tipo,
                 direccion     = :direccion,
-                docente_delegado_ap_paterno = :dd_ap_paterno,
-                docente_delegado_ap_materno = :dd_ap_materno,
-                docente_delegado_nombres    = :dd_nombres,
-                docente_delegado_celular    = :dd_celular,
-                docente_delegado_correo     = :dd_correo,
-                docente_delegado_dni        = :dd_dni,
+                docente_delegado_id = :docente_delegado_id,
                 director_ap_paterno = :di_ap_paterno,
                 director_ap_materno = :di_ap_materno,
                 director_nombres    = :di_nombres,

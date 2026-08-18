@@ -79,7 +79,7 @@ Sistema interno en PHP para que la secretaría de la I.E. "Víctor Valenzuela Gu
 
 **Institución Educativa** (catálogo global): nombre de la I.E., distrito, provincia, departamento, tipo (pública/privada), dirección.
 
-**Docente Delegado** (persistente en la I.E.): apellido paterno, apellido materno, nombres, celular, correo electrónico, DNI (opcional).
+**Docente Delegado / encargado de la delegación** (vive en `apoderados` desde D-28, no embebido en la I.E.): apellido paterno, apellido materno, nombres, celular, correo electrónico (opcional), **DNI (obligatorio — D-28)**. Es el apoderado de todos los participantes que inscribe su colegio, y sin documento no hay forma de reconocerlo para reutilizarlo en vez de duplicarlo.
 
 **Director de la I.E.** (persistente en la I.E.): apellido paterno, apellido materno, nombres, celular, correo electrónico, DNI (opcional).
 
@@ -87,7 +87,7 @@ Sistema interno en PHP para que la secretaría de la I.E. "Víctor Valenzuela Gu
 
 **Participante libre (independiente)**: DNI, apellido paterno, apellido materno, nombres, nivel, grado.
 
-**Apoderado del estudiante libre**: DNI, apellido paterno, apellido materno, nombres, celular.
+**Apoderado del estudiante libre**: DNI, apellido paterno, apellido materno, nombres, celular, correo electrónico (opcional — D-28). Se le piden los mismos campos que al docente delegado, porque son la misma entidad; el correo es lo único que cambia de obligatorio a opcional.
 
 **Cabecera de la ficha (general)**: tipo de inscripción (delegación/independiente), fecha.
 
@@ -458,6 +458,11 @@ romper registros futuros ni forzar una migración.
 quien gestiona la inscripción y siempre está presente—; el **director es opcional**, porque
 sus datos suelen conseguirse después y no deben bloquear el registro de la delegación. Los
 campos opcionales igual se validan en formato si vienen llenos.
+
+> **Superado en parte por D-28 (2026-08-18):** el DNI del docente delegado dejó de ser
+> opcional. No fue un cambio de criterio sino una consecuencia: al pasar el docente delegado a
+> ser el apoderado de su delegación, su documento es lo único que permite reconocerlo y no
+> duplicarlo. El resto de D-09 sigue vigente, incluido que el director es opcional.
 
 ---
 
@@ -919,10 +924,200 @@ en `participantes` no hay segundo factor con qué protegerlo.
 
 ---
 
+### D-27 — Marca de agua institucional y campos del participante desglosados
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario · **Afecta:** D-23, D-25
+
+Dos peticiones del propietario sobre el carné, que resultaron estar acopladas.
+
+**1. El escudo a 12.5 mm era «prácticamente una mancha».** Lo era: D-23 ya había
+aceptado que su texto perimetral es ilegible a ese tamaño y lo justificaba como
+reconocimiento visual. El propietario propone en su lugar el logo de aniversario
+(`logoaniversario2026.png`) como marca de agua de fondo.
+
+Se adopta, y **el escudo pequeño de la cabecera desaparece**: el logo de aniversario
+*ya contiene el mismo escudo*, y repetirlo dos veces en 85 mm no informaba de nada.
+Quitarlo tuvo dos efectos que resolvieron problemas abiertos:
+
+- El nombre del concurso dejó de partirse en dos líneas: recupera el ancho completo.
+- Los 12.5 mm de alto que el escudo imponía a la cabecera son justo los que
+  necesitaban los campos nuevos. Sin ese hueco, el desglose no habría entrado.
+
+**La transparencia se hornea en el PNG, no se pide por CSS.** Dompdf soporta
+`opacity` de forma parcial y desigual entre versiones, y un carné cuya opacidad
+dependa de la versión de una librería es un carné que se imprime distinto cada
+año. `scripts/generar_marca_agua.php` genera el derivado al 10% —por encima del
+12% compite con los rótulos de 4.6 pt, por debajo del 7% no se ve— siguiendo el
+patrón que ya usaba el escudo: original en `resources/img/`, derivado en
+`public/img/`, ambos versionados.
+
+**Consecuencia no evidente: el QR pierde su zona de silencio.** La norma del QR
+exige 4 módulos de margen limpio alrededor del símbolo, y hasta ahora los aportaba
+«el espacio en blanco que el layout deja alrededor». Con un fondo, ese espacio deja
+de ser blanco y el lector confunde el borde del símbolo con datos. El QR pasa a
+apoyarse sobre **un recuadro blanco opaco** de 2.1 mm por lado. No es decoración:
+sin él, la marca de agua habría roto el QR de forma silenciosa —seguiría
+imprimiéndose igual de bonito y fallando en la puerta.
+
+Verificado leyendo las matrices de colocación del propio PDF: la marca se dibuja a
+**70.6 × 54.0 mm**, embebida una vez y referenciada diez, y el QR a 16.5 mm con 33
+módulos = 0.500 mm/módulo.
+
+**Y un defecto que la marca de agua destapó:** la celda de relleno de las hojas
+impares también recibía el fondo, y quedaba un carné en blanco con la marca
+institucional listo para recortar y rellenar a mano. `.celda--vacia` conserva las
+guías de corte pero no el fondo.
+
+**2. Los datos del participante se desglosan** en DNI, Apellidos, Nombres, Grado,
+Modalidad y —solo si no es libre— Procedencia.
+
+- **Apellidos y Nombres ganan rótulo propio.** D-23 los había dejado sin rótulo
+  para ahorrar 2 mm. Con el escudo fuera, esos 2 mm sobran, y el rótulo resuelve
+  una ambigüedad real: «Nolasco Mendoza Sara» sin rótulos se puede leer con el
+  apellido en cualquiera de los dos sitios.
+- **Modalidad** (Libre / Pública / Privada) se deriva de `tipo_participante` y
+  `instituciones_educativas.tipo` —los mismos tres valores que `tarifas.tipo_origen`
+  usa para decidir cuánto paga el estudiante— para que el carné no pueda contradecir
+  a la tarifa que se cobró. **Esto convierte a P-04 en bloqueante de verdad:** hasta
+  ahora esa correspondencia solo afectaba a un cálculo interno; ahora se imprime en
+  un documento irreversible.
+- **Un estudiante libre no lleva Procedencia.** Repetirla como «Estudiante libre»
+  sería decir dos veces lo que ya dice Modalidad.
+
+**Orden de los campos:** el propietario los enumeró empezando por el DNI. En el
+carné van con el nombre arriba y el DNI en la fila de tres, porque el nombre es el
+único dato que se lee a un metro de distancia en la fila de la puerta y encabezarlo
+con un número de ocho dígitos le quita esa función. Si el propietario prefiere el
+orden literal, es mover un bloque.
+
+**La franja de Modalidad y Procedencia va dentro de la columna de datos, no a lo
+ancho del carné.** A lo ancho parecía mejor —le daba 56 mm al nombre del colegio en
+vez de 33— pero añadía altura *encima* de la del QR en lugar de aprovechar el hueco
+que el QR deja debajo, y la hoja se partía en dos páginas. Medido: diez carnés en
+una página con los diez casos extremos que el sistema puede recibir.
+
+**Recalibración obligada por D-23.** El recuadro blanco del QR le quitó 2.2 mm de
+ancho a la columna de datos (61.4 → 59.2 mm): `NOMBRE_POR_LINEA` baja de 26 a 25 y
+`ORIGEN_POR_LINEA` de 42 a 40.
+
+**La vista pública del carné se alinea con los mismos campos y el mismo orden.** Es
+lo que abre el QR del papel: si la mesa de la puerta ve ahí una estructura distinta
+de la que tiene en la mano, deja de poder contrastar un dato con el otro.
+
+**Queda huérfano** `public/img/logo-cociap.png` (y su original en `resources/img/`):
+ya no lo usa nada. No se borra sin consultar — el escudo suelto puede quererse en la
+interfaz web.
+
+---
+
+### D-28 — El encargado de la delegación ES el apoderado de sus participantes
+**Fecha:** 2026-08-18 · **Estado:** aprobado por el propietario · **Afecta:** secciones 3, 4 y 5, D-09
+
+Petición del propietario: que un apoderado pueda inscribir a varios participantes, y que
+**a cada delegación se le asigne como apoderado a su encargado**.
+
+**El encargado ya existía, con otro nombre.** Es el *docente delegado*, que hasta ahora vivía
+embebido en seis columnas de `instituciones_educativas`, mientras los participantes de
+delegación se guardaban con `apoderado_id = NULL`. La misma persona podía existir dos veces
+—como docente delegado de su colegio y como apoderado del hijo que inscribió como libre— con
+dos celulares destinados a divergir y sin forma de saber cuál era el bueno.
+
+**Decisión: unificar.** `apoderados` pasa a ser *el adulto responsable de uno o varios
+participantes*, cubriendo los dos casos. `instituciones_educativas` deja de embeber al docente
+y guarda `docente_delegado_id` (NOT NULL, con clave foránea). El **director se queda embebido**:
+no es apoderado de nadie.
+
+Se descartaron las otras dos salidas:
+
+- *Copiar el docente a `apoderados` al inscribir*: no toca el CRUD de instituciones, pero deja
+  a la misma persona en dos sitios. El día que alguien corrija el celular en un sitio y no en
+  el otro, divergen para siempre.
+- *Derivar por join sin asignar*: cero duplicación, pero no cumple lo pedido y hace que cambiar
+  de docente delegado reescriba retroactivamente quién inscribió las delegaciones de años
+  anteriores.
+
+**El vínculo se guarda en cada participante, no se deduce.** `participantes.apoderado_id` se
+rellena al inscribir con el encargado vigente en ese momento. Si el año que viene encabeza otro
+docente, estas inscripciones siguen diciendo quién las hizo, no quién manda hoy.
+
+**Contradicción que esto obligó a resolver.** No se pueden sostener las tres a la vez:
+
+1. el DNI del apoderado es obligatorio —lo es, y es lo único que permite reconocer a la persona
+   en vez de duplicarla—;
+2. el encargado de delegación es un apoderado;
+3. el DNI del docente delegado es opcional, como declaraba la §4 marcada
+   `[CONFIRMADO POR PROPIETARIO]` y reafirmaba D-09.
+
+El propietario eligió sacrificar la tercera: **el DNI del docente delegado pasa a ser
+obligatorio**. La §4 queda actualizada.
+
+**Los dos formularios piden los mismos datos** (decisión del propietario). El único campo que
+no encajaba era el correo, que el docente delegado tenía y el apoderado de un libre no.
+`apoderados` gana `correo VARCHAR(150) NULL` y **ambos formularios lo piden, opcional en los dos**:
+es la misma persona y el mismo campo, y no hay razón para exigírselo a uno y no al otro.
+
+**Quién puede borrar ese correo, y quién no.** `Apoderado::actualizar()` solo toca la columna
+si quien llama trae la clave, y los dos llamantes la usan distinto a propósito:
+
+- La ficha de `/apoderados` la manda **siempre**, incluso vacía: esa pantalla existe para editar
+  a esa persona, así que desde ahí sí se puede borrar un correo equivocado.
+- La inscripción libre la manda **solo si trae valor**. Si el apoderado de ese estudiante resulta
+  ser también el docente delegado de un colegio, dejar el campo en blanco mientras se inscribe a
+  un niño no puede borrarle el canal por el que se coordina con su delegación entera. Es un
+  formulario que está haciendo otra cosa: puede añadir, no vaciar.
+
+**Reutilizar sin pisar.** Cuando el documento reconoce a alguien ya registrado, sus datos se
+autorrellenan y quedan **en solo lectura**, con un botón «Editar sus datos» para desbloquearlos
+a conciencia (decisión del propietario). El formulario actualiza la ficha del apoderado al
+guardar, y esa ficha la comparten todos sus participantes: sin el freno, un tipeo al inscribir
+al tercer hijo reescribía en silencio el apoderado de los otros dos, y en el caso del docente,
+el de su delegación entera. Si el documento deja de reconocer a nadie, los campos
+autorrellenados **se vacían**: conservar el nombre de una persona bajo el documento de otra
+habría creado un registro nuevo con datos ajenos.
+
+El comportamiento vive en `src/js/apoderado-reutilizable.js`, compartido por los dos
+formularios. En un archivo aparte expuesto en `window` porque el pipeline de assets copia cada
+`src/js/*.js` por separado, sin empaquetador: no hay forma de importarlo, y duplicarlo
+garantizaba que algún día divergieran.
+
+**El listado de `/apoderados` distingue la modalidad.** Al ser una sola tabla para los dos
+casos, sin esa columna la secretaria no puede saber si una fila es el encargado de un colegio o
+el padre de un estudiante libre —y no da igual: borrar a uno rompe una delegación entera—. Las
+etiquetas **no son excluyentes**: el docente que encabeza la delegación de su colegio y además
+inscribió a su propio hijo como libre lleva las dos. Un apoderado sin ninguna es alguien que se
+registró y todavía no se usó, que también conviene ver.
+
+Los tres recuentos van como subconsultas y no como JOIN con GROUP BY: hay dos relaciones
+distintas hacia el mismo apoderado —sus participantes y las instituciones que encabeza— y
+unirlas en la misma consulta multiplicaría las filas, inflando cada recuento por el tamaño de la
+otra relación.
+
+**Un error que apareció de paso:** `/api/apoderados/buscar` exigía `^\d{8}$`, más estricto que
+la regla con la que se registran los apoderados (`Validador::dni()` acepta también carné de
+extranjería de 9 a 12 caracteres). Un apoderado dado de alta con carné de extranjería era
+**imposible de encontrar** desde el formulario, y se duplicaba cada vez que volvía. Ahora ambos
+usan el mismo criterio.
+
+**Migración** en `database/migraciones/2026-08-18-encargado-delegacion-es-apoderado.sql`,
+idempotente y aplicada. Promueve a cada docente delegado a `apoderados` reutilizando la fila si
+el DNI ya existía, enlaza las I.E., **asigna el encargado a los participantes de delegación ya
+inscritos** —si no, las inscripciones anteriores a la migración serían las únicas sin encargado
+y el listado mentiría sobre ellas— y solo al final suelta las seis columnas embebidas, para que
+hasta ese punto siga siendo reversible. Si algún docente no tuviera DNI, se detiene a propósito
+en el paso 5 y el paso 0 lista cuáles completar.
+
+Verificado sobre una restauración del respaldo previo, dos pasadas seguidas, más siete
+comprobantes contra la base real: el docente migrado conserva su correo, una I.E. nueva queda
+enlazada a su encargado, el documento repetido no crea una segunda persona, y actualizar sin
+correo no borra el correo.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04** Origen del `tipo_origen` que selecciona la tarifa (presumiblemente
   `instituciones_educativas.tipo` para delegación y `'libre'` para libre — sin confirmar).
-  **Necesario antes de la Fase 3.**
+  **Subió de prioridad con D-27:** el carné ahora imprime esa misma correspondencia
+  bajo el rótulo «Modalidad». Deja de ser un cálculo interno corregible y pasa a un
+  documento en papel que ya está en manos del estudiante. Necesita un sí explícito.
 - **P-05** `usuarios` carece de `organizacion_id` pese al diseño multi-tenant declarado.
   Se respeta el plan tal como está; añadirlo después es un `ALTER TABLE` aditivo.
 

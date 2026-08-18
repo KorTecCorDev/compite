@@ -7,16 +7,24 @@ use Core\View;
 /** @var array<string, mixed> $ficha */
 /** @var string $estado */
 
-$nombre = trim(
-    ($ficha['ap_paterno'] ?? '') . ' ' . ($ficha['ap_materno'] ?? '')
-    . ', ' . ($ficha['nombres'] ?? '')
-);
+/*
+ * Los campos son los mismos del carné impreso y en el mismo orden, a propósito:
+ * esta vista es lo que abre el QR del papel, y si la mesa de la puerta ve aquí
+ * una estructura distinta de la que tiene en la mano deja de poder contrastar
+ * un dato con el otro. Cualquier cambio aquí va también en GeneradorCarne.
+ */
+$apellidos = trim(($ficha['ap_paterno'] ?? '') . ' ' . ($ficha['ap_materno'] ?? ''));
+$nombres   = trim((string) ($ficha['nombres'] ?? ''));
 
-$categoria = ucfirst((string) ($ficha['nivel'] ?? '')) . ' ' . (int) ($ficha['grado'] ?? 0) . '°';
+$grado = (int) ($ficha['grado'] ?? 0) . '° ' . ucfirst((string) ($ficha['nivel'] ?? ''));
 
-$origen = ($ficha['tipo_participante'] ?? '') === 'libre'
-    ? 'Estudiante libre'
-    : (string) ($ficha['institucion'] ?? '—');
+$esLibre = ($ficha['tipo_participante'] ?? '') === 'libre';
+
+$modalidad = $esLibre ? 'Libre' : match ((string) ($ficha['institucion_tipo'] ?? '')) {
+    'publica' => 'Pública',
+    'privada' => 'Privada',
+    default   => '—',
+};
 
 $fecha = !empty($ficha['fecha_evento'])
     ? date('d/m/Y', strtotime((string) $ficha['fecha_evento']))
@@ -42,23 +50,33 @@ $fecha = !empty($ficha['fecha_evento'])
 
     <dl class="carne-datos">
         <div>
-            <dt>Participante</dt>
-            <dd class="carne-nombre"><?= View::e($nombre) ?></dd>
+            <dt>Apellidos</dt>
+            <dd class="carne-nombre"><?= View::e($apellidos) ?></dd>
         </div>
         <div>
-            <dt>Documento</dt>
+            <dt>Nombres</dt>
+            <dd class="carne-nombre"><?= View::e($nombres) ?></dd>
+        </div>
+        <div>
+            <dt>DNI</dt>
             <dd><?= View::e($ficha['dni']) ?></dd>
         </div>
         <?php if (!empty($ficha['nivel'])): ?>
         <div>
-            <dt>Categoría</dt>
-            <dd><?= View::e($categoria) ?></dd>
+            <dt>Grado</dt>
+            <dd><?= View::e($grado) ?></dd>
         </div>
         <?php endif; ?>
         <div>
-            <dt>Procedencia</dt>
-            <dd><?= View::e($origen) ?></dd>
+            <dt>Modalidad</dt>
+            <dd><?= View::e($modalidad) ?></dd>
         </div>
+        <?php if (!$esLibre): ?>
+        <div>
+            <dt>Procedencia</dt>
+            <dd><?= View::e($ficha['institucion'] ?? '—') ?></dd>
+        </div>
+        <?php endif; ?>
     </dl>
 
     <p class="carne-codigo"><?= View::e($ficha['codigo_correlativo']) ?></p>

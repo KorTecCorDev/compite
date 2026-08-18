@@ -163,6 +163,16 @@ final class InscripcionController extends Controller
         $prefijo = Participante::prefijoConcurso($concursoId);
         $usuario = (int) Auth::id();
 
+        /*
+         * El encargado de la delegación es el apoderado de todos sus
+         * participantes (D-28). Se resuelve una sola vez para el lote entero
+         * porque todos comparten institución, y se guarda en cada participante
+         * en vez de deducirse después por la I.E.: si el año que viene encabeza
+         * otro docente, estas inscripciones tienen que seguir diciendo quién las
+         * hizo, no quién manda hoy.
+         */
+        $encargadoId = (int) $institucion['docente_delegado_id'];
+
         try {
             /*
              * Todo el lote en una transacción: o entran los N participantes con
@@ -170,7 +180,7 @@ final class InscripcionController extends Controller
              * cargada, un fallo dejaría a la secretaria sin saber por dónde iba.
              */
             $codigos = Database::transaccion(
-                static function () use ($validadas, $concursoId, $ieId, $monto, $prefijo, $usuario): array {
+                static function () use ($validadas, $concursoId, $ieId, $monto, $prefijo, $usuario, $encargadoId): array {
                     $generados = [];
 
                     foreach ($validadas as $fila) {
@@ -182,7 +192,7 @@ final class InscripcionController extends Controller
                             'ap_materno'        => $fila['ap_materno'],
                             'nombres'           => $fila['nombres'],
                             'institucion_id'    => $ieId,
-                            'apoderado_id'      => null,
+                            'apoderado_id'      => $encargadoId,
                         ], $prefijo);
 
                         Inscripcion::crear([
@@ -260,6 +270,7 @@ final class InscripcionController extends Controller
         $v->requerido('ap_ap_materno', 'El apellido materno del apoderado');
         $v->requerido('ap_nombres', 'Los nombres del apoderado');
         $v->requerido('ap_celular', 'El celular del apoderado')->celular('ap_celular', 'El celular del apoderado');
+        $v->correo('ap_correo', 'El correo del apoderado');
 
         $categoriaId = (int) $v->limpio('categoria_id');
 
@@ -291,6 +302,18 @@ final class InscripcionController extends Controller
             'nombres'    => $v->limpio('ap_nombres'),
             'celular'    => $v->limpio('ap_celular'),
         ];
+
+        /*
+         * El correo solo viaja si trae valor. La clave ausente le dice a
+         * Apoderado::actualizar() que no toque esa columna, y eso protege un
+         * caso real: si el apoderado de este estudiante resulta ser también el
+         * docente delegado de un colegio, dejar el campo en blanco aquí no puede
+         * borrarle el correo por el que se coordina con su delegación entera.
+         * Para vaciarlo a propósito está su ficha en /apoderados.
+         */
+        if ($v->limpioONulo('ap_correo') !== null) {
+            $datosApoderado['correo'] = $v->limpio('ap_correo');
+        }
 
         $datosEstudiante = [
             'dni'        => $v->limpio('dni'),

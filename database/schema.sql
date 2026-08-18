@@ -11,6 +11,9 @@
 --         vista pública del carné expone datos de menores de edad.
 --   D-05  participantes.dni SIN UNIQUE: el duplicado se advierte, no se impide.
 --         Se indexa (concurso_id, dni) para que esa advertencia sea barata.
+--   D-28  el docente delegado deja de estar embebido en la I.E. y pasa a ser
+--         un `apoderados`: es el encargado de la delegación y, por tanto, el
+--         apoderado de los participantes que inscribe.
 --
 -- Orden de creación respeta las dependencias de claves foráneas.
 -- =====================================================================
@@ -82,9 +85,48 @@ CREATE TABLE tarifas (
 
 
 -- ---------------------------------------------------------------------
+-- Adulto responsable de uno o varios participantes.
+--
+-- Cubre los dos casos del concurso (D-28):
+--   · el apoderado de un estudiante libre —varios hermanos comparten uno—;
+--   · el docente delegado de una I.E., que es el encargado de su delegación y
+--     por tanto el apoderado de los treinta estudiantes que inscribe.
+--
+-- Es UNA tabla y no dos porque es UNA persona: el mismo docente puede además
+-- inscribir a su propio hijo como libre, y con dos tablas existiría dos veces
+-- con dos celulares que divergirían.
+--
+-- Va antes que `instituciones_educativas` porque esa tabla la referencia.
+--
+-- dni: NOT NULL UNIQUE. Es lo único que permite reconocer a la persona y
+--   reutilizarla en lugar de duplicarla; sin él, el docente que vuelve cada año
+--   sería un apoderado nuevo cada año.
+-- correo: NULL. Al docente delegado se le exige (es el canal por el que se le
+--   escribe a la delegación); al apoderado de un libre no se le pide.
+-- ---------------------------------------------------------------------
+CREATE TABLE apoderados (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    dni VARCHAR(15) NOT NULL UNIQUE,
+    ap_paterno VARCHAR(100) NOT NULL,
+    ap_materno VARCHAR(100) NOT NULL,
+    nombres VARCHAR(150) NOT NULL,
+    celular VARCHAR(20) NOT NULL,
+    correo VARCHAR(150) NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------
 -- Catálogo GLOBAL, compartido entre organizaciones (no aislado por tenant).
--- Docente delegado y director viven aquí: son datos persistentes de la I.E.,
--- no se recapturan en cada inscripción. DNI de ambos es opcional.
+--
+-- El DIRECTOR vive embebido aquí: son datos persistentes de la I.E. y no es
+-- apoderado de nadie, así que no tiene por qué existir en `apoderados`.
+--
+-- El DOCENTE DELEGADO ya no (D-28): es el encargado de la delegación y por
+-- tanto el apoderado de sus participantes, así que vive en `apoderados` y aquí
+-- solo se guarda a cuál apunta. Antes estaba embebido en seis columnas, y eso
+-- obligaba a que la misma persona existiera dos veces —una aquí y otra como
+-- apoderado— con dos celulares destinados a divergir.
 -- ---------------------------------------------------------------------
 CREATE TABLE instituciones_educativas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -95,12 +137,10 @@ CREATE TABLE instituciones_educativas (
     tipo ENUM('publica','privada') NOT NULL,
     direccion VARCHAR(250),
 
-    docente_delegado_ap_paterno VARCHAR(100),
-    docente_delegado_ap_materno VARCHAR(100),
-    docente_delegado_nombres VARCHAR(150),
-    docente_delegado_celular VARCHAR(20),
-    docente_delegado_correo VARCHAR(150),
-    docente_delegado_dni VARCHAR(15) NULL,
+    -- El encargado de la delegación. NOT NULL: una delegación sin encargado no
+    -- tiene a quién asignar como apoderado de sus estudiantes, y el formulario
+    -- de la I.E. ya lo exigía.
+    docente_delegado_id INT UNSIGNED NOT NULL,
 
     director_ap_paterno VARCHAR(100),
     director_ap_materno VARCHAR(100),
@@ -112,23 +152,13 @@ CREATE TABLE instituciones_educativas (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_ie_docente_delegado
+        FOREIGN KEY (docente_delegado_id) REFERENCES apoderados(id),
+
     -- Soporta el buscador anti-duplicados de la Fase 2.
     INDEX idx_ie_nombre (nombre),
-    INDEX idx_ie_ubicacion (departamento, provincia, distrito)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-
--- ---------------------------------------------------------------------
--- Reutilizable: un apoderado puede tener varios estudiantes libres (hermanos).
--- ---------------------------------------------------------------------
-CREATE TABLE apoderados (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    dni VARCHAR(15) NOT NULL UNIQUE,
-    ap_paterno VARCHAR(100) NOT NULL,
-    ap_materno VARCHAR(100) NOT NULL,
-    nombres VARCHAR(150) NOT NULL,
-    celular VARCHAR(20) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    INDEX idx_ie_ubicacion (departamento, provincia, distrito),
+    INDEX idx_ie_docente_delegado (docente_delegado_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 

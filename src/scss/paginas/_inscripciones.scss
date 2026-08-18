@@ -47,3 +47,36 @@
         color: var(--tinta-suave);
     }
 }
+
+// Aviso de apoderado reutilizado, en el formulario de inscripción libre.
+//
+// Cuando el documento reconoce a un apoderado ya registrado, sus campos pasan a
+// solo lectura y aparece esta franja. El bloqueo protege un dato compartido: el
+// mismo apoderado puede tener varios estudiantes, y el formulario actualiza su
+// ficha al guardar. Editarlo tiene que ser un acto deliberado, no un descuido.
+.reutilizado {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    flex-wrap: wrap;
+    margin: 0;
+    padding: .7rem .9rem;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+    background: var(--acento-suave);
+
+    &__texto {
+        flex: 1 1 16rem;
+        font-size: .9rem;
+        color: var(--tinta-suave);
+    }
+}
+
+// Un campo bloqueado tiene que PARECER bloqueado. Si se ve igual que uno
+// editable, la secretaria escribe encima, no pasa nada y pierde la confianza en
+// que el formulario responda.
+.campo input[readonly] {
+    background: var(--acento-suave);
+    color: var(--tinta-suave);
+    cursor: not-allowed;
+}

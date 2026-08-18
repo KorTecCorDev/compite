@@ -61,11 +61,17 @@ final class GeneradorCarne
     private const QR_MM_MAX       = 17;
     private const QR_MM_POR_MODULO = 0.5;
 
-    /** Ancho de la columna del QR: el máximo más su zona de silencio. */
-    private const QR_COLUMNA_MM = 19;
-
-    /** Alto del escudo institucional en la cabecera. */
-    private const LOGO_MM = 12.5;
+    /**
+     * Zona de silencio del QR, en milímetros, a cada lado.
+     *
+     * Antes la aportaba «el espacio en blanco que el layout deja alrededor».
+     * Desde que el carné lleva marca de agua ese espacio ya no es blanco, así
+     * que el QR se apoya sobre un recuadro blanco opaco de este padding. No es
+     * decoración: la norma del QR exige 4 módulos de margen limpio, y a 0.52 mm
+     * por módulo eso son 2.1 mm. Sin ellos el lector confunde el borde del
+     * símbolo con datos y muchos teléfonos dejan de resolverlo.
+     */
+    private const QR_SILENCIO_MM = 2.1;
 
     /** Cuerpo base del nombre y de la procedencia, en puntos. */
     private const NOMBRE_PT = 8.4;
@@ -74,16 +80,20 @@ final class GeneradorCarne
     /**
      * Caracteres que entran en una línea a ese cuerpo base.
      *
-     * Medido sobre la maqueta real el 2026-08-18, no estimado: se generaron
-     * hojas de 10 carnés alargando el texto hasta que la hoja se partió en dos.
-     * El límite medido fue 29 y 46; se dejan en 26 y 42 como margen, porque el
-     * ancho real de un texto depende de qué letras lo componen —una M ocupa el
-     * doble que una I— y al filo el cálculo falla para unos apellidos y no para
-     * otros. Si cambia el ancho del carné, el del QR o el cuerpo base, hay que
-     * volver a medirlos.
+     * Medido sobre la maqueta real, no estimado: se generaron hojas de 10
+     * carnés alargando el texto hasta que la hoja se partió en dos. Al valor
+     * medido se le deja ~10% de margen, porque el ancho real de un texto
+     * depende de qué letras lo componen —una M ocupa el doble que una I— y al
+     * filo el cálculo falla para unos apellidos y no para otros.
+     *
+     * Revisados el 2026-08-18 tras añadir la marca de agua: la caja blanca que
+     * devuelve la zona de silencio al QR le quitó 2.2 mm de ancho a la columna
+     * de datos (61.4 → 59.2 mm), y con ellos un carácter al nombre y dos a la
+     * procedencia. **Si cambia el ancho del carné, el del QR, su zona de
+     * silencio o el cuerpo base, hay que volver a medirlos.**
      */
-    private const NOMBRE_POR_LINEA = 26;
-    private const ORIGEN_POR_LINEA = 42;
+    private const NOMBRE_POR_LINEA = 25;
+    private const ORIGEN_POR_LINEA = 40;
 
     /**
      * PDF con los carnés de varias inscripciones, paginado de 10 en 10.
@@ -211,18 +221,23 @@ final class GeneradorCarne
     }
 
     /**
-     * Ruta del escudo, tal como la entiende Dompdf.
+     * Ruta de la marca de agua, tal como la entiende Dompdf.
+     *
+     * Es el logo de aniversario con el alfa ya aplicado en el archivo
+     * (`scripts/generar_marca_agua.php`), no el original: la transparencia no se
+     * pide por CSS porque Dompdf la soporta de forma parcial y lo impreso
+     * dejaría de coincidir con lo previsto.
      *
      * Se pasa por ruta de archivo y no como data URI a propósito: en una hoja
-     * de 10 carnés, incrustar el PNG en base64 diez veces son ~1 MB de HTML
+     * de 10 carnés, incrustar el PNG en base64 diez veces son ~2 MB de HTML
      * repetido. Con la ruta, Dompdf carga la imagen una sola vez.
      */
-    private static function rutaLogo(): ?string
+    private static function rutaMarcaAgua(): ?string
     {
-        $ruta = Config::ruta('public/img/logo-cociap.png');
+        $ruta = Config::ruta('public/img/marca-agua-carne.png');
 
         if (!is_file($ruta)) {
-            return null;   // el carné se genera igual, sin escudo
+            return null;   // el carné se genera igual, sin marca de agua
         }
 
         return str_replace('\\', '/', $ruta);
@@ -233,7 +248,6 @@ final class GeneradorCarne
      */
     private static function documento(array $paginas): string
     {
-        $logo   = self::rutaLogo();
         $cuerpo = '';
 
         foreach ($paginas as $indice => $fichas) {
@@ -246,10 +260,10 @@ final class GeneradorCarne
              */
             $clase = $indice === 0 ? 'hoja' : 'hoja hoja--nueva';
 
-            $cuerpo .= '<div class="' . $clase . '">' . self::grilla($fichas, $logo) . '</div>';
+            $cuerpo .= '<div class="' . $clase . '">' . self::grilla($fichas) . '</div>';
         }
 
-        $css = self::css();
+        $css = self::css(self::rutaMarcaAgua());
 
         return <<<HTML
 <!doctype html>
@@ -273,7 +287,7 @@ HTML;
      *
      * @param array<int, array<string, mixed>> $fichas
      */
-    private static function grilla(array $fichas, ?string $logo): string
+    private static function grilla(array $fichas): string
     {
         $celdas = '';
         $total  = count($fichas);
@@ -288,7 +302,7 @@ HTML;
                     // Celda vacía: mantiene la grilla cuadrada en la última
                     // hoja cuando los carnés no son múltiplo de 2.
                     ? '<td class="celda celda--vacia"></td>'
-                    : '<td class="celda">' . self::carne($ficha, $logo) . '</td>';
+                    : '<td class="celda">' . self::carne($ficha) . '</td>';
             }
 
             $celdas .= '</tr>';
@@ -302,7 +316,7 @@ HTML;
      *
      * @param array<string, mixed> $d
      */
-    private static function carne(array $d, ?string $logo): string
+    private static function carne(array $d): string
     {
         $e = static fn (mixed $v): string => View::e($v);
 
@@ -316,11 +330,22 @@ HTML;
         $apellidos = trim(($d['ap_paterno'] ?? '') . ' ' . ($d['ap_materno'] ?? ''));
         $nombres   = trim((string) ($d['nombres'] ?? ''));
 
-        $categoria = ucfirst((string) ($d['nivel'] ?? '')) . ' ' . (int) ($d['grado'] ?? 0) . '°';
+        $grado = (int) ($d['grado'] ?? 0) . '° ' . ucfirst((string) ($d['nivel'] ?? ''));
 
-        $origen = ($d['tipo_participante'] ?? '') === 'libre'
-            ? 'Estudiante libre'
-            : (string) ($d['institucion'] ?? '—');
+        /*
+         * Modalidad: libre / pública / privada. Son los mismos tres valores que
+         * `tarifas.tipo_origen` usa para decidir cuánto paga el estudiante, y se
+         * derivan igual —de `participantes.tipo_participante` cuando es libre y
+         * de `instituciones_educativas.tipo` cuando viene por delegación—, para
+         * que el carné no pueda contradecir a la tarifa que se cobró.
+         */
+        $esLibre = ($d['tipo_participante'] ?? '') === 'libre';
+
+        $modalidad = $esLibre ? 'Libre' : match ((string) ($d['institucion_tipo'] ?? '')) {
+            'publica' => 'Pública',
+            'privada' => 'Privada',
+            default   => '—',
+        };
 
         $fecha = !empty($d['fecha_evento'])
             ? date('d/m/Y', strtotime((string) $d['fecha_evento']))
@@ -328,52 +353,70 @@ HTML;
 
         $ptApellidos = self::tamanoQueQuepa($apellidos, self::NOMBRE_PT, self::NOMBRE_POR_LINEA);
         $ptNombres   = self::tamanoQueQuepa($nombres,   self::NOMBRE_PT, self::NOMBRE_POR_LINEA);
-        $ptOrigen    = self::tamanoQueQuepa($origen,    self::ORIGEN_PT, self::ORIGEN_POR_LINEA);
 
         $codigo = (string) ($d['codigo_correlativo'] ?? '');
         [$qr, $qrMm] = self::qr(self::urlPublica($codigo));
 
-        $escudo = $logo === null
-            ? ''
-            : '<td class="cab-logo"><img src="' . $e($logo) . '" alt=""></td>';
+        // Ancho de la caja blanca del QR: el símbolo más su zona de silencio a
+        // ambos lados. Va inline porque el lado del QR no es fijo (ladoQr()).
+        $cajaMm = round($qrMm + 2 * self::QR_SILENCIO_MM, 1);
+
+        /*
+         * La procedencia solo existe si el estudiante viene por una delegación.
+         * Para un libre, repetirla como «Estudiante libre» sería decir dos veces
+         * lo que ya dice Modalidad, en un carné donde cada milímetro se pelea.
+         */
+        $procedencia = '';
+
+        if (!$esLibre) {
+            $origen   = (string) ($d['institucion'] ?? '—');
+            $ptOrigen = self::tamanoQueQuepa($origen, self::ORIGEN_PT, self::ORIGEN_POR_LINEA);
+
+            $procedencia = '<div class="rotulo">Procedencia</div>'
+                . '<div class="valor valor--origen" style="font-size: ' . $ptOrigen . 'pt">'
+                . $e($origen) . '</div>';
+        }
 
         return <<<HTML
 <div class="carne">
 
-    <table class="cab">
-        <tr>
-            {$escudo}
-            <td class="cab-txt">
-                <div class="cab-evento">{$e($d['concurso'] ?? 'COCIAP 2026')}</div>
-                <div class="cab-org">Colegio de Aplicación «Víctor Valenzuela Guardia» — UNASAM</div>
-            </td>
-        </tr>
-    </table>
+    <div class="cab">
+        <div class="cab-evento">{$e($d['concurso'] ?? 'COCIAP 2026')}</div>
+        <div class="cab-org">Colegio de Aplicación «Víctor Valenzuela Guardia» — UNASAM</div>
+    </div>
 
     <table class="cuerpo">
         <tr>
             <td class="datos">
-                <div class="valor valor--apellidos" style="font-size: {$ptApellidos}pt">{$e($apellidos)}</div>
-                <div class="valor valor--nombres" style="font-size: {$ptNombres}pt">{$e($nombres)}</div>
+                <div class="rotulo">Apellidos</div>
+                <div class="valor valor--nombre" style="font-size: {$ptApellidos}pt">{$e($apellidos)}</div>
 
-                <table class="par">
+                <div class="rotulo">Nombres</div>
+                <div class="valor valor--nombre" style="font-size: {$ptNombres}pt">{$e($nombres)}</div>
+
+                <table class="trio">
                     <tr>
-                        <td class="par-dni">
-                            <div class="rotulo">Documento</div>
+                        <td class="trio-dni">
+                            <div class="rotulo">DNI</div>
                             <div class="valor">{$e($d['dni'] ?? '')}</div>
                         </td>
+                        <td class="trio-grado">
+                            <div class="rotulo">Grado</div>
+                            <div class="valor">{$e($grado)}</div>
+                        </td>
                         <td>
-                            <div class="rotulo">Categoría</div>
-                            <div class="valor">{$e($categoria)}</div>
+                            <div class="rotulo">Modalidad</div>
+                            <div class="valor">{$e($modalidad)}</div>
                         </td>
                     </tr>
                 </table>
 
-                <div class="rotulo">Procedencia</div>
-                <div class="valor valor--origen" style="font-size: {$ptOrigen}pt">{$e($origen)}</div>
+                {$procedencia}
             </td>
-            <td class="qr">
-                <img src="{$qr}" alt="" style="width: {$qrMm}mm; height: {$qrMm}mm">
+            <td class="qr" style="width: {$cajaMm}mm">
+                <div class="qr-caja" style="width: {$qrMm}mm">
+                    <img src="{$qr}" alt="" style="width: {$qrMm}mm; height: {$qrMm}mm">
+                </div>
             </td>
         </tr>
     </table>
@@ -416,16 +459,35 @@ HTML;
         // holgura vertical que el layout se reserva.
         return max(round($base * 0.7, 1), round($base * $porLinea / $largo, 1));
     }
-    private static function css(): string
+    private static function css(?string $marca): string
     {
         $ancho = self::CARNE_ANCHO_MM;
         $alto  = self::CARNE_ALTO_MM;
-        $logo  = self::LOGO_MM;
 
-        // Ancho del escudo derivado de su proporción real (748 × 898 px).
-        $logoAncho = round($logo * 748 / 898, 2);
+        $silencio = self::QR_SILENCIO_MM;
 
-        $columnaQr = self::QR_COLUMNA_MM;
+        /*
+         * Fondo del carné. El tamaño se calcula a partir de las proporciones
+         * reales del archivo en vez de fijarse a mano: así, cambiar la imagen de
+         * aniversario el año que viene no exige recalcular nada. Se ajusta al
+         * ALTO del carné —el lado corto— para que la marca quede contenida y
+         * deje aire a izquierda y derecha, en lugar de recortarse por arriba.
+         */
+        $fondo = '';
+
+        if ($marca !== null) {
+            $medidas = @getimagesize($marca);
+            $marcaMm = $medidas === false
+                ? $alto
+                : round($alto * $medidas[0] / $medidas[1], 2);
+
+            $fondo = <<<FONDO
+        background-image: url("{$marca}");
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: {$marcaMm}mm {$alto}mm;
+FONDO;
+        }
 
         return <<<CSS
     @page { margin: 0; }
@@ -457,7 +519,14 @@ HTML;
         /* Guía de corte. Punteada y clara: orienta la tijera sin ensuciar el
            carné si el corte no queda exacto. */
         border: 0.4pt dashed #9aa6b4;
+{$fondo}
     }
+
+    /* La celda de relleno conserva las guías de corte —la guillotina corta la
+       hoja entera de lado a lado, no carné por carné— pero NO el fondo: un
+       rectángulo con la marca institucional y sin datos es un carné en blanco
+       esperando a que alguien lo recorte y lo rellene a mano. */
+    .celda--vacia { background-image: none; }
 
     /* Sin width ni height aquí a propósito: el modelo de caja de Dompdf es
        content-box, así que fijar 85.6 × 53.98 mm y encima añadir padding daba
@@ -467,15 +536,16 @@ HTML;
     .carne { padding: 2mm 2.6mm; }
 
     /* ------------------------------------------------------------------ */
-    /* Cabecera: escudo + identidad                                        */
+    /* Cabecera: identidad del evento                                      */
     /* ------------------------------------------------------------------ */
 
-    .cab { width: 100%; border-bottom: 1pt solid #1d4ed8; padding-bottom: .8mm; }
+    /* Sin escudo. La marca de agua del fondo ya contiene el mismo escudo del
+       Colegio de Aplicación, y repetirlo a 12.5 mm en la cabecera lo dejaba
+       como una mancha de color ilegible además de duplicado. Quitarlo devuelve
+       el ancho completo al nombre del concurso —que antes se partía en dos
+       líneas— y libera la altura que necesitan Modalidad y Procedencia. */
 
-    .cab-logo { width: {$logoAncho}mm; padding-right: 1.8mm; vertical-align: middle; }
-    .cab-logo img { width: {$logoAncho}mm; height: {$logo}mm; }
-
-    .cab-txt { vertical-align: middle; }
+    .cab { border-bottom: 1pt solid #1d4ed8; padding-bottom: .8mm; }
 
     .cab-evento {
         font-size: 6.4pt;
@@ -501,17 +571,20 @@ HTML;
 
     .cuerpo { width: 100%; margin-top: 1.2mm; }
 
-    .datos { vertical-align: top; }
+    .datos { vertical-align: top; padding-right: 2mm; }
 
-    .qr {
-        width: {$columnaQr}mm;
-        text-align: right;
-        vertical-align: top;
+    /* El ancho de esta columna va inline: depende de cuántos módulos pida la
+       URL, que es lo que decide el lado del QR (ladoQr()). */
+    .qr { vertical-align: top; }
+
+    /* Recuadro blanco opaco bajo el QR: le devuelve la zona de silencio que la
+       marca de agua le quitó. Sin él, el fondo se cuela hasta el borde del
+       símbolo y muchos lectores dejan de resolverlo. */
+    .qr-caja {
+        background-color: #ffffff;
+        padding: {$silencio}mm;
+        line-height: 0;
     }
-
-    /* El tamaño del QR va inline: depende de cuántos módulos pida la URL.
-       Lo que esta columna garantiza es la zona de silencio a su izquierda; a
-       la derecha la da el padding del carné. */
 
     .rotulo {
         font-size: 4.6pt;
@@ -526,18 +599,24 @@ HTML;
         margin-bottom: 1.3mm;
     }
 
-    /* El nombre es el dato que se lee a un metro de distancia en la puerta:
-       es el único que se agranda, y por eso ya no lleva rótulo encima: un
-       nombre en negrita al principio del carné no necesita que le expliquen
-       que es el participante, y esa línea de rótulo son 2 mm de altura que
-       hacían falta para partirlo en apellidos y nombres. */
+    /* El nombre es el dato que se lee a un metro de distancia en la puerta, y
+       el único que se agranda. Lleva rótulo propio —Apellidos / Nombres, como
+       en el DNI— porque son dos campos distintos y quien revisa una nómina
+       necesita saber cuál es cuál: «Nolasco Mendoza Sara» sin rótulos se puede
+       leer con el apellido en cualquiera de los dos sitios. La altura para esos
+       rótulos salió de quitar el escudo de la cabecera. */
     /* Sin font-size aquí: lo calcula tamanoQueQuepa() carné por carné. */
-    .valor--apellidos { line-height: 1.08; margin-bottom: 0; }
-    .valor--nombres   { line-height: 1.08; }
-    .valor--origen    { font-weight: normal; margin-bottom: 0; }
+    .valor--nombre { line-height: 1.08; margin-bottom: .8mm; }
+    .valor--origen { font-weight: normal; margin-bottom: 0; }
 
-    .par { width: 100%; }
-    .par-dni { width: 47%; }
+    /* DNI, grado y modalidad comparten fila: los tres son cortos y ninguno
+       merece una línea propia en un carné donde la altura es el recurso
+       escaso. Los porcentajes no son estéticos —«1° Secundaria» y un carné de
+       extranjería de 12 dígitos son los valores más largos que puede recibir
+       cada columna, y cada una tiene el ancho justo para que no partan. */
+    .trio { width: 100%; }
+    .trio-dni   { width: 34%; }
+    .trio-grado { width: 36%; }
 
     /* ------------------------------------------------------------------ */
     /* Pie: código y fecha                                                 */
