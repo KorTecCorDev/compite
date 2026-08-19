@@ -88,30 +88,68 @@ echo "Usuario creado (id {$id}): {$nombres} <{$correo}> como {$rol}." . PHP_EOL;
  */
 function leerPasswordOculta(): string
 {
-    if (stripos(PHP_OS_FAMILY, 'Windows') !== false) {
+    /*
+     * `shell_exec` puede no existir, y en hosting compartido normalmente NO
+     * existe: Hostinger y compañía lo deshabilitan por `disable_functions`.
+     *
+     * Antes se llamaba sin comprobarlo, y el resultado era el peor posible: el
+     * script imprimía «Contraseña para …:» y **terminaba en silencio**, sin
+     * leer nada y sin decir por qué. La contraseña que el operador escribía a
+     * continuación se la quedaba el shell, que intentaba ejecutarla como un
+     * comando. Pasó en el despliegue del 19 de agosto.
+     *
+     * Ahora se comprueba antes de usarlo y, si no se puede ocultar la entrada,
+     * se avisa y se lee igualmente. Una contraseña visible en la pantalla de
+     * tu propia sesión SSH es un problema mucho menor que no poder crear el
+     * primer administrador.
+     */
+    $puedeEjecutar = function_exists('shell_exec')
+        && !in_array('shell_exec', array_map(
+            static fn (string $f): string => trim(strtolower($f)),
+            explode(',', (string) ini_get('disable_functions'))
+        ), true);
+
+    if ($puedeEjecutar && stripos(PHP_OS_FAMILY, 'Windows') !== false) {
         $comando = 'powershell -NoProfile -Command '
             . '"$p = Read-Host -AsSecureString; '
             . '[Runtime.InteropServices.Marshal]::PtrToStringAuto('
             . '[Runtime.InteropServices.Marshal]::SecureStringToBSTR($p))"';
 
-        $salida = shell_exec($comando);
+        $salida = @shell_exec($comando);
 
-        if (is_string($salida)) {
+        if (is_string($salida) && trim($salida) !== '') {
             return rtrim($salida, "\r\n");
         }
-
-        echo "\n[aviso] No se pudo ocultar la entrada; la contraseña será visible.\n";
-    } else {
-        shell_exec('stty -echo');
+    } elseif ($puedeEjecutar) {
+        @shell_exec('stty -echo 2>/dev/null');
         $entrada = fgets(STDIN);
-        shell_exec('stty echo');
+        @shell_exec('stty echo 2>/dev/null');
 
         if (is_string($entrada)) {
             return rtrim($entrada, "\r\n");
         }
     }
 
+    if (!$puedeEjecutar) {
+        echo PHP_EOL
+           . '[aviso] Este servidor no permite ocultar la escritura (shell_exec está' . PHP_EOL
+           . '        deshabilitado). La contraseña se verá mientras la escribes.' . PHP_EOL
+           . '        Escríbela y pulsa Enter: ';
+    }
+
     $entrada = fgets(STDIN);
 
-    return is_string($entrada) ? rtrim($entrada, "\r\n") : '';
+    /*
+     * `false` aquí significa que no hay entrada que leer —sin terminal, o la
+     * entrada se agotó—. Se dice en voz alta en vez de devolver una cadena
+     * vacía que luego fallaría por «contraseña demasiado corta», que es un
+     * mensaje que manda a buscar el problema donde no está.
+     */
+    if ($entrada === false) {
+        exit(PHP_EOL . 'No se pudo leer la contraseña: no hay entrada por teclado.' . PHP_EOL
+            . 'Ejecuta este script tú mismo en una consola, sin pegarlo junto a otros' . PHP_EOL
+            . 'comandos: la línea siguiente se consumiría como si fuera la contraseña.' . PHP_EOL);
+    }
+
+    return rtrim($entrada, "\r\n");
 }

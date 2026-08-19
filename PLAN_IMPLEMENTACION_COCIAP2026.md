@@ -1930,6 +1930,42 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-47 — `crear_usuario.php` fallaba en silencio en hosting compartido
+
+**Fecha:** 2026-08-19 · **Estado:** encontrado durante el despliegue real · **Afecta:** scripts
+
+Al crear el primer administrador en Hostinger, el script imprim&iacute;a
+«Contraseña para …:» y **terminaba sin leer nada y sin decir por qu&eacute;**. La contrase&ntilde;a
+que el propietario escrib&iacute;a a continuaci&oacute;n se la quedaba el shell, que intentaba
+ejecutarla como un comando —`bash: admin1234: command not found`—.
+
+**La causa:** para ocultar la escritura, el script llamaba a `shell_exec('stty -echo')` sin
+comprobar que exista. En hosting compartido **`shell_exec` suele estar deshabilitado** por
+`disable_functions`, y entonces la llamada no hace nada, `fgets(STDIN)` devuelve `false`, y el
+c&oacute;digo ca&iacute;a por una rama que terminaba en una cadena vac&iacute;a.
+
+Lo grave no era que fallara, sino **c&oacute;mo**: sin un solo mensaje. El operador no ten&iacute;a
+forma de saber si el problema era la contrase&ntilde;a, la base, los permisos o el propio script.
+
+**Lo que se hizo:**
+
+- Se comprueba `shell_exec` antes de usarlo, mirando tanto `function_exists()` como la lista de
+  `disable_functions` —hace falta comprobar las dos: una funci&oacute;n deshabilitada sigue
+  existiendo—.
+- Si no se puede ocultar la entrada, **se avisa y se lee igual**. Una contrase&ntilde;a visible en
+  la pantalla de tu propia sesi&oacute;n SSH es un problema mucho menor que no poder crear el
+  primer administrador.
+- Si `fgets` devuelve `false`, se dice en voz alta —«no hay entrada por teclado»— con la causa
+  m&aacute;s probable: haber pegado el comando junto con el siguiente, con lo que esa
+  l&iacute;nea se consume como si fuera la contrase&ntilde;a. Tambi&eacute;n pas&oacute;, antes
+  que lo otro.
+
+**Comprobado** simulando el servidor con `php -d disable_functions=shell_exec`: sin teclado
+explica el motivo y sale; con entrada disponible avisa de que la contrase&ntilde;a se ver&aacute;
+y **crea el usuario**.
+
+---
+
 ### D-46 — Limpieza de los datos de prueba, con seguro
 
 **Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** producción
