@@ -115,6 +115,14 @@ if ($urlBase === '') {
     mal('url_base vacío — el QR del carné no tendría a dónde apuntar');
 } elseif (str_contains($urlBase, 'localhost') || str_contains($urlBase, '127.0.0.1')) {
     mal("url_base = {$urlBase} — apunta a la máquina local; TODOS los QR impresos serían inservibles");
+} elseif (preg_match('/TU-DOMINIO|tudominio|CAMBIAR|ejemplo\.|dominio\.pe$|localhost/i', $urlBase)) {
+    /*
+     * Un marcador de posición sin reemplazar pasaba esta comprobación: no está
+     * vacío y no dice localhost, así que se daba por bueno. Y es justo el valor
+     * que más caro sale equivocado — es el que codifica el QR del carné, y no se
+     * arregla reimprimiendo: hay que repartirlos otra vez.
+     */
+    mal("url_base = {$urlBase} — eso sigue siendo la plantilla, no tu dominio real");
 } else {
     bien("url_base = {$urlBase}");
     if (!str_starts_with($urlBase, 'https://')) {
