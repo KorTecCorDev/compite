@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Concurso;
 use Core\Sesion;
 use Core\View;
 
@@ -55,7 +56,12 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
                     <option value="">Seleccionar institución…</option>
                     <?php foreach ($instituciones as $ie): ?>
                         <option value="<?= (int) $ie['id'] ?>"
-                                data-tipo="<?= View::e($ie['tipo']) ?>"
+                                <?php /* La MODALIDAD, no el tipo del colegio (D-37): el
+                                         anfitrión es público y aun así cobra su propia
+                                         tarifa. Hoy ambas valen S/ 10 y la diferencia no
+                                         se vería, pero la tarifa organizadora existe
+                                         justamente para poder moverse sola. */ ?>
+                                data-tipo="<?= View::e(Concurso::modalidad($concurso, $ie)) ?>"
                                 <?= ($institucion['id'] ?? null) == $ie['id'] ? 'selected' : '' ?>>
                             <?= View::e($ie['nombre']) ?> — <?= View::e($ie['distrito']) ?>
                             (<?= $ie['tipo'] === 'publica' ? 'pública' : 'privada' ?>)

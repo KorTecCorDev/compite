@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Concurso;
 use Core\View;
 
 /** @var array<string, mixed> $ficha */
@@ -20,11 +21,14 @@ $grado = (int) ($ficha['grado'] ?? 0) . '° ' . ucfirst((string) ($ficha['nivel'
 
 $esLibre = ($ficha['tipo_participante'] ?? '') === 'libre';
 
-$modalidad = $esLibre ? 'Libre' : match ((string) ($ficha['institucion_tipo'] ?? '')) {
-    'publica' => 'Pública',
-    'privada' => 'Privada',
-    default   => '—',
-};
+/*
+ * La modalidad se lee de la inscripción, que es donde quedó congelada junto al
+ * monto (D-37). Antes se rederivaba aquí del tipo del colegio, y por eso podía
+ * acabar diciendo algo distinto de lo que se cobró.
+ */
+$modalidad = Concurso::etiquetaModalidad(
+    isset($ficha['tipo_origen']) ? (string) $ficha['tipo_origen'] : null
+);
 
 $fecha = !empty($ficha['fecha_evento'])
     ? date('d/m/Y', strtotime((string) $ficha['fecha_evento']))

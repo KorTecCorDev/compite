@@ -89,11 +89,50 @@ final class Usuario
         );
     }
 
-    public static function correoExiste(string $correo): bool
+    public static function correoExiste(string $correo, ?int $exceptoId = null): bool
     {
-        return Database::uno(
-            'SELECT 1 AS existe FROM usuarios WHERE correo = :correo LIMIT 1',
-            ['correo' => mb_strtolower(trim($correo))]
-        ) !== null;
+        // `$exceptoId` permite editar un usuario sin que su propio correo se
+        // detecte como repetido contra sí mismo.
+        $sql = 'SELECT 1 AS existe FROM usuarios WHERE correo = :correo';
+        $parametros = ['correo' => mb_strtolower(trim($correo))];
+
+        if ($exceptoId !== null) {
+            $sql .= ' AND id <> :id';
+            $parametros['id'] = $exceptoId;
+        }
+
+        return Database::uno($sql . ' LIMIT 1', $parametros) !== null;
+    }
+
+    /**
+     * Cambia nombre, correo y rol. La contraseña va por su propio método:
+     * son dos formularios distintos y no deben poder tocarse por accidente.
+     */
+    public static function actualizar(int $id, string $nombres, string $correo, string $rol): void
+    {
+        Database::ejecutar(
+            'UPDATE usuarios SET nombres = :nombres, correo = :correo, rol = :rol WHERE id = :id',
+            [
+                'nombres' => trim($nombres),
+                'correo'  => mb_strtolower(trim($correo)),
+                'rol'     => $rol,
+                'id'      => $id,
+            ]
+        );
+    }
+
+    /**
+     * Administradores activos. Lo consulta el controlador antes de degradar o
+     * desactivar a uno: quedarse sin ningún administrador activo dejaría el
+     * sistema sin quien gestione concurso, tarifas, instituciones y usuarios,
+     * y no habría forma de arreglarlo desde la propia aplicación.
+     */
+    public static function administradoresActivos(): int
+    {
+        $fila = Database::uno(
+            "SELECT COUNT(*) AS total FROM usuarios WHERE rol = 'administrador' AND activo = 1"
+        );
+
+        return (int) ($fila['total'] ?? 0);
     }
 }

@@ -189,11 +189,16 @@ final class InscripcionController extends Controller
         }
 
         /*
-         * Decisión D-11: el monto se deriva del tipo de la I.E., no lo elige
-         * la secretaria. Se resuelve una sola vez para toda la delegación
-         * porque todos comparten institución.
+         * Decisión D-11: el monto se deriva de la modalidad, no lo elige la
+         * secretaria. Se resuelve una sola vez para toda la delegación porque
+         * todos comparten institución.
+         *
+         * La modalidad ya no es el tipo de la I.E. sin más (D-37): si el colegio
+         * es el anfitrión del concurso, es 'organizadora' y tiene tarifa propia
+         * aunque el colegio sea público.
          */
-        $monto   = Concurso::tarifa($concursoId, (string) $institucion['tipo']);
+        $modalidad = Concurso::modalidad($concurso, $institucion);
+        $monto     = Concurso::tarifa($concursoId, $modalidad);
         $prefijo = Participante::prefijoConcurso($concursoId);
         $usuario = (int) Auth::id();
 
@@ -214,7 +219,7 @@ final class InscripcionController extends Controller
              * cargada, un fallo dejaría a la secretaria sin saber por dónde iba.
              */
             $codigos = Database::transaccion(
-                static function () use ($validadas, $concursoId, $ieId, $monto, $prefijo, $usuario, $encargadoId): array {
+                static function () use ($validadas, $concursoId, $ieId, $modalidad, $monto, $prefijo, $usuario, $encargadoId): array {
                     $generados = [];
 
                     foreach ($validadas as $fila) {
@@ -233,6 +238,7 @@ final class InscripcionController extends Controller
                             'participante_id' => $participanteId,
                             'categoria_id'    => $fila['categoria_id'],
                             'usuario_id'      => $usuario,
+                            'tipo_origen'     => $modalidad,
                             'monto'           => $monto,
                         ]);
 
@@ -405,6 +411,9 @@ final class InscripcionController extends Controller
                         'participante_id' => $participanteId,
                         'categoria_id'    => $categoriaId,
                         'usuario_id'      => $usuario,
+                        // El estudiante libre no tiene colegio: su modalidad es
+                        // siempre 'libre', igual que su tarifa.
+                        'tipo_origen'     => 'libre',
                         'monto'           => $monto,
                     ]);
 

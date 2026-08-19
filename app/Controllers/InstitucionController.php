@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\Apoderado;
+use App\Models\Concurso;
 use App\Models\InstitucionEducativa;
+use App\Models\Organizacion;
 use Core\Auth;
 use Core\Controller;
 use Core\Database;
@@ -27,6 +29,8 @@ final class InstitucionController extends Controller
             'busqueda'      => $busqueda,
             'tipo'          => $tipo,
             'total'         => InstitucionEducativa::total(),
+            // Para pintarle la píldora ANFITRIÓN en vez de la de gestión (D-37).
+            'anfitriona'    => $this->institucionAnfitriona(),
         ]);
     }
 
@@ -37,7 +41,7 @@ final class InstitucionController extends Controller
         $this->ver('instituciones.formulario', [
             'titulo'      => 'Nueva Institución Educativa',
             'institucion' => null,
-            'valores'     => [],
+            'valores'     => ['papel' => 'externa'],
             'errores'     => [],
         ]);
     }
@@ -56,9 +60,23 @@ final class InstitucionController extends Controller
         $this->ver('instituciones.formulario', [
             'titulo'      => 'Editar Institución Educativa',
             'institucion' => $institucion,
-            'valores'     => $institucion,
+            'valores'     => $institucion + [
+                'papel' => $this->institucionAnfitriona() === (int) $id ? 'anfitriona' : 'externa',
+            ],
             'errores'     => [],
         ]);
+    }
+
+    /**
+     * El colegio marcado como anfitrión del concurso vigente, si lo hay (D-37).
+     */
+    private function institucionAnfitriona(): ?int
+    {
+        $concurso = Concurso::vigente();
+
+        return $concurso === null
+            ? null
+            : Organizacion::institucionAnfitriona((int) $concurso['organizacion_id']);
     }
 
     public function guardar(?string $id = null): void
@@ -117,8 +135,26 @@ final class InstitucionController extends Controller
          * suelto sin colegio, o —peor— una I.E. apuntando a un encargado que la
          * siguiente sentencia no llegó a crear.
          */
+        /*
+         * El papel en el concurso no se guarda en la I.E. sino en la
+         * organización (D-37): «esta organización ES este colegio». Se resuelve
+         * aquí, fuera de la transacción, porque leer el concurso vigente no
+         * modifica nada.
+         */
+        $concurso        = Concurso::vigente();
+        $organizacionId  = $concurso === null ? null : (int) $concurso['organizacion_id'];
+        $seraAnfitriona  = $validador->limpio('papel') === 'anfitriona';
+        $anfitrionaAntes = $this->institucionAnfitriona();
+
         $nuevoId = Database::transaccion(
-            static function () use ($encargado, $datos, $idNumerico): int {
+            static function () use (
+                $encargado,
+                $datos,
+                $idNumerico,
+                $organizacionId,
+                $seraAnfitriona,
+                $anfitrionaAntes
+            ): int {
                 /*
                  * Si el documento ya existe, es la misma persona: se reutiliza
                  * su ficha y se actualizan sus datos. Es el caso del docente que
@@ -137,19 +173,55 @@ final class InstitucionController extends Controller
 
                 $datos['docente_delegado_id'] = $encargadoId;
 
-                if ($idNumerico === null) {
-                    return InstitucionEducativa::crear($datos);
+                $ieId = $idNumerico === null
+                    ? InstitucionEducativa::crear($datos)
+                    : $idNumerico;
+
+                if ($idNumerico !== null) {
+                    InstitucionEducativa::actualizar($idNumerico, $datos);
                 }
 
-                InstitucionEducativa::actualizar($idNumerico, $datos);
+                /*
+                 * La marca de anfitriona va DENTRO de la transacción: si el
+                 * colegio se guarda y la marca no, el sistema cobraría a sus
+                 * estudiantes como pública sin que nadie se entere.
+                 *
+                 * Se desmarca solo si el anfitrión que había era ESTE colegio.
+                 * Sin esa condición, editar un colegio externo cualquiera —que
+                 * llega con papel «externa»— le quitaría la marca al anfitrión
+                 * de verdad.
+                 */
+                if ($organizacionId !== null) {
+                    if ($seraAnfitriona) {
+                        Organizacion::marcarAnfitriona($organizacionId, $ieId);
+                    } elseif ($anfitrionaAntes === $ieId) {
+                        Organizacion::marcarAnfitriona($organizacionId, null);
+                    }
+                }
 
-                return $idNumerico;
+                return $ieId;
             }
         );
 
-        Sesion::flash('exito', $idNumerico === null
+        $aviso = $idNumerico === null
             ? 'Institución educativa registrada.'
-            : 'Datos actualizados.');
+            : 'Datos actualizados.';
+
+        /*
+         * Se avisa del traslado de la marca porque es un efecto sobre OTRA ficha
+         * que quien guarda no está mirando: solo puede haber un anfitrión, así
+         * que marcar este colegio desmarcó al anterior.
+         */
+        if ($seraAnfitriona && $anfitrionaAntes !== null && $anfitrionaAntes !== $nuevoId) {
+            $previa  = InstitucionEducativa::porId($anfitrionaAntes);
+            $aviso  .= ' Ahora es la institución anfitriona; dejó de serlo «'
+                     . ($previa['nombre'] ?? 'la anterior') . '».';
+        } elseif ($seraAnfitriona) {
+            $aviso .= ' Queda marcada como institución anfitriona: sus estudiantes'
+                    . ' pagan la tarifa COCIAP y compiten en su propia bolsa.';
+        }
+
+        Sesion::flash('exito', $aviso);
 
         $this->redirigir('/instituciones/' . $nuevoId . '/editar');
     }
@@ -220,9 +292,19 @@ final class InstitucionController extends Controller
         $v->requerido('distrito', 'El distrito')->maximo('distrito', 100, 'El distrito');
         $v->requerido('provincia', 'La provincia')->maximo('provincia', 100, 'La provincia');
         $v->requerido('departamento', 'El departamento')->maximo('departamento', 100, 'El departamento');
-        $v->requerido('tipo', 'El tipo de institución')
-          ->enLista('tipo', ['publica', 'privada'], 'El tipo de institución');
+        $v->requerido('tipo', 'La gestión de la I.E.')
+          ->enLista('tipo', ['publica', 'privada'], 'La gestión de la I.E.');
         $v->requerido('direccion', 'La dirección')->maximo('direccion', 250, 'La dirección');
+
+        /*
+         * Papel en el concurso (D-37). Va explícito y no como una casilla que se
+         * puede pasar por alto: si el colegio anfitrión se registra sin marcar,
+         * sus estudiantes se cobran como cualquier pública y compiten en la
+         * bolsa equivocada, sin ningún aviso. Un campo que hay que responder no
+         * se olvida; una casilla desmarcada, sí.
+         */
+        $v->requerido('papel', 'El papel en el concurso')
+          ->enLista('papel', ['externa', 'anfitriona'], 'El papel en el concurso');
 
         /*
          * Docente delegado — obligatorio, **incluido el DNI desde D-28**. Antes

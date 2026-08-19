@@ -23,12 +23,64 @@ final class Concurso
     public static function vigente(): ?array
     {
         return Database::uno(
-            'SELECT c.*, o.nombre AS organizacion
+            'SELECT c.*,
+                    o.nombre         AS organizacion,
+                    o.institucion_id AS organizacion_institucion_id
                FROM concursos c
                JOIN organizaciones o ON o.id = c.organizacion_id
            ORDER BY c.fecha_evento DESC
               LIMIT 1'
         );
+    }
+
+    /**
+     * Modalidad (`tipo_origen`) de un participante: la que elige su tarifa y la
+     * bolsa en la que compite.
+     *
+     * Es el ÚNICO sitio donde se decide (D-37). Antes la misma regla estaba
+     * copiada en cuatro —el alta, el filtro del listado y los dos carnés—, y con
+     * una modalidad más habría habido cuatro copias que mantener sincronizadas.
+     *
+     * `$institucion` en null significa estudiante libre: no tiene colegio.
+     *
+     * 'organizadora' cuando el colegio es el anfitrión del concurso. La
+     * comparación es contra `organizaciones.institucion_id` —un entero— y no
+     * contra el nombre del colegio, que es lo que la haría frágil.
+     */
+    public static function modalidad(array $concurso, ?array $institucion): string
+    {
+        if ($institucion === null) {
+            return 'libre';
+        }
+
+        $anfitriona = $concurso['organizacion_institucion_id'] ?? null;
+
+        if ($anfitriona !== null && (int) $anfitriona === (int) $institucion['id']) {
+            return 'organizadora';
+        }
+
+        return (string) $institucion['tipo'];
+    }
+
+    /**
+     * Rótulo de la modalidad, tal como lo lee una persona: en el carné, en la
+     * vista pública y en el listado.
+     *
+     * Separado del valor guardado a propósito (D-37). En la base la modalidad
+     * del anfitrión se llama `'organizadora'` —el esquema no puede llevar el
+     * nombre de un inquilino, porque el día que organice otro colegio seguiría
+     * diciendo COCIAP—, pero quien lee el carné espera «COCIAP». Cambiar el
+     * rótulo es cambiar esta línea; cambiar el valor sería una migración.
+     */
+    public static function etiquetaModalidad(?string $tipoOrigen): string
+    {
+        return match ($tipoOrigen) {
+            'publica'      => 'Pública',
+            'privada'      => 'Privada',
+            'libre'        => 'Libre',
+            'organizadora' => 'COCIAP',
+            default        => '—',
+        };
     }
 
     /**
@@ -94,7 +146,7 @@ final class Concurso
             "SELECT tipo_origen, monto
                FROM tarifas
               WHERE concurso_id = :con
-           ORDER BY FIELD(tipo_origen,'publica','privada','libre')",
+           ORDER BY FIELD(tipo_origen,'publica','privada','libre','organizadora')",
             ['con' => $concursoId]
         );
     }

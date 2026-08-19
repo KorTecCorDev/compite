@@ -117,9 +117,10 @@ final class Participante
     {
         return Database::uno(
             "SELECT p.*,
-                    ie.nombre AS institucion, ie.tipo AS institucion_tipo,
+                    ie.nombre AS institucion,
                     c.nombre AS concurso, c.fecha_evento, c.sede,
                     i.id AS inscripcion_id, i.estado, i.monto, i.motivo_anulacion,
+                    i.tipo_origen,
                     cat.nivel, cat.grado
                FROM participantes p
                JOIN concursos c ON c.id = p.concurso_id

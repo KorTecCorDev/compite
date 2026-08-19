@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Core\Database;
+use InvalidArgumentException;
 
 /**
  * Inscripción: una fila POR PARTICIPANTE, aunque el alta se haga en bloque
@@ -20,15 +21,55 @@ final class Inscripcion
      */
     public static function crear(array $datos): int
     {
+        /*
+         * `tipo_origen` es obligatorio (D-37): es la modalidad que eligió el
+         * monto, y se congela con él. Quien crea una inscripción tiene que
+         * decir con cuál se cobró — deducirla después del colegio es justo lo
+         * que permitía que las dos se contradijeran.
+         *
+         * La comprobación va aquí porque LA BASE NO PROTEGE. Comprobado sobre
+         * MariaDB 10.4 con STRICT_TRANS_TABLES activo: un INSERT que omite una
+         * columna ENUM NOT NULL sin default no se rechaza — se rellena con el
+         * PRIMER valor del ENUM, que aquí es 'publica'. Un olvido no explotaría:
+         * marcaría como pública una inscripción privada de S/ 15.00 y el carné
+         * saldría contradiciendo a la tarifa cobrada, que es exactamente lo que
+         * D-37 vino a cerrar. Preferimos el fallo ruidoso.
+         */
+        $modalidades = ['publica', 'privada', 'libre', 'organizadora'];
+
+        if (!in_array($datos['tipo_origen'] ?? null, $modalidades, true)) {
+            throw new InvalidArgumentException(
+                'La inscripción necesita una modalidad válida (' . implode(', ', $modalidades)
+                . '); se recibió ' . var_export($datos['tipo_origen'] ?? null, true) . '.'
+            );
+        }
+
+        /*
+         * `medio_pago` y `fecha_pago` viajan cuando la inscripción nace ya
+         * pagada, que ocurre al corregir una categoría o al reinscribir a quien
+         * ya había pagado. Sin ellos, la nueva quedaba «confirmada» pero sin
+         * rastro de CÓMO se cobró: la secretaria cuadrando la caja al final del
+         * día veía un pago confirmado sin medio, y el código de seguridad de
+         * Yape —que es la prueba de esa transacción— desaparecía.
+         */
         return Database::insertar(
-            'INSERT INTO inscripciones (participante_id, categoria_id, usuario_id, estado, monto)
-                  VALUES (:participante, :categoria, :usuario, :estado, :monto)',
+            'INSERT INTO inscripciones (
+                participante_id, categoria_id, usuario_id, estado, tipo_origen, monto,
+                medio_pago, yape_codigo_seguridad, fecha_pago
+             ) VALUES (
+                :participante, :categoria, :usuario, :estado, :tipo_origen, :monto,
+                :medio_pago, :yape, :fecha_pago
+             )',
             [
                 'participante' => $datos['participante_id'],
                 'categoria'    => $datos['categoria_id'],
                 'usuario'      => $datos['usuario_id'],
                 'estado'       => $datos['estado'] ?? 'pendiente',
+                'tipo_origen'  => $datos['tipo_origen'],
                 'monto'        => $datos['monto'],
+                'medio_pago'   => $datos['medio_pago'] ?? null,
+                'yape'         => $datos['yape_codigo_seguridad'] ?? null,
+                'fecha_pago'   => $datos['fecha_pago'] ?? null,
             ]
         );
     }
@@ -41,7 +82,7 @@ final class Inscripcion
         return Database::uno(
             'SELECT i.*, p.codigo_correlativo, p.dni, p.ap_paterno, p.ap_materno,
                     p.nombres, p.tipo_participante, p.institucion_id, p.apoderado_id,
-                    ie.nombre AS institucion, ie.tipo AS institucion_tipo,
+                    ie.nombre AS institucion,
                     cat.nivel, cat.grado,
                     u.nombres AS registrado_por
                FROM inscripciones i
@@ -68,11 +109,33 @@ final class Inscripcion
                        i.requiere_devolucion, i.created_at,
                        p.codigo_correlativo, p.dni, p.ap_paterno, p.ap_materno,
                        p.nombres, p.tipo_participante,
-                       ie.nombre AS institucion, ie.tipo AS institucion_tipo,
-                       cat.nivel, cat.grado
+                       ie.nombre AS institucion, i.tipo_origen,
+                       cat.nivel, cat.grado,
+                       -- Quién registró la inscripción (D-39). Es el único de los
+                       -- tres firmantes que se muestra en el listado, por decisión
+                       -- del propietario; los otros dos —quién cobró y quién anuló—
+                       -- quedan guardados en `confirmado_por` y `anulado_por`.
+                       u.nombres AS registrado_por,
+                       /*
+                        * ¿Le queda al participante alguna inscripción viva?
+                        *
+                        * Distingue las dos anuladas que se ven igual en el
+                        * listado y no lo son: la que dejó atrás una corrección
+                        * —el estudiante sigue inscrito, no hay nada que hacer—
+                        * y la que dejó a alguien FUERA del concurso, que es la
+                        * única que se puede reinscribir. Sin esto, el enlace de
+                        * reinscribir saldría en todas y sería erróneo en casi
+                        * todas, porque cada corrección deja una anulada detrás.
+                        */
+                       EXISTS (
+                           SELECT 1 FROM inscripciones i2
+                            WHERE i2.participante_id = p.id
+                              AND i2.estado <> 'anulada'
+                       ) AS participante_activo
                   FROM inscripciones i
                   JOIN participantes p ON p.id = i.participante_id
                   JOIN categorias cat ON cat.id = i.categoria_id
+                  JOIN usuarios u ON u.id = i.usuario_id
              LEFT JOIN instituciones_educativas ie ON ie.id = p.institucion_id
                  WHERE p.concurso_id = :concurso";
 
@@ -83,15 +146,16 @@ final class Inscripcion
             $parametros['institucion'] = (int) $filtros['institucion_id'];
         }
 
-        // 'publica' / 'privada' miran el tipo de la I.E.; 'libre' mira el tipo
-        // de participante, porque un estudiante libre no tiene institución.
+        /*
+         * La modalidad se lee de la inscripción, no se reconstruye (D-37).
+         * Antes esto tenía dos ramas —una mirando `ie.tipo` y otra
+         * `p.tipo_participante`— porque la modalidad no se guardaba en ningún
+         * sitio. Ahora es la columna que decidió el monto, así que filtrar es
+         * comparar, y el filtro no puede discrepar de lo que dice el carné.
+         */
         if (!empty($filtros['tipo_origen'])) {
-            if ($filtros['tipo_origen'] === 'libre') {
-                $sql .= " AND p.tipo_participante = 'libre'";
-            } else {
-                $sql .= " AND p.tipo_participante = 'delegacion' AND ie.tipo = :tipo_ie";
-                $parametros['tipo_ie'] = $filtros['tipo_origen'];
-            }
+            $sql .= ' AND i.tipo_origen = :tipo_origen';
+            $parametros['tipo_origen'] = $filtros['tipo_origen'];
         }
 
         if (!empty($filtros['nivel'])) {
@@ -251,20 +315,27 @@ final class Inscripcion
     public static function confirmarPago(
         int $id,
         string $medioPago,
-        ?string $yapeCodigo
+        ?string $yapeCodigo,
+        int $usuarioId
     ): void {
+        // `confirmado_por` no es opcional (D-39): cobrar es el acto que mueve
+        // dinero, y con varias secretarias a la vez un cobro mal hecho tiene que
+        // tener dueño. Se exige en la firma del método para que no se pueda
+        // llamar sin decirlo.
         Database::ejecutar(
             "UPDATE inscripciones
                 SET estado = 'confirmada',
                     medio_pago = :medio,
                     yape_codigo_seguridad = :yape,
-                    fecha_pago = NOW()
+                    fecha_pago = NOW(),
+                    confirmado_por = :usuario
               WHERE id = :id AND estado = 'pendiente'",
             [
-                'medio' => $medioPago,
+                'medio'   => $medioPago,
                 // Solo se guarda para Yape; en transferencia y efectivo queda NULL.
-                'yape'  => $medioPago === 'yape' ? $yapeCodigo : null,
-                'id'    => $id,
+                'yape'    => $medioPago === 'yape' ? $yapeCodigo : null,
+                'usuario' => $usuarioId,
+                'id'      => $id,
             ]
         );
     }
@@ -276,7 +347,7 @@ final class Inscripcion
      * una inscripción pendiente nunca cobró nada, así que no hay qué devolver.
      * Por eso se decide aquí y no se acepta desde el formulario.
      */
-    public static function anular(int $id, string $motivo, bool $esDefinitiva): void
+    public static function anular(int $id, string $motivo, bool $esDefinitiva, int $usuarioId): void
     {
         $actual = self::porId($id);
 
@@ -286,17 +357,58 @@ final class Inscripcion
 
         $requiereDevolucion = $esDefinitiva && $actual['estado'] === 'confirmada';
 
+        // `anulado_por` obligatorio por el mismo motivo que en el cobro (D-39):
+        // anular saca a alguien del concurso y, si había pago, manda un monto al
+        // fondo de devoluciones.
         Database::ejecutar(
             "UPDATE inscripciones
                 SET estado = 'anulada',
                     motivo_anulacion = :motivo,
-                    requiere_devolucion = :devolucion
+                    requiere_devolucion = :devolucion,
+                    anulado_por = :usuario
               WHERE id = :id",
             [
                 'motivo'     => $motivo,
                 'devolucion' => $requiereDevolucion ? 1 : 0,
+                'usuario'    => $usuarioId,
                 'id'         => $id,
             ]
+        );
+    }
+
+    /**
+     * Añade una nota al motivo de anulación, sin borrar lo que ya decía.
+     *
+     * La anulada es la fila que cuenta qué pasó, así que la reinscripción se
+     * anota ahí y no en la nueva. Se concatena en vez de sobrescribir: el motivo
+     * original es la razón por la que alguien quedó fuera, y perderlo dejaría el
+     * historial diciendo solo la mitad.
+     */
+    public static function anotarEnAnulacion(int $id, string $nota): void
+    {
+        Database::ejecutar(
+            "UPDATE inscripciones
+                SET motivo_anulacion = LEFT(
+                        CONCAT(COALESCE(motivo_anulacion, ''), ' · ', :nota), 250
+                    )
+              WHERE id = :id",
+            ['nota' => $nota, 'id' => $id]
+        );
+    }
+
+    /**
+     * Saca una inscripción anulada del fondo de devoluciones.
+     *
+     * Se usa al reinscribir a quien había pagado: el dinero **no se devolvió**,
+     * se está reutilizando en la inscripción nueva. Si el marcador se quedara
+     * puesto, el reporte de devoluciones pediría entregarle un dinero que la
+     * secretaria acaba de aplicar otra vez — lo pagaría dos veces el concurso.
+     */
+    public static function limpiarDevolucion(int $id): void
+    {
+        Database::ejecutar(
+            'UPDATE inscripciones SET requiere_devolucion = 0 WHERE id = :id',
+            ['id' => $id]
         );
     }
 

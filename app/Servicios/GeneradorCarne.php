@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Servicios;
 
+use App\Models\Concurso;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Endroid\QrCode\Builder\Builder;
@@ -498,19 +499,22 @@ HTML;
         $grado = (int) ($d['grado'] ?? 0) . '° ' . ucfirst((string) ($d['nivel'] ?? ''));
 
         /*
-         * Modalidad: libre / pública / privada. Son los mismos tres valores que
-         * `tarifas.tipo_origen` usa para decidir cuánto paga el estudiante, y se
-         * derivan igual —de `participantes.tipo_participante` cuando es libre y
-         * de `instituciones_educativas.tipo` cuando viene por delegación—, para
-         * que el carné no pueda contradecir a la tarifa que se cobró.
+         * Modalidad: libre / pública / privada / COCIAP. Es el mismo valor que
+         * `tarifas.tipo_origen` usó para decidir cuánto paga el estudiante, y se
+         * LEE de la inscripción en vez de rederivarse aquí (D-37).
+         *
+         * Rederivarla era la intención original —«que el carné no pueda
+         * contradecir a la tarifa que se cobró»— pero conseguía lo contrario:
+         * el monto quedaba congelado en la inscripción y la modalidad se
+         * recalculaba en cada impresión desde `instituciones_educativas.tipo`,
+         * así que reclasificar un colegio cambiaba la modalidad de los carnés ya
+         * emitidos y dejaba de cuadrar con su importe.
          */
         $esLibre = ($d['tipo_participante'] ?? '') === 'libre';
 
-        $modalidad = $esLibre ? 'Libre' : match ((string) ($d['institucion_tipo'] ?? '')) {
-            'publica' => 'Pública',
-            'privada' => 'Privada',
-            default   => '—',
-        };
+        $modalidad = Concurso::etiquetaModalidad(
+            isset($d['tipo_origen']) ? (string) $d['tipo_origen'] : null
+        );
 
         $fecha = !empty($d['fecha_evento'])
             ? date('d/m/Y', strtotime((string) $d['fecha_evento']))

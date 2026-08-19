@@ -74,15 +74,49 @@ $msg = static function (string $campo) use ($errores): string {
                      role="status" hidden></div>
             <?php endif; ?>
 
+            <?php
+            /*
+             * «Gestión», no «Tipo», y sin mencionar la tarifa (D-37). La ayuda
+             * decía «Define la tarifa: pública S/10, privada S/15», y desde que
+             * el colegio anfitrión tiene modalidad y tarifa propias eso dejó de
+             * ser cierto: marcarlo como pública —que es lo que es— le anunciaba
+             * a la secretaria un cobro que no es el suyo. Lo que cobra se decide
+             * abajo, en el papel que juega, y se muestra al inscribir.
+             */
+            ?>
             <label class="campo<?= $err('tipo') ?>">
-                <span class="campo__etiqueta">Tipo *</span>
+                <span class="campo__etiqueta">Gestión *</span>
                 <select name="tipo" required>
                     <option value="">Seleccionar…</option>
                     <option value="publica" <?= ($valores['tipo'] ?? '') === 'publica' ? 'selected' : '' ?>>Pública</option>
                     <option value="privada" <?= ($valores['tipo'] ?? '') === 'privada' ? 'selected' : '' ?>>Privada</option>
                 </select>
-                <span class="campo__ayuda">Define la tarifa: pública S/10, privada S/15.</span>
+                <span class="campo__ayuda">Qué clase de institución es. No decide sola la tarifa.</span>
                 <?= $msg('tipo') ?>
+            </label>
+
+            <?php $esAnfitriona = ($valores['papel'] ?? 'externa') === 'anfitriona'; ?>
+            <label class="campo campo--ancho<?= $err('papel') ?>">
+                <span class="campo__etiqueta">Papel en el concurso *</span>
+                <select name="papel" required>
+                    <option value="externa" <?= $esAnfitriona ? '' : 'selected' ?>>
+                        Delegación externa
+                    </option>
+                    <option value="anfitriona" <?= $esAnfitriona ? 'selected' : '' ?>>
+                        Anfitriona — organiza el concurso
+                    </option>
+                </select>
+                <span class="campo__ayuda">
+                    <?php if ($esAnfitriona): ?>
+                        Sus estudiantes se inscriben en la modalidad <strong>COCIAP</strong>:
+                        tarifa propia y bolsa de competencia aparte de las demás.
+                    <?php else: ?>
+                        Un colegio que manda su delegación. Solo la institución que organiza
+                        el concurso es anfitriona, y solo puede haber una: marcar otra
+                        traslada la marca.
+                    <?php endif; ?>
+                </span>
+                <?= $msg('papel') ?>
             </label>
 
             <label class="campo<?= $err('departamento') ?>">

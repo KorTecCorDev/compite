@@ -80,6 +80,11 @@ final class PagoController extends Controller
         // Solo Yape trae código; en transferencia y efectivo la columna queda NULL.
         $yapeCodigo = $medioPago === 'yape' ? $codigoYape : null;
 
+        // Quién está cobrando. Queda escrito en cada inscripción (D-39): con
+        // varias secretarias trabajando a la vez, un cobro mal hecho tiene que
+        // poder atribuirse.
+        $usuario = (int) Auth::id();
+
         $confirmadas = 0;
         $total       = 0.0;
         $fallosCarne = [];
@@ -95,8 +100,8 @@ final class PagoController extends Controller
                  * El fallo se reporta y el carné se puede regenerar después.
                  */
                 Database::transaccion(
-                    static function () use ($inscripcionId, $medioPago, $yapeCodigo): void {
-                        Inscripcion::confirmarPago($inscripcionId, $medioPago, $yapeCodigo);
+                    static function () use ($inscripcionId, $medioPago, $yapeCodigo, $usuario): void {
+                        Inscripcion::confirmarPago($inscripcionId, $medioPago, $yapeCodigo, $usuario);
                         self::emitirCarne($inscripcionId);
                     }
                 );

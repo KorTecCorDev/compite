@@ -49,7 +49,7 @@ Sistema interno en PHP para que la secretaría de la I.E. "Víctor Valenzuela Gu
 - **Organización** (tenant): entidad que organiza un concurso. Preparada desde el diseño para futuro multi-tenant/SaaS, pero en este MVP solo existe una: UNASAM/I.E. Víctor Valenzuela Guardia. `[CONFIRMADO POR PROPIETARIO]`
 - **Concurso**: evento concreto organizado por una Organización (COCIAP 2026 es la primera instancia).
 - **Categoría**: nivel + grado dentro de un Concurso (Primaria 1°–6°, Secundaria 1°–5° = 11 categorías fijas para COCIAP).
-- **Tarifa**: costo de inscripción por Concurso y tipo de origen (I.E. pública S/10, I.E. privada S/15, estudiante libre S/15). No varía por categoría.
+- **Tarifa**: costo de inscripción por Concurso y tipo de origen (I.E. pública S/10, I.E. privada S/15, estudiante libre S/15, **I.E. organizadora S/10 — D-37**). No varía por categoría.
 - **Institución Educativa**: catálogo **global y compartido** entre todas las Organizaciones del sistema (no aislado por tenant), para no duplicar el mismo colegio si participa en concursos de distintas organizaciones. `[CONFIRMADO POR PROPIETARIO]`
 - **Participante**: puede ser tipo `delegacion` (vinculado a una Institución Educativa, dentro de un lote institucional) o tipo `libre` (estudiante independiente, vinculado a un Apoderado).
 - **Apoderado**: entidad reutilizable — puede vincularse a varios estudiantes libres (ej. hermanos). `[CONFIRMADO POR PROPIETARIO]`
@@ -250,7 +250,8 @@ CREATE TABLE carnes (
 | Anular inscripciones | ✅ | ✅ |
 | Exportar reportes Excel | ✅ | ✅ |
 | Gestionar Concurso, Categorías, Tarifas | ❌ | ✅ |
-| Gestionar usuarios (crear/desactivar secretarias) | ❌ | ✅ |
+| Reinscribir a un participante que quedó fuera (D-38) | ✅ | ✅ |
+| Gestionar usuarios y contraseñas en `/usuarios` (D-39) | ❌ | ✅ |
 | Gestionar Organización | ❌ | ✅ |
 
 ---
@@ -1478,18 +1479,284 @@ canto. Escudo de 10.5 × 8.74 mm y QR intacto en 16.5 mm.
 
 ---
 
+### D-37 — La I.E. organizadora inscribe a sus propios estudiantes
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** secciones 3, 5, 6 y P-04
+
+**La situación nueva.** El COCIAP tendrá delegaciones propias: los estudiantes matriculados
+este año en la I.E. que organiza el concurso. Cada tutor de sección lleva su nómina impresa a
+secretaría e indica a quiénes inscribir; **la secretaria los registra uno por uno**, delante del
+tutor, para que ambos queden conformes. No hay autoservicio, no hay carga de archivos y no hay
+usuarios nuevos: la regla de la §3 —único canal de captura, la secretaria— sigue intacta.
+
+**Las dos opciones que planteó el propietario, y por qué no se tomó ninguna tal cual.**
+
+- *«Una delegación cualquiera, diferenciada por el nombre de la sección.»* Habría metido ~20
+  pseudocolegios en `instituciones_educativas` —un catálogo declarado **global y compartido** en
+  la §3—, con dirección, distrito y los seis campos del director repetidos y destinados a
+  divergir: exactamente el problema que D-28 acababa de resolver. Y agrupar «todo el COCIAP»
+  habría quedado atado a un `LIKE` sobre el nombre, que es la clase de dependencia frágil que
+  D-21 sacó de la base.
+- *«Una modalidad COCIAP.»* El eje es el correcto —la modalidad **sí** es lo que separa las
+  bolsas—, pero el valor no puede llevar el nombre del inquilino: el modelo tiene
+  `organizaciones` justamente para que el organizador sea un dato y no una constante. El valor
+  almacenado es `'organizadora'`; el rótulo que ve la gente dice «COCIAP».
+
+**La regla de competencia, que no estaba escrita en ninguna parte de este plan.** Confirmada por
+el propietario: los participantes compiten dentro de su grado **y** dentro de su modalidad, con
+estas bolsas por cada nivel + grado:
+
+| Bolsa | Modalidades |
+|---|---|
+| 1 | privada **+** libre (juntos) |
+| 2 | publica |
+| 3 | organizadora |
+
+De esta regla depende entera la Fase 5. Queda registrada aquí porque no se deducía de nada de lo
+ya escrito.
+
+**La tarifa.** S/ 10.00, igual hoy que la de una I.E. pública, y aun así **una fila aparte de
+`tarifas`** por decisión expresa del propietario: la tarifa del COCIAP puede cambiar a futuro, y
+reusar `'publica'` habría obligado a reclasificar el colegio anfitrión entero para moverle el
+precio, arrastrando en el cambio a todos los demás colegios públicos.
+
+**Lo que se hizo** (migración `database/migraciones/2026-08-19-modalidad-organizadora.sql`):
+
+1. `organizaciones.institucion_id` — enlace explícito «esta organización **es** esta I.E.».
+   Nulable, y no de forma provisional: una organización puede no tener estudiantes propios. Va
+   aquí y no como un booleano `es_organizadora` en la I.E. porque ser anfitriona es propiedad de
+   la *relación* con la organización, no del colegio; un flag en un catálogo global sería falso
+   para cualquier otro inquilino en cuanto exista un segundo (misma familia que P-07).
+2. `tarifas.tipo_origen` gana el valor `'organizadora'`, con su fila a S/ 10.00.
+3. `inscripciones.tipo_origen` — la modalidad pasa a guardarse como **snapshot** junto al monto.
+4. La I.E. anfitriona **no se siembra**: sus datos, incluido un docente delegado con DNI que
+   `docente_delegado_id NOT NULL` exige, los captura la secretaria en `/instituciones`.
+
+**La modalidad se decide y se rotula en un solo sitio.** `Concurso::modalidad()` la deriva —una
+comparación de enteros contra `organizaciones.institucion_id`, nunca contra el nombre del
+colegio— y `Concurso::etiquetaModalidad()` la rotula. El valor guardado y el rótulo van
+separados a propósito: en la base se llama `'organizadora'` porque el esquema no puede llevar el
+nombre de un inquilino, y en pantalla dice «COCIAP» porque es lo que espera quien lee el carné.
+Cambiar el rótulo es una línea; cambiar el valor sería una migración.
+
+Con eso, los cinco sitios que antes rederivaban la modalidad por su cuenta pasan a leerla:
+el alta por lote, el filtro del listado, la píldora de cada fila, el carné en PDF y la vista
+pública del QR. La caja de tarifa del formulario de delegación también: su `data-tipo` llevaba
+el tipo del colegio, así que habría cotizado al anfitrión como pública —hoy sin diferencia
+visible, porque ambas valen S/ 10, y equivocada en cuanto la tarifa organizadora se mueva, que
+es justamente para lo que existe. `instituciones_educativas.tipo` deja de viajar en esas
+consultas: ya no lo consume nadie, y tenerlo al lado de la modalidad congelada solo invitaba a
+volver a derivarla de él.
+
+**Comprobado.** «COCIAP» ocupa 9.56 mm en la columna de modalidad del carné, que mide 15.00 mm
+—medido con las métricas de DejaVu Sans a 7.2 pt, las mismas que usa Dompdf—, prácticamente lo
+mismo que «Privada» (9.51 mm), que ya se imprime. No parte en dos líneas, así que la maqueta de
+D-33 a D-36 no se mueve.
+
+**Hallazgo colateral: la modalidad podía contradecir al monto que la eligió.** `inscripciones.monto`
+era snapshot desde el principio, pero la modalidad se derivaba **en vivo** de
+`instituciones_educativas.tipo` cada vez que se pintaba un carné (`GeneradorCarne.php`,
+`carne/publico.php`) o se filtraba el listado. Reclasificar un colegio de pública a privada
+cambiaba la modalidad impresa en los carnés **ya emitidos** mientras su monto seguía diciendo
+S/ 10.00 — justo lo que el comentario de `GeneradorCarne` afirmaba estar evitando. Congelar la
+modalidad junto al monto lo cierra, y de paso elimina las copias de la misma derivación: el
+filtro de `Inscripcion::listar()` deja de necesitar su `if/else` de dos ramas.
+
+**Y la base no protege esa columna.** Comprobado sobre MariaDB 10.4 con `STRICT_TRANS_TABLES`
+activo —el modo que fuerza D-07—: un `INSERT` que omite una columna `ENUM NOT NULL` sin default
+**no se rechaza**, se rellena con el primer valor del ENUM, que aquí es `'publica'`. Es decir,
+olvidarse de la modalidad en cualquier camino de alta no daría error: marcaría como pública una
+inscripción privada de S/ 15.00, y el carné saldría contradiciendo a la tarifa cobrada. Por eso
+`Inscripcion::crear()` valida la modalidad en PHP y lanza si no es una de las cuatro: la
+garantía que el motor no da, la da la aplicación.
+
+**Ampliación del 2026-08-19 — el papel del colegio se marca, y la interfaz dejaba de decir la
+verdad.** Al ir a dar de alta el colegio anfitrión, el propietario señala que marcarlo como
+«Pública» induce a pensar que cobra la tarifa de las públicas. Tenía razón, y **estaba escrito en
+la pantalla**: el formulario de institución anunciaba bajo el selector de tipo «Define la tarifa:
+pública S/10, privada S/15». Esa frase era cierta hasta D-37 y dejó de serlo con él.
+
+Se evaluó darle a `instituciones_educativas.tipo` un tercer valor `'anfitrion'`. Se descartó por
+cuatro razones concretas:
+
+1. **Rompe el cobro de inmediato.** `Concurso::modalidad()` devuelve `$institucion['tipo']` para
+   las delegaciones y ese valor va directo a `Concurso::tarifa()`, que buscaría una tarifa
+   llamada `'anfitrion'`; la fila se llama `'organizadora'`, así que lanzaría excepción y no se
+   podría inscribir a nadie. El precio permanente sería mantener dos ENUM sincronizados.
+2. **Deja de ser imposible tener dos anfitriones.** Siendo una columna de `organizaciones`, marcar
+   un colegio desmarca al anterior **por construcción**. Un valor de ENUM no lo impide, y entonces
+   ninguna consulta sabe cuál manda.
+3. **Se pierde un dato cierto.** El colegio anfitrión es de gestión pública; con el ENUM el
+   catálogo dejaría de saberlo y el filtro «públicas» no lo encontraría.
+4. **El catálogo es global** (§3): «anfitrión» no diría de qué concurso, y con un segundo
+   inquilino el mismo colegio sería anfitrión de uno y delegación normal de otro. Es P-07 otra vez.
+
+Lo que se hizo en su lugar:
+
+- El selector pasa de **«Tipo»** a **«Gestión»** —el término real en el Perú— y su ayuda deja de
+  hablar de tarifas. El hecho (qué clase de colegio es) se separa de la consecuencia (cuánto cobra).
+- Campo nuevo y **obligatorio** en el mismo formulario: **Papel en el concurso** → «Delegación
+  externa» (por defecto) o «Anfitriona — organiza el concurso». Va como campo que hay que
+  responder y no como casilla que se puede pasar por alto, porque un anfitrión sin marcar cobra
+  como pública y compite en la bolsa equivocada **sin ningún aviso**. Al elegir «anfitriona» se
+  escribe `organizaciones.institucion_id` dentro de la misma transacción que guarda el colegio.
+- En el listado, el anfitrión lleva la píldora **`ANFITRIÓN`** en ámbar en vez de la de gestión.
+  El ámbar es deliberado: el anfitrión *es* público, y son justo esas dos las que hay que poder
+  distinguir de un vistazo.
+- Se desmarca solo si el anfitrión anterior era ese mismo colegio; sin esa condición, editar
+  cualquier colegio externo —que llega con papel «externa»— le quitaría la marca al anfitrión real.
+  Y como solo puede haber uno, trasladar la marca lo avisa por nombre, porque afecta a una ficha
+  que quien guarda no está mirando.
+
+**Vocabulario, confirmado por el propietario.** Son dos cosas distintas y llevan dos palabras
+distintas: **«Anfitrión»** es el *papel del colegio* y solo aparece en el catálogo de
+instituciones; **«COCIAP»** es la *modalidad de la inscripción* y es lo que se muestra en el
+carné, en el listado y en los reportes. En la base, el valor sigue siendo `'organizadora'`.
+
+**Consecuencia aceptada.** Al tratarse como una delegación cualquiera, el encargado registrado
+para todo estudiante del colegio anfitrión es el **docente delegado de la I.E.** (su coordinador),
+no el tutor de cada aula, y la sección no se guarda ni se imprime —solo el grado, confirmado por
+el propietario—. Es reversible sin migración: `participantes.apoderado_id` ya es por participante.
+
+**Pendiente de un paso manual.** Mientras `organizaciones.institucion_id` siga en NULL, ninguna
+inscripción resuelve a `'organizadora'` y el sistema se comporta exactamente como antes. El
+enlace se hace una sola vez, tras dar de alta la I.E. anfitriona. El paso 7 de la migración lo
+recuerda cada vez que se ejecuta.
+
+**Inconsistencia reportada (§0), ajena a esta decisión.** La base local tiene el UNIQUE de
+`concursos.codigo` con el nombre `uk_concurso_codigo`, mientras que `schema.sql` lo declara en
+línea y MySQL lo nombra `codigo`. Mismas columnas y mismo comportamiento; solo difiere el nombre
+del índice. No se toca: renombrarlo a tres días del concurso es riesgo sin beneficio.
+
+---
+
+### D-38 — Reinscribir: la salida del callejón que abrió D-31 · resuelve P-06
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** secciones 6 y 7, P-06
+
+**El callejón, verificado en el código.** Con el documento único de D-31, un participante cuya
+**única** inscripción se anulaba quedaba fuera del concurso y sin salida por pantalla:
+
+- `Participante::porDocumento()` bloquea el alta de ese DNI, sin mirar el estado, así que no se
+  puede volver a registrar.
+- `AnulacionController::inscripcionVigenteOFallar()` **rechaza lo anulado**, así que «Corregir
+  categoría» tampoco lo recupera. La nota de P-06 decía que sí; no era exacto.
+- No existía ninguna ruta de reinscripción.
+
+La única salida era SQL a mano. **Y ya había pasado**: en la base de pruebas quedaron dos
+participantes atrapados (los códigos `-0021-` y `-0031-`) antes de que nadie lo buscara.
+
+**La acción nueva.** «Reinscribir» crea una inscripción nueva para el mismo participante. No
+revive la anulada: esa se queda con su motivo, que es el rastro de lo que pasó, y el participante
+conserva su correlativo, así que cualquier carné ya impreso sigue sirviendo.
+
+- Si **había pagado** —se deduce de `fecha_pago`, que la anulación no borra, y no de
+  `requiere_devolucion`—, la nueva nace `confirmada`, con su mismo medio de pago y su carné
+  emitido, y el monto **sale del fondo de devoluciones**: ese dinero no se devolvió, se está
+  volviendo a aplicar. Si el marcador se quedara puesto, el reporte pediría entregar un dinero ya
+  gastado en esa misma inscripción y el concurso lo pagaría dos veces.
+- Si no había pago, nace `pendiente`.
+- El motivo, opcional, se **añade** al `motivo_anulacion` sin borrarlo: la razón por la que alguien
+  quedó fuera es media historia y perderla dejaría la otra media sin sentido.
+
+**Dónde está el freno, y por qué no es el rol.** El propietario preguntó si la acción debía ser
+solo del administrador. Se decidió que **no**, y el freno es otro:
+
+- La secretaria ya puede hacer lo *más* peligroso —anular definitivamente, que marca dinero para
+  devolución— y confirmar cobros. Dejarle crear la trampa y no deshacerla convierte cada error en
+  una escalada, justo durante los dos días de registro y con el tutor delante.
+- Reinscribir **no puede fabricar un pago**: hereda lo que ya había. De una pendiente sale una
+  pendiente. No hay forma de convertir a alguien en pagado sin pasar por el cobro.
+- El freno real es que **solo aparece cuando al participante no le queda ninguna inscripción
+  viva**. `Inscripcion::listar()` trae ese dato calculado (`participante_activo`) y el controlador
+  lo vuelve a comprobar al guardar. Sin esa condición se podría reinscribir sobre la anulada que
+  cada corrección de categoría deja detrás, y el estudiante acabaría con dos inscripciones
+  activas, dos carnés y dos montos.
+- El rastro queda en `inscripciones.usuario_id` y `created_at` de la fila nueva: quién reinscribió
+  y cuándo.
+
+Cambiar a solo-administrador es una línea (`Auth::exigirAdministrador()` en los dos métodos).
+
+**Dos fallos preexistentes que salieron al escribir esto, en «Corregir categoría».** La corrección
+crea la inscripción nueva heredando estado y monto, pero no heredaba `medio_pago`,
+`yape_codigo_seguridad` ni `fecha_pago`, y no emitía el carné:
+
+1. Un estudiante que había pagado quedaba «confirmada» **sin decir cómo se le cobró**. Cuadrar la
+   caja al final del día dejaba de salir, y el código de seguridad de Yape —la prueba de esa
+   transacción— desaparecía.
+2. La inscripción corregida nacía confirmada **y sin carné**, así que el enlace «PDF» del listado
+   respondía «todavía no tiene carné emitido» a alguien que ya había pagado. Había salida —el
+   botón «Regenerar»— pero solo si alguien se acordaba.
+
+Los dos van arreglados aquí, porque «Reinscribir» necesita exactamente la misma lógica y no tenía
+sentido escribir el fallo dos veces.
+
+---
+
+### D-39 — Quién hizo qué, y una pantalla para gestionar a quién
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** secciones 5 y 7
+
+Preguntado por el propietario antes de dar de alta a las secretarias: cómo se cambia una
+contraseña, y si las acciones quedan firmadas para poder detectar al responsable de un registro
+incorrecto. Las dos respuestas eran peores de lo esperado.
+
+**No había forma de cambiar una contraseña.** Ni la secretaria ni el administrador. No existía
+ruta de perfil ni pantalla de usuarios, y `scripts/crear_usuario.php` se niega si el correo ya
+existe. Una credencial filtrada no se podía rotar sin entrar por SSH. Lo llamativo es que la mitad
+de la plomería llevaba escrita desde la Fase 1 y **sin usar**: `Usuario::actualizarPassword()`,
+`Usuario::cambiarEstado()` y `Usuario::todos()` no los llamaba nadie.
+
+**La firma existía a medias, y faltaba justo donde importa.** Solo se firmaba *crear* la
+inscripción (`inscripciones.usuario_id`). `confirmarPago()` escribía medio y fecha pero no quién
+cobró; `anular()` escribía estado y motivo pero no quién anuló. Es decir: los dos actos que tocan
+el dinero —cobrarlo, y mandarlo al fondo de devoluciones— **no tenían dueño**. Y el único que sí
+se guardaba no se mostraba en ninguna vista: había que consultar la base a mano.
+
+**Lo que se hizo:**
+
+1. `inscripciones.confirmado_por` y `inscripciones.anulado_por`, nullables con clave foránea a
+   `usuarios`. NULL significa «no ha pasado», no «no se sabe»: una pendiente no la ha cobrado
+   nadie y la mayoría no se anulan nunca. Los métodos del modelo **exigen** el usuario en su
+   firma, para que no se pueda cobrar ni anular sin decir quién.
+   Las filas anteriores se quedan en NULL a propósito —16 cobros y 3 anulaciones—: rellenarlas
+   con quien registró sería inventar, y una firma inventada es peor que ninguna.
+2. **Columna «Responsable» en `/inscripciones`**, con el nombre de quien registró. Por decisión
+   del propietario es lo único que se muestra; quién cobró y quién anuló quedan guardados pero no
+   se pintan, para no ensanchar una tabla que ya tiene nueve columnas.
+3. **Pantalla `/usuarios`, exclusiva del administrador**: alta, edición de nombre/correo/rol,
+   cambio de contraseña y activar/desactivar. Con tres frenos: nadie puede desactivarse a sí
+   mismo, no se puede dejar el sistema sin ningún administrador activo —ni desactivando ni
+   degradando el rol—, y **los usuarios no se borran nunca**, porque las tres firmas apuntan aquí
+   y tienen que seguir resolviendo cuando la persona ya no trabaje en el concurso.
+   El formulario de contraseña va **separado** del de datos: guardar un cambio de nombre no puede
+   tocarla por descuido. Y separado de verdad, no anidado — anidar formularios es el fallo que ya
+   apagó la caja de cobro una vez (D-29), y se comprueba en la prueba automática.
+
+**Sin autoservicio de contraseña, por decisión del propietario.** No hay `/perfil`: la contraseña
+se asigna y se cambia solo desde `/usuarios`, por el administrador. Tampoco se obliga a cambiarla
+en el primer inicio de sesión. Consecuencia asumida: una secretaria que necesite cambiarla depende
+del administrador. Añadir `/perfil` después es aditivo y no toca nada de esto.
+
+**Fuera de alcance por tiempo:** una bitácora general que firme también instituciones y apoderados.
+El propietario la aplaza a después del concurso. Hoy esas dos tablas siguen sin registrar quién
+las creó o editó.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
-- **P-04 — CONFIRMADO** por el propietario (2026-08-18). «Modalidad» —libre, pública,
-  privada— es el criterio que elige la tarifa, y `tipo_origen` sale de
+- **P-04 — CONFIRMADO** por el propietario (2026-08-18) `[AMPLIADO POR D-37]`. «Modalidad»
+  —libre, pública, privada— es el criterio que elige la tarifa, y `tipo_origen` sale de
   `instituciones_educativas.tipo` para las delegaciones y de `'libre'` para el estudiante
   libre. Es lo que `Inscripcion::listar()` ya venía aplicando y lo que el carné imprime
   bajo ese rótulo desde D-27, así que la confirmación no cambia código: **lo que cierra es
   el riesgo de que el papel ya entregado contradijera la regla**. Tarifas vigentes:
   pública S/ 10.00, privada S/ 15.00, libre S/ 15.00.
-- **P-06** Reinscribir a un participante ya registrado. Con D-31, un estudiante anulado
-  definitivamente no puede volver a darse de alta desde el formulario: su documento ya existe.
-  Hoy solo «Corregir categoría» lo recupera. Decidir si hace falta una pantalla propia antes
-  del día del concurso.
+- ~~**P-06** Reinscribir a un participante ya registrado~~ → **RESUELTO por D-38** (2026-08-19).
+  Y era peor de lo que decía esta nota: «Corregir categoría» tampoco lo recuperaba, porque rechaza
+  lo anulado. La única salida era SQL a mano, y en la base de pruebas ya había dos participantes
+  atrapados. Ahora hay una acción «Reinscribir», visible solo cuando al participante no le queda
+  ninguna inscripción viva.
 - **P-07 — APLAZADO** por decisión del propietario (2026-08-18): por tiempo, el fix no entra
   antes de la presentación y el sistema queda declarado de un solo inquilino en la §9.
   Aislamiento entre organizaciones en `apoderados` e `instituciones_educativas`.

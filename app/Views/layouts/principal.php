@@ -33,6 +33,13 @@ $flash = Sesion::tomarFlash();
         '/apoderados'     => 'Apoderados',
         '/control'        => 'Control de ingreso',
     ];
+
+    // Solo el administrador gestiona usuarios (sección 7 del plan). El enlace
+    // se oculta además de estar protegido en el controlador: enseñarle a la
+    // secretaria una puerta que le va a dar 403 no ayuda a nadie.
+    if (Auth::esAdministrador()) {
+        $enlaces['/usuarios'] = 'Usuarios';
+    }
     ?>
     <nav class="barra__menu">
         <?php foreach ($enlaces as $ruta => $texto): ?>

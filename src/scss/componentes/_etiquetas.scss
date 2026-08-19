@@ -31,6 +31,15 @@
         color: t.$privada-texto;
     }
 
+    // Modalidad del colegio anfitrión (D-37). `text-transform: none` porque
+    // COCIAP es una sigla: la píldora baja todo a minúsculas para «pública» y
+    // «privada», que son adjetivos, y dejaría «cociap».
+    &--organizadora {
+        background: t.$organizadora-fondo;
+        color: t.$organizadora-texto;
+        text-transform: none;
+    }
+
     &--neutra {
         background: t.$gris-suave;
         color: var(--tinta-suave);

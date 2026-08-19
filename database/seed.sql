@@ -15,6 +15,16 @@ SET NAMES utf8mb4;
 
 -- ---------------------------------------------------------------------
 -- Organización (tenant único en este MVP)
+--
+-- `institucion_id` queda en NULL a propósito (D-37): la I.E. anfitriona no se
+-- puede sembrar desde aquí porque necesita un docente delegado con DNI, que es
+-- una fila de `apoderados`, y esos datos los captura la secretaria. Una vez
+-- creada en /instituciones, se enlaza una sola vez:
+--
+--     UPDATE organizaciones SET institucion_id = <id de la I.E.> WHERE id = 1;
+--
+-- Mientras siga en NULL, los estudiantes del colegio anfitrión se cobrarían
+-- como cualquier I.E. pública y no saldrían en su propia bolsa.
 -- ---------------------------------------------------------------------
 INSERT INTO organizaciones (id, nombre)
 VALUES (1, 'I.E. Víctor Valenzuela Guardia — UNASAM')
@@ -61,12 +71,18 @@ ON DUPLICATE KEY UPDATE grado = VALUES(grado);
 
 -- ---------------------------------------------------------------------
 -- Tarifas: no varían por categoría (sección 3 del plan).
---   I.E. pública    S/ 10
---   I.E. privada    S/ 15
---   Estudiante libre S/ 15
+--   I.E. pública      S/ 10
+--   I.E. privada      S/ 15
+--   Estudiante libre  S/ 15
+--   I.E. organizadora S/ 10   (D-37)
+--
+-- 'organizadora' vale hoy lo mismo que 'publica' y aun así es una fila aparte:
+-- el propietario la quiere independiente para poder moverla sin arrastrar a los
+-- demás colegios públicos.
 -- ---------------------------------------------------------------------
 INSERT INTO tarifas (concurso_id, tipo_origen, monto) VALUES
-    (1, 'publica', 10.00),
-    (1, 'privada', 15.00),
-    (1, 'libre',   15.00)
+    (1, 'publica',      10.00),
+    (1, 'privada',      15.00),
+    (1, 'libre',        15.00),
+    (1, 'organizadora', 10.00)
 ON DUPLICATE KEY UPDATE monto = VALUES(monto);

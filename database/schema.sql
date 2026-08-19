@@ -15,6 +15,13 @@
 --   D-28  el docente delegado deja de estar embebido en la I.E. y pasa a ser
 --         un `apoderados`: es el encargado de la delegación y, por tanto, el
 --         apoderado de los participantes que inscribe.
+--   D-39  cada inscripción guarda TRES firmas: quién la registró (usuario_id),
+--         quién cobró (confirmado_por) y quién anuló (anulado_por). Antes solo
+--         la primera, así que un cobro mal hecho no tenía dueño.
+--   D-37  la I.E. organizadora inscribe a sus propios estudiantes: modalidad
+--         'organizadora' con tarifa propia, `organizaciones.institucion_id`
+--         para saber cuál colegio es el anfitrión, y la modalidad guardada
+--         como snapshot en `inscripciones` junto al monto que decidió.
 --
 -- Orden de creación respeta las dependencias de claves foráneas.
 -- =====================================================================
@@ -25,12 +32,28 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 -- ---------------------------------------------------------------------
 -- Tenant. En este MVP solo existe UNASAM / I.E. Víctor Valenzuela Guardia.
+--
+-- institucion_id (D-37): la I.E. que esta organización ES, cuando además de
+-- organizar inscribe a sus propios estudiantes. Es lo que permite reconocer al
+-- colegio anfitrión sin comparar su nombre. NULABLE y no provisional: una
+-- organización puede no tener estudiantes propios en su concurso.
+--
+-- Va aquí y no como un booleano en la I.E. porque ser anfitriona es propiedad
+-- de la RELACIÓN con la organización, no del colegio: el catálogo de I.E. es
+-- global y compartido entre organizaciones, y ese flag sería falso para
+-- cualquier otro inquilino en cuanto exista un segundo.
+--
+-- La clave foránea se añade más abajo, después de crear
+-- `instituciones_educativas`: esta tabla es la raíz del modelo y se crea
+-- primero, así que la referencia va hacia adelante.
 -- ---------------------------------------------------------------------
 CREATE TABLE organizaciones (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(150) NOT NULL,
+    institucion_id INT UNSIGNED NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_organizacion_institucion (institucion_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
@@ -73,11 +96,17 @@ CREATE TABLE categorias (
 
 -- ---------------------------------------------------------------------
 -- Costo por concurso y tipo de origen. No varía por categoría.
+--
+-- 'organizadora' (D-37) es la modalidad de los estudiantes de la I.E. que
+-- organiza el concurso. Hoy vale lo mismo que 'publica' —S/ 10.00— y aun así
+-- es una fila aparte a propósito: el día que una se mueva, la otra no se mueve
+-- con ella. Reusar 'publica' obligaría a reclasificar el colegio anfitrión
+-- entero para cambiarle el precio, arrastrando a todos los demás públicos.
 -- ---------------------------------------------------------------------
 CREATE TABLE tarifas (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     concurso_id INT UNSIGNED NOT NULL,
-    tipo_origen ENUM('publica','privada','libre') NOT NULL,
+    tipo_origen ENUM('publica','privada','libre','organizadora') NOT NULL,
     monto DECIMAL(6,2) NOT NULL,
     UNIQUE KEY uk_tarifa (concurso_id, tipo_origen),
     CONSTRAINT fk_tarifa_concurso
@@ -163,6 +192,15 @@ CREATE TABLE instituciones_educativas (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 
+-- La referencia pendiente de `organizaciones` (D-37). Se cierra aquí, y no en
+-- el CREATE de esa tabla, porque `organizaciones` es la raíz del modelo y se
+-- crea primero; adelantar todo el catálogo de colegios solo para satisfacer
+-- una referencia opcional invertiría la lectura del esquema.
+ALTER TABLE organizaciones
+    ADD CONSTRAINT fk_organizacion_institucion
+        FOREIGN KEY (institucion_id) REFERENCES instituciones_educativas(id);
+
+
 -- ---------------------------------------------------------------------
 -- Usuarios del sistema. Login individual por persona.
 -- NOTA (P-05, pendiente): el plan no incluye organizacion_id aquí pese al
@@ -230,6 +268,14 @@ CREATE TABLE participantes (
 --
 -- monto: se copia de `tarifas` al inscribir (snapshot). Si la tarifa cambia
 -- después, las inscripciones ya emitidas conservan lo que realmente se cobró.
+--
+-- tipo_origen: la modalidad que ELIGIÓ ese monto, congelada con él (D-37).
+-- Antes se derivaba en vivo de `instituciones_educativas.tipo` cada vez que se
+-- pintaba un carné, así que reclasificar un colegio de pública a privada
+-- cambiaba la modalidad impresa en los carnés ya emitidos mientras su monto
+-- seguía diciendo S/ 10.00. Los dos datos son el retrato de lo que se cobró el
+-- día que se cobró; tenerlos separados —uno congelado y el otro en vivo— es lo
+-- que permitía que se contradijeran.
 -- ---------------------------------------------------------------------
 CREATE TABLE inscripciones (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -237,11 +283,15 @@ CREATE TABLE inscripciones (
     categoria_id INT UNSIGNED NOT NULL COMMENT 'movido desde participantes — decisión D-01',
     usuario_id INT UNSIGNED NOT NULL COMMENT 'secretaria/admin que registró',
     estado ENUM('pendiente','confirmada','anulada') NOT NULL DEFAULT 'pendiente',
+    tipo_origen ENUM('publica','privada','libre','organizadora') NOT NULL
+        COMMENT 'modalidad con la que se cobró — snapshot, decisión D-37',
     monto DECIMAL(6,2) NOT NULL,
     medio_pago ENUM('yape','transferencia','efectivo') NULL,
     yape_codigo_seguridad CHAR(3) NULL COMMENT 'solo si medio_pago = yape',
     fecha_pago DATETIME NULL,
+    confirmado_por INT UNSIGNED NULL COMMENT 'quién confirmó el pago — D-39',
     motivo_anulacion VARCHAR(250) NULL,
+    anulado_por INT UNSIGNED NULL COMMENT 'quién anuló — D-39',
     requiere_devolucion BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -252,6 +302,10 @@ CREATE TABLE inscripciones (
         FOREIGN KEY (categoria_id) REFERENCES categorias(id),
     CONSTRAINT fk_inscripcion_usuario
         FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    CONSTRAINT fk_inscripcion_confirmado_por
+        FOREIGN KEY (confirmado_por) REFERENCES usuarios(id),
+    CONSTRAINT fk_inscripcion_anulado_por
+        FOREIGN KEY (anulado_por) REFERENCES usuarios(id),
 
     INDEX idx_inscripcion_estado (estado),
     INDEX idx_inscripcion_participante (participante_id),

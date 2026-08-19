@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Concurso;
 use Core\Sesion;
 use Core\View;
 
@@ -71,9 +72,10 @@ foreach ($inscripciones as $ins) {
 
     <select name="tipo_origen">
         <option value="">Todo origen</option>
-        <option value="publica" <?= $sel('tipo_origen', 'publica') ?>>I.E. pública</option>
-        <option value="privada" <?= $sel('tipo_origen', 'privada') ?>>I.E. privada</option>
-        <option value="libre"   <?= $sel('tipo_origen', 'libre') ?>>Estudiante libre</option>
+        <option value="publica"      <?= $sel('tipo_origen', 'publica') ?>>I.E. pública</option>
+        <option value="privada"      <?= $sel('tipo_origen', 'privada') ?>>I.E. privada</option>
+        <option value="libre"        <?= $sel('tipo_origen', 'libre') ?>>Estudiante libre</option>
+        <option value="organizadora" <?= $sel('tipo_origen', 'organizadora') ?>>COCIAP</option>
     </select>
 
     <select name="nivel">
@@ -154,6 +156,7 @@ foreach ($inscripciones as $ins) {
                     <th>Categoría</th>
                     <th>Monto</th>
                     <th>Estado</th>
+                    <th>Responsable</th>
                     <th class="tabla__acciones">Acciones</th>
                 </tr>
             </thead>
@@ -183,12 +186,18 @@ foreach ($inscripciones as $ins) {
                         <br><span class="tenue"><?= View::e($ins['dni']) ?></span>
                     </td>
                     <td class="tenue">
+                        <?php
+                        /* La píldora dice la MODALIDAD con la que se cobró, no el
+                           tipo del colegio (D-37): el anfitrión es público y aun así
+                           compite y paga como COCIAP. */
+                        $modalidad = (string) $ins['tipo_origen'];
+                        ?>
                         <?php if ($ins['tipo_participante'] === 'libre'): ?>
                             <span class="etiqueta etiqueta--neutra">libre</span>
                         <?php else: ?>
                             <?= View::e($ins['institucion'] ?? '—') ?>
-                            <span class="etiqueta etiqueta--<?= View::e((string) $ins['institucion_tipo']) ?>">
-                                <?= $ins['institucion_tipo'] === 'publica' ? 'pública' : 'privada' ?>
+                            <span class="etiqueta etiqueta--<?= View::e($modalidad) ?>">
+                                <?= View::e(Concurso::etiquetaModalidad($modalidad)) ?>
                             </span>
                         <?php endif; ?>
                     </td>
@@ -207,6 +216,14 @@ foreach ($inscripciones as $ins) {
                             <br><span class="etiqueta etiqueta--alerta">por devolver</span>
                         <?php endif; ?>
                     </td>
+                    <?php
+                    /* Quién registró la inscripción (D-39). Con varias secretarias
+                       trabajando a la vez, un registro incorrecto tiene que poder
+                       atribuirse sin salir del listado. Quién cobró y quién anuló
+                       también quedan guardados, pero no se muestran aquí por
+                       decisión del propietario: la columna es una sola. */
+                    ?>
+                    <td class="tenue"><?= View::e((string) $ins['registrado_por']) ?></td>
                     <td class="tabla__acciones">
                         <?php if ($ins['estado'] !== 'anulada'): ?>
                             <a class="enlace-tenue"
@@ -220,6 +237,21 @@ foreach ($inscripciones as $ins) {
                                     data-monto="<?= number_format((float) $ins['monto'], 2) ?>">
                                 Anular
                             </button>
+                        <?php endif; ?>
+
+                        <?php
+                        /* Reinscribir solo cuando el participante se quedó SIN
+                           ninguna inscripción viva, que es cuando de verdad está
+                           fuera del concurso. Cada corrección de categoría deja
+                           una anulada detrás, y ofrecer el enlace también en esas
+                           —que son la mayoría— lo volvería ruido y llevaría a
+                           duplicar la inscripción de alguien que ya está dentro. */
+                        ?>
+                        <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo'])): ?>
+                            <a class="enlace-tenue"
+                               href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/reinscribir')) ?>">
+                                Reinscribir
+                            </a>
                         <?php endif; ?>
 
                         <?php if ($ins['estado'] === 'confirmada'): ?>

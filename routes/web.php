@@ -20,6 +20,7 @@ use App\Controllers\InscripcionController;
 use App\Controllers\InstitucionController;
 use App\Controllers\PagoController;
 use App\Controllers\PanelController;
+use App\Controllers\UsuarioController;
 use Core\View;
 
 // ---------------------------------------------------------------------
@@ -40,6 +41,18 @@ $router->post('/instituciones', [InstitucionController::class, 'guardar']);
 $router->get('/instituciones/{id}/editar', [InstitucionController::class, 'formularioEditar']);
 $router->post('/instituciones/{id}', [InstitucionController::class, 'guardar']);
 $router->post('/instituciones/{id}/eliminar', [InstitucionController::class, 'eliminar']);
+
+// -----------------------------------------------------------------
+// Usuarios — exclusivo del administrador (sección 7 del plan, D-39).
+// Es también el único sitio donde se cambia una contraseña.
+// -----------------------------------------------------------------
+$router->get('/usuarios', [UsuarioController::class, 'index']);
+$router->get('/usuarios/nuevo', [UsuarioController::class, 'formularioNuevo']);
+$router->post('/usuarios', [UsuarioController::class, 'guardar']);
+$router->get('/usuarios/{id}/editar', [UsuarioController::class, 'formularioEditar']);
+$router->post('/usuarios/{id}', [UsuarioController::class, 'guardar']);
+$router->post('/usuarios/{id}/password', [UsuarioController::class, 'cambiarPassword']);
+$router->post('/usuarios/{id}/estado', [UsuarioController::class, 'cambiarEstado']);
 
 $router->get('/apoderados', [ApoderadoController::class, 'index']);
 $router->get('/apoderados/nuevo', [ApoderadoController::class, 'formularioNuevo']);
@@ -72,6 +85,11 @@ $router->post('/inscripciones/{id}/carne/regenerar', [PagoController::class, 're
 $router->get('/inscripciones/{id}/corregir', [AnulacionController::class, 'formularioCorregir']);
 $router->post('/inscripciones/{id}/corregir', [AnulacionController::class, 'corregir']);
 $router->post('/inscripciones/{id}/anular', [AnulacionController::class, 'anular']);
+
+// Reinscribir: solo desde una anulada cuyo participante se quedó sin ninguna
+// viva. Es la salida del callejón que D-31 creó sin querer (D-38).
+$router->get('/inscripciones/{id}/reinscribir', [AnulacionController::class, 'formularioReinscribir']);
+$router->post('/inscripciones/{id}/reinscribir', [AnulacionController::class, 'reinscribir']);
 
 $router->get('/inscripciones/{id}/carne.pdf', [CarneController::class, 'descargar']);
 

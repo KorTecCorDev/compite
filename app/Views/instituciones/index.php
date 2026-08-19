@@ -10,6 +10,7 @@ use Core\View;
 /** @var string $busqueda */
 /** @var string $tipo */
 /** @var int $total */
+/** @var int|null $anfitriona */
 ?>
 <div class="encabezado">
     <div>
@@ -28,7 +29,7 @@ use Core\View;
            value="<?= View::e($busqueda) ?>">
 
     <select name="tipo">
-        <option value="">Todos los tipos</option>
+        <option value="">Toda gestión</option>
         <option value="publica" <?= $tipo === 'publica' ? 'selected' : '' ?>>Pública</option>
         <option value="privada" <?= $tipo === 'privada' ? 'selected' : '' ?>>Privada</option>
     </select>
@@ -58,7 +59,7 @@ use Core\View;
             <thead>
                 <tr>
                     <th>Institución Educativa</th>
-                    <th>Tipo</th>
+                    <th>Gestión</th>
                     <th>Ubicación</th>
                     <th class="tabla__acciones">Acciones</th>
                 </tr>
@@ -68,9 +69,22 @@ use Core\View;
                 <tr>
                     <td><strong><?= View::e($ie['nombre']) ?></strong></td>
                     <td>
-                        <span class="etiqueta etiqueta--<?= View::e($ie['tipo']) ?>">
-                            <?= $ie['tipo'] === 'publica' ? 'pública' : 'privada' ?>
-                        </span>
+                        <?php
+                        /* El anfitrión lleva SU papel, no su gestión (D-37). Es de
+                           gestión pública y eso sigue guardado, pero mostrarlo aquí
+                           como «pública» hacía leer que cobra la tarifa de las
+                           públicas, y cobra la suya. */
+                        ?>
+                        <?php if ($anfitriona !== null && (int) $ie['id'] === $anfitriona): ?>
+                            <span class="etiqueta etiqueta--organizadora"
+                                  title="Organiza el concurso. Sus estudiantes se inscriben en la modalidad COCIAP.">
+                                ANFITRIÓN
+                            </span>
+                        <?php else: ?>
+                            <span class="etiqueta etiqueta--<?= View::e($ie['tipo']) ?>">
+                                <?= $ie['tipo'] === 'publica' ? 'pública' : 'privada' ?>
+                            </span>
+                        <?php endif; ?>
                     </td>
                     <td class="tenue">
                         <?= View::e($ie['distrito']) ?>,
