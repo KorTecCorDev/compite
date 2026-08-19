@@ -77,22 +77,49 @@ final class GeneradorCarne
      * Alto del escudo institucional en la cabecera, en milímetros.
      *
      * Calibrado midiendo, no elegido a ojo. Generando hojas de diez carnés con
-     * los casos más largos que el sistema puede recibir, el techo está en
-     * **6.2 mm**: a 6.4 mm la hoja se parte en dos páginas. Se fija en 6.0 mm
-     * para no trabajar al filo, y a esa altura el escudo no cuesta ni un carné
-     * —la hoja aguanta exactamente los mismos casos que aguantaba sin él—.
+     * los casos más largos que el sistema puede recibir, el techo de la franja
+     * está en **10.0 mm**: a 10.5 mm la hoja se parte en dos páginas. La franja
+     * se fija en 9.0 mm y el escudo en 8.5, de modo que le queda medio
+     * milímetro de aire dentro de su franja y la franja un milímetro largo
+     * hasta el techo.
      *
-     * Sale 6.0 × 5.0 mm impresos, verificado sobre las matrices de colocación
-     * del propio PDF.
+     * Sale **8.5 × 7.08 mm** impresos, verificado sobre las matrices de
+     * colocación del propio PDF. El primer intento se quedó en 6.0 mm porque la
+     * cabecera y el pie fluían pegados al cuerpo; lo que permitió casi doblar el
+     * escudo no fue apretar nada, sino repartir la altura de antemano (D-35) y
+     * quitar el relleno por defecto que Dompdf daba a la tabla del cuerpo.
      *
      * **Si cambia, hay que volver a generar la hoja de diez y comprobar que no
      * se parte en dos páginas.** El presupuesto vertical del carné no tiene
      * holgura para estimaciones.
      */
-    private const ESCUDO_ALTO_MM = 6.0;
+    private const ESCUDO_ALTO_MM = 10.5;
 
     /** Aire entre el escudo y el texto de la cabecera. */
     private const ESCUDO_SEPARACION_MM = 2.0;
+
+    /**
+     * Alto de las franjas de cabecera y de pie, en milímetros.
+     *
+     * Las dos están fijadas de antemano y apoyadas en los extremos del carné
+     * (D-35): eso es lo que impide que un dato largo empuje la altura y parta
+     * la hoja de diez.
+     *
+     * **No miden lo mismo, y es deliberado (D-36).** D-35 las igualó en 9 mm
+     * leyendo al pie de la letra la petición de simetría, y el resultado fue un
+     * pie sobredimensionado: su contenido es una sola línea de 2.3 mm, así que
+     * sobraban casi 7 mm que dejaban el código flotando a 7 mm del borde en vez
+     * de apoyado en él. La simetría que se percibe en el papel es la de los dos
+     * filetes enmarcando el cuerpo, no la de dos franjas invisibles de igual
+     * altura; el pie ocupa ahora lo que su contenido necesita, y los milímetros
+     * liberados van al escudo y al aire entre los datos.
+     *
+     * De ZONA_CAB_MM sale el techo del escudo: lo que no quepa en esa franja no
+     * cabe en la cabecera.
+     */
+    private const ZONA_CAB_MM = 11.0;
+    private const ZONA_PIE_MM = 4.0;
+    private const ZONA_CUERPO_MM = 34.0;
 
     /**
      * Cuerpo base del nombre del concurso, en puntos, y ancho medio de sus
@@ -100,15 +127,13 @@ final class GeneradorCarne
      *
      * El milímetro por carácter está medido con las métricas reales de la
      * fuente (DejaVu Sans bold, 6.4 pt, mayúsculas), no estimado: el nombre del
-     * concurso ocupa 75.17 mm de los 80.40 mm útiles del carné. Le sobran 5.2
-     * mm, y ahí está el problema que el escudo destapa —cualquier escudo se los
-     * come y empuja el nombre a una segunda línea, que cuesta 2.6 mm de altura
-     * y parte la hoja de diez en dos páginas—.
+     * concurso ocupa 75.17 mm de los 80.40 mm útiles del carné, y con el escudo
+     * al lado le quedan 71.3 mm de ancho.
      *
-     * Por eso el nombre del concurso se encoge lo justo para seguir en una
-     * línea, igual que ya se hace con los apellidos y con la procedencia. El
-     * suelo del 85% es deliberado: por debajo, el rótulo del evento empieza a
-     * competir con los rótulos de 4.6 pt y deja de leerse como titular.
+     * El titular solo se encoge si no cabe **en dos líneas**, que es lo que la
+     * franja de cabecera admite desde D-35. El suelo del 85% es deliberado: por
+     * debajo, el rótulo del evento empieza a competir con los rótulos de 4.6 pt
+     * y deja de leerse como titular.
      */
     private const CONCURSO_PT          = 6.4;
     private const CONCURSO_MM_POR_CAR  = 1.534;
@@ -333,12 +358,12 @@ final class GeneradorCarne
      * escudo le cobraba su altura entera al cuerpo del carné, que es lo que en
      * D-27 obligó a quitarlo.
      *
-     * **El nombre del concurso se encoge para seguir en una sola línea.** No es
-     * una preferencia tipográfica: medido sobre la fuente real ocupa 75.2 mm de
-     * los 80.4 mm útiles, así que el escudo —cualquier escudo— lo empuja a una
-     * segunda línea, y esa línea cuesta 2.6 mm que parten la hoja de diez en
-     * dos páginas. Encogerlo de 6.4 a 6.1 pt devuelve esos 2.6 mm y es la razón
-     * de que el escudo salga gratis en altura.
+     * **El nombre del concurso conserva su cuerpo y usa dos líneas si las
+     * necesita.** Mientras la cabecera fluía pegada al cuerpo hubo que
+     * encogerlo hasta meterlo en una sola línea, porque la segunda costaba
+     * 2.6 mm de altura y partía la hoja de diez. Con la franja de altura fija
+     * (D-35) esos milímetros ya están pagados, así que el titular vuelve a sus
+     * 6.4 pt y solo se encoge si no cabe ni en dos líneas.
      */
     private static function cabecera(string $concurso): string
     {
@@ -521,8 +546,13 @@ HTML;
 
         return <<<HTML
 <div class="carne">
+<table class="marco">
+    <tr><td class="zona zona--cab">
 
 {$cabecera}
+
+    </td></tr>
+    <tr><td class="zona zona--cuerpo">
 
     <table class="cuerpo">
         <tr>
@@ -560,6 +590,9 @@ HTML;
         </tr>
     </table>
 
+    </td></tr>
+    <tr><td class="zona zona--pie">
+
     <table class="pie">
         <tr>
             <td class="pie-codigo">{$e($codigo)}</td>
@@ -567,6 +600,8 @@ HTML;
         </tr>
     </table>
 
+    </td></tr>
+</table>
 </div>
 HTML;
     }
@@ -631,11 +666,19 @@ HTML;
     {
         $necesarioMm = mb_strlen($texto) * self::CONCURSO_MM_POR_CAR;
 
-        if ($necesarioMm <= $disponibleMm) {
+        /*
+         * El objetivo son DOS líneas, no una. Cuando la cabecera fluía pegada
+         * al cuerpo, la segunda línea costaba 2.6 mm de altura y partía la hoja,
+         * así que había que encoger el titular hasta meterlo en una. Con la
+         * franja de altura fija (D-35) esa altura ya está pagada: dos líneas
+         * caben dentro de los mismos milímetros, y el nombre del concurso
+         * conserva su cuerpo completo en vez de bajar a 5.9 pt para nada.
+         */
+        if ($necesarioMm <= $disponibleMm * 2) {
             return self::CONCURSO_PT;
         }
 
-        $ajustado = round(self::CONCURSO_PT * ($disponibleMm * 0.97) / $necesarioMm, 1);
+        $ajustado = round(self::CONCURSO_PT * ($disponibleMm * 2 * 0.97) / $necesarioMm, 1);
 
         /*
          * Ni al cuerpo mínimo entra: el nombre del concurso ocupará dos líneas
@@ -648,9 +691,9 @@ HTML;
          */
         if ($ajustado < self::CONCURSO_PT_MINIMO) {
             error_log(sprintf(
-                'Carné: el nombre del concurso «%s» (%d caracteres) no cabe en una línea '
-                . 'junto al escudo ni a %.1f pt; ocupará dos líneas. Acórtalo o revisa que '
-                . 'la hoja de diez siga entrando en un A4.',
+                'Carné: el nombre del concurso «%s» (%d caracteres) no cabe en la cabecera '
+                . 'ni a %.1f pt en dos líneas. Se imprimirá igual, pero acórtalo o comprueba '
+                . 'que la hoja de diez siga entrando en un A4.',
                 $texto, mb_strlen($texto), self::CONCURSO_PT_MINIMO
             ));
         }
@@ -672,6 +715,25 @@ HTML;
         $escudo    = self::escudo();
         $colEscudo = $escudo === null ? 0 : $escudo['ancho'];
         $sepEscudo = $escudo === null ? 0 : self::ESCUDO_SEPARACION_MM;
+
+        /*
+         * Altura interior del carné: la de la celda, menos el padding vertical
+         * de `.carne`, menos el grosor de los dos filetes.
+         *
+         * Ese último descuento no es un número de ajuste: el modelo de caja de
+         * Dompdf es content-box, así que el borde de la cabecera (1 pt) y el del
+         * pie (0.5 pt) se suman **por encima** de la altura declarada. Sin
+         * descontarlos el carné salía 0.53 mm más alto de lo que dice medir, y
+         * multiplicado por las cinco filas de la hoja son 2.7 mm que se comen el
+         * margen de corte. Verificado midiendo la distancia entre las guías en
+         * el propio PDF: 53.98 mm.
+         */
+        $filetes  = round((1 + 0.5) * 25.4 / 72, 3);
+        $interior = round(self::CARNE_ALTO_MM - 2 * 2.0 - $filetes, 2);
+        $zonaCab   = self::ZONA_CAB_MM;
+        $zonaPie   = self::ZONA_PIE_MM;
+        $zonaCuerpo = self::ZONA_CUERPO_MM;
+        $zonaCuerpo = round($interior - $zonaCab - $zonaPie, 2);
 
         /*
          * Fondo del carné. El tamaño se calcula a partir de las proporciones
@@ -743,6 +805,57 @@ FONDO;
     .carne { padding: 2mm 2.6mm; }
 
     /* ------------------------------------------------------------------ */
+    /* Marco: tres zonas de altura gobernada                               */
+    /* ------------------------------------------------------------------ */
+
+    /* El carné se reparte en cabecera, cuerpo y pie con la altura fijada de
+       antemano (D-35). Antes las tres zonas fluían una detrás de otra desde
+       arriba, y eso tenía dos consecuencias que se ven en el papel:
+
+         · el pie quedaba pegado al cuerpo, así que su distancia al borde
+           inferior dependía de lo largo que fuera el nombre del estudiante, y
+           dos carnés de la misma hoja no se parecían;
+         · cualquier dato más largo de lo previsto empujaba la altura del carné
+           y, con cinco filas por hoja, mandaba la última a una página nueva.
+
+       Con la altura repartida de antemano cada franja se apoya en su extremo y
+       el cuerpo trabaja dentro de lo que queda, así que la hoja deja de depender
+       del largo de los datos.
+
+       El `height` de la fila del cuerpo es lo que obliga a la tabla a ocupar
+       todo el alto declarado. Sin él, Dompdf no la estira —trata el `height` de
+       la tabla como contenido— y el sobrante quedaba debajo del pie, que es
+       como el código acabó flotando a 7 mm del canto (D-36). */
+    .marco {
+        width: 100%;
+        height: {$interior}mm;
+        border-collapse: collapse;
+    }
+
+    .marco > tr > td, .zona { padding: 0; }
+
+    /* La cabecera centra su contenido en la franja: el escudo la llena casi
+       entera y queda con el mismo aire arriba y abajo. */
+    /* Las celdas no llevan ni altura ni filete: el reparto de la tabla las
+       estira cuando sobra espacio, y con ellos dentro el filete se movía con la
+       celda —así acabó a 11.5 mm del canto en vez de a 6—. La celda solo dice
+       en qué extremo se apoya su franja; la altura y la línea viven dentro. */
+    .zona--cab { vertical-align: top; }
+
+    /* El pie se apoya en el canto inferior: es una sola línea de 2.3 mm y
+       centrarla en su franja la dejaba flotando a 7 mm del borde, justo lo
+       contrario de lo que un pie de página debe parecer. */
+    .zona--pie { vertical-align: bottom; }
+
+    /* El cuerpo lleva altura explícita, y no se deja al reparto automático, por
+       una razón que costó una medición descubrir: `height` en una celda es un
+       MÍNIMO, no una medida, así que Dompdf reparte el espacio sobrante entre
+       las filas y engordaba la del pie —el filete acababa a 11.5 mm del canto
+       en vez de a 6—. Con las tres alturas sumando exactamente el interior del
+       carné no queda sobrante que repartir, y cada franja mide lo que dice. */
+    .zona--cuerpo { height: {$zonaCuerpo}mm; vertical-align: middle; }
+
+    /* ------------------------------------------------------------------ */
     /* Cabecera: identidad del evento                                      */
     /* ------------------------------------------------------------------ */
 
@@ -756,9 +869,16 @@ FONDO;
        borde sobre un elemento de tabla se dibuja de forma desigual según haya
        o no `border-collapse`, y aquí la cabecera lleva su propia tabla. */
 
-    .cab { border-bottom: 1pt solid #1d4ed8; padding-bottom: .8mm; }
+    /* Aquí vive la altura de la franja superior, y aquí se dibuja su filete: al
+       estar en un elemento de altura fija, la línea cae siempre a los mismos
+       milímetros del canto, sin depender del alto del escudo ni de cuántas
+       líneas ocupe el nombre del concurso. */
+    .cab {
+        height: {$zonaCab}mm;
+        border-bottom: 1pt solid #1d4ed8;
+    }
 
-    .cab-marco { width: 100%; border-collapse: collapse; }
+    .cab-marco { width: 100%; height: 100%; border-collapse: collapse; }
 
     /* La columna del escudo se fija al ancho exacto de la imagen más su aire:
        sin ancho declarado, Dompdf reparte la tabla a partes iguales y el escudo
@@ -801,7 +921,11 @@ FONDO;
     /* Cuerpo: datos + QR                                                  */
     /* ------------------------------------------------------------------ */
 
-    .cuerpo { width: 100%; margin-top: 1.2mm; }
+    /* border-collapse y padding cero por lo mismo que en `.trio`: sin ellos
+       Dompdf aplica el relleno y el espaciado por defecto de las tablas HTML, y
+       eso son milímetros que nadie ve pero que el reparto de altura sí paga. */
+    .cuerpo { width: 100%; border-collapse: collapse; }
+    .cuerpo > tr > td { padding: 0; }
 
     .datos { vertical-align: top; padding-right: 2mm; }
 
@@ -873,12 +997,17 @@ FONDO;
     /* Pie: código y fecha                                                 */
     /* ------------------------------------------------------------------ */
 
+    /* Simétrico a `.cab`: la franja del pie lleva su altura y su filete. Sus
+       celdas se alinean abajo para que el código y la fecha queden apoyados en
+       el canto inferior del carné. */
     .pie {
         width: 100%;
-        margin-top: 1.2mm;
+        height: {$zonaPie}mm;
         border-top: .5pt solid #dde3ea;
-        padding-top: .8mm;
+        border-collapse: collapse;
     }
+
+    .pie td { padding: 0; vertical-align: bottom; }
 
     .pie-codigo {
         font-size: 6.6pt;

@@ -1397,6 +1397,87 @@ que dejó el fallo dentro.
 
 ---
 
+### D-35 — Cabecera y pie miden lo mismo y se apoyan en los extremos
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-33, D-23
+
+Revisando el carné impreso, el propietario pide dos cosas: que **la cabecera y el pie
+tengan el mismo tamaño y queden en los extremos** del carné, y que **el escudo sea más
+grande** —a 6 mm «parece una mancha de color nada más»—. Las dos resultaron ser la
+misma cosa.
+
+**El carné pasa a repartir su altura de antemano.** Antes las tres zonas fluían una
+detrás de otra desde arriba, y eso tenía dos consecuencias visibles en el papel: el pie
+quedaba pegado al cuerpo, así que su distancia al canto inferior dependía de lo largo
+que fuera el nombre del estudiante y dos carnés de la misma hoja no se parecían; y
+cualquier dato más largo de lo previsto empujaba la altura del carné y mandaba la
+última fila a otra página. Ahora cabecera y pie son franjas de **9.0 mm** apoyadas en
+los extremos, y el cuerpo trabaja dentro de lo que queda.
+
+**Los filetes se dibujan en las franjas, no bajo el texto.** Es lo que hace que las dos
+líneas queden a la misma distancia de sus cantos; dibujadas en `.cab` y `.pie`, su
+posición cambiaba con el alto del escudo.
+
+**El escudo casi dobla: de 6.0 a 8.5 mm** (8.5 × 7.08 mm impresos, verificado sobre las
+matrices del PDF). Y no se consiguió apretando el diseño:
+
+- **Repartir la altura de antemano** subió el techo de la franja de 7.6 a 10.0 mm.
+- **Quitar el relleno por defecto de la tabla del cuerpo** —el mismo fallo que D-34
+  encontró en la fila del trío— valió por sí solo 2.4 mm de techo.
+- Se descartó apretar los márgenes entre los datos: probado, solo daba 0.4 mm más, y no
+  compensaba encoger el aire entre los campos que se leen en la puerta.
+
+Se fija la franja en 9.0 mm con el techo en 10.0, y el escudo en 8.5 dentro de ella: un
+milímetro de margen en la franja y medio de aire para el escudo. Medido: los diez casos
+extremos entran en una hoja, y también el peor carné que el sistema puede producir.
+
+**El titular recupera su cuerpo completo.** D-33 lo encogía a 6.1 pt para meterlo en una
+línea, porque la segunda costaba 2.6 mm de altura. Con la franja fija esos milímetros ya
+están pagados, así que vuelve a 6.4 pt y usa dos líneas si las necesita. **Encogerlo ya
+no compraba nada.**
+
+---
+
+### D-36 — El pie se apoya en el canto, y deja de medir lo mismo que la cabecera
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-35
+
+Con el carné impreso delante, el propietario pide que **el código y la fecha queden al
+final del carné**. Estaban ya en la franja del pie, pero flotando: medido sobre el PDF,
+el texto caía a **7 mm del canto inferior** con su filete 6 mm más arriba.
+
+**La causa fue una lectura demasiado literal de D-35.** Aquella decisión igualó cabecera
+y pie en 9 mm por simetría, y centró el contenido en cada franja. En la cabecera
+funciona —el escudo llena la franja casi entera—, pero el pie es **una sola línea de
+2.3 mm**: centrarla en 9 mm dejaba casi 7 mm de aire repartidos arriba y abajo.
+
+**Las dos peticiones eran incompatibles y se eligió cuál manda.** Con una línea de texto
+en el pie no se puede a la vez mantener las franjas iguales y apoyar el texto en el
+canto: pegándolo abajo dentro de una franja de 9 mm, el filete quedaba a 10 mm del
+texto. **La simetría que se percibe en el papel es la de los dos filetes enmarcando el
+cuerpo, no la de dos franjas invisibles de igual altura.** El pie pasa a **4 mm** —lo
+que su contenido necesita— y se alinea abajo; la cabecera sube a **11 mm** con los
+milímetros liberados, y el escudo de 8.5 a **10.5 mm**.
+
+**Tres cosas que solo aparecieron midiendo:**
+
+1. **`height` en una celda es un mínimo, no una medida.** Dompdf repartía el sobrante
+   entre las filas y engordaba la del pie, que por eso no llegaba al canto. Se resuelve
+   dando altura también a la fila del cuerpo: sin sobrante que repartir, cada franja
+   mide lo que dice.
+2. **`position: absolute` no es una alternativa.** Se probó anclar el pie al canto y
+   Dompdf directamente no lo renderiza: el pie desaparecía del carné.
+3. **El carné había crecido 0.44 mm.** El modelo de caja es content-box, así que los dos
+   filetes se suman por encima de la altura declarada. Se descuenta su grosor (1 pt +
+   0.5 pt) del interior del marco. Verificado sobre la distancia entre guías de corte:
+   **53.98 mm**, el mismo valor que el propietario comprobó con regla.
+
+**Geometría resultante,** medida en el PDF: filete de cabecera a 13.32 mm del canto
+superior, filete del pie a 5.95 mm del inferior, código y fecha apoyados a 2.89 mm del
+canto. Escudo de 10.5 × 8.74 mm y QR intacto en 16.5 mm.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04 — CONFIRMADO** por el propietario (2026-08-18). «Modalidad» —libre, pública,
   privada— es el criterio que elige la tarifa, y `tipo_origen` sale de
