@@ -1930,6 +1930,48 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-46 — Limpieza de los datos de prueba, con seguro
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** producción
+
+Desplegado el sistema, hay que dejar la base sin los datos de prueba.
+`database/migraciones/2026-08-19-limpiar-datos-de-prueba.sql` borra participantes,
+inscripciones, carn&eacute;s, instituciones y apoderados, y conserva
+organizaci&oacute;n, concurso, categor&iacute;as, tarifas y **usuarios**.
+
+**Tres decisiones que no son obvias:**
+
+1. **La primera ejecuci&oacute;n no borra nada.** El archivo lleva `SET @LIMPIAR := 0` y todos los
+   pasos destructivos van condicionados; ejecutarlo informa de cu&aacute;ntas filas se
+   llevar&iacute;a y —lo que de verdad importa— **cu&aacute;nto dinero hay en inscripciones
+   confirmadas**. Hay que cambiar la l&iacute;nea a mano para armarlo. El seguro existe porque el
+   archivo no puede distinguir una base de pruebas de una de producci&oacute;n con cobros reales
+   dentro, y el d&iacute;a que alguien lo ejecute por costumbre habr&aacute; dinero en esas filas.
+2. **`DELETE` y no `TRUNCATE`.** TRUNCATE no respeta las claves for&aacute;neas y no se puede
+   deshacer dentro de una transacci&oacute;n; a este tama&ntilde;o no hay diferencia de velocidad.
+3. **Se reinician los contadores.** No es cosm&eacute;tica: el c&oacute;digo correlativo se arma
+   con el `id` del participante (D-04, D-12), as&iacute; que sin reiniciar el primer estudiante
+   real saldr&iacute;a con un n&uacute;mero heredado de las pruebas —`COCIAP2026-0024-…`— impreso
+   en su carn&eacute; y en la n&oacute;mina.
+
+**Consecuencia que la migraci&oacute;n avisa al terminar:** `organizaciones.institucion_id` apunta
+a una instituci&oacute;n, as&iacute; que la marca se suelta antes de borrar y el concurso queda
+**sin I.E. anfitriona**. Hay que volver a darla de alta y marcarla antes del primer estudiante del
+COCIAP; si se olvida, sus estudiantes se cobran como p&uacute;blica y compiten en la bolsa
+equivocada, en silencio.
+
+**Probada sobre una copia exacta de la base**, no sobre la real: con el seguro puesto no
+tocó nada y report&oacute; 23 participantes, 25 inscripciones y S/ 215 en 17 cobros; armada,
+dej&oacute; las cinco tablas en cero, los cinco contadores en 1, las 14 claves for&aacute;neas
+intactas y el seed —1 concurso, 11 categor&iacute;as, 4 tarifas, 3 usuarios— sin tocar. Y es
+repetible: una segunda ejecuci&oacute;n sobre la base ya limpia no da error.
+
+**No se ejecuta en desarrollo.** Trece de las pruebas automáticas toman filas existentes de la
+base local —una inscripción confirmada, un participante, un colegio— y con la base vacía dejarían
+de comprobar nada.
+
+---
+
 ### D-45 — Sin poder mover el Document Root: raíz de `public_html` y defensa por capas
 
 **Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-44, despliegue

@@ -184,6 +184,36 @@ ancho, no el diseño. Para eso está `docs/protocolo-pruebas.html`.
 
 ---
 
+## Limpiar los datos de prueba
+
+Si la base de producción se creó importando un volcado de la de desarrollo,
+llevará dentro los participantes, colegios y cobros de las pruebas. Para dejarla
+lista:
+
+```
+mysqldump -u USUARIO -p BASE | gzip > antes-de-limpiar.sql.gz
+mysql -u USUARIO -p BASE < database/migraciones/2026-08-19-limpiar-datos-de-prueba.sql
+```
+
+**La primera ejecución no borra nada**: te dice cuántas filas se llevaría y
+cuánto dinero hay en inscripciones confirmadas. Míralo. Solo entonces cambia
+`SET @LIMPIAR := 0;` por `1` dentro del archivo y vuelve a ejecutarla.
+
+Borra participantes, inscripciones, carnés, instituciones y apoderados, y
+reinicia los contadores —para que el primer estudiante real sea el `0001` y no
+herede un número de las pruebas—. Conserva la organización, el concurso, las 11
+categorías, las 4 tarifas y **los usuarios**.
+
+Deja una cosa pendiente que no puede hacer sola: **la I.E. anfitriona
+desaparece con las demás**, y con ella la marca. Hay que darla de alta otra vez
+en `/instituciones` y marcarla con papel «Anfitriona» **antes del primer
+estudiante del COCIAP**. La propia migración te lo recuerda al terminar.
+
+> **No la ejecutes en tu máquina de desarrollo.** Trece de las pruebas
+> automáticas toman filas existentes de la base local —una inscripción
+> confirmada, un participante, un colegio— y con la base vacía dejarían de
+> comprobar nada.
+
 ## Antes del primer estudiante
 
 1. **Da de alta la I.E. anfitriona** en `/instituciones` y márcala con papel
