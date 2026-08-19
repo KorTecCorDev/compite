@@ -1930,6 +1930,55 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-45 — Sin poder mover el Document Root: raíz de `public_html` y defensa por capas
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-44, despliegue
+
+El plan de Hostinger del propietario **no permite mover el Document Root**: solo deja crear
+subcarpetas dentro de `public_html`. Cae por tanto la recomendaci&oacute;n de D-44, y quedan dos
+sitios donde poner el proyecto — la ra&iacute;z de `public_html` o una subcarpeta.
+
+**En seguridad son id&eacute;nticos**: en los dos casos el proyecto entero vive dentro de la
+ra&iacute;z web y la &uacute;nica defensa es el `.htaccess`. As&iacute; que la decisi&oacute;n se
+tom&oacute; con el otro criterio, medido:
+
+| D&oacute;nde | URL | QR del carn&eacute; |
+|---|---|---|
+| **`public_html/`** | `https://dominio/c/K7M9X3` | **29 × 29 m&oacute;dulos** · 0.466 mm cada uno |
+| `public_html/compite/` | `https://dominio/compite/c/K7M9X3` | 33 × 33 · 0.409 mm |
+
+Nueve caracteres m&aacute;s de URL meten **cuatro filas m&aacute;s de m&oacute;dulos**, y en los
+13.5 mm que el carn&eacute; reserva al QR cada m&oacute;dulo encoge un **12%**. Es exactamente el
+criterio de D-25, que ya sacrific&oacute; legibilidad de la URL para ganar tama&ntilde;o de
+m&oacute;dulo. **Va en la ra&iacute;z de `public_html`.**
+
+**Y como el `.htaccess` pasa a ser la &uacute;nica defensa, deja de ser una sola lista.** Cada
+directorio sensible —`config/`, `core/`, `app/`, `database/`, `storage/`, `scripts/`, `src/`,
+`resources/`, `docs/`— lleva ahora su propio `.htaccess` con `Require all denied`.
+
+No es redundancia decorativa; resuelve dos debilidades reales de la lista de la ra&iacute;z:
+
+1. **Depende de estar al d&iacute;a.** Ya le faltaba `.git`, y nadie lo vio hasta que se
+   busc&oacute; a prop&oacute;sito (D-44). El pr&oacute;ximo directorio que alguien a&ntilde;ada
+   volver&aacute; a faltar.
+2. **Depende de d&oacute;nde est&eacute; montado el sitio.** El patr&oacute;n
+   `^/?(config|core|...)` est&aacute; escrito para la app en la ra&iacute;z de la URL; con el
+   proyecto en una subcarpeta **no llegar&iacute;a a coincidir**, y lo &uacute;nico que salvar&iacute;a
+   esos archivos ser&iacute;a que la reescritura hacia `public/` devuelve 404 por no encontrarlos —
+   protecci&oacute;n por accidente, no por regla. Los archivos por directorio no dependen del
+   prefijo.
+
+**Comprobado sobre Apache**, y el c&oacute;digo de respuesta lo demuestra: esas rutas pasaron de
+404 —«no existe bajo `public/`»— a **403** —«denegado»—, que es la regla del directorio actuando.
+`/.git/config` sigue en 404 por la regla de los archivos con punto, y el login, el CSS y el escudo
+siguen en 200.
+
+**Dos cosas que quedan a mano en `public_html`:** borrar el `index.html` de bienvenida de Hostinger
+—se servir&iacute;a antes que el front controller— y no subir `node_modules/`. `vendor/` lo crea
+Composer y no lleva `.htaccess` propio, pero s&iacute; est&aacute; en la lista de la ra&iacute;z.
+
+---
+
 ### D-44 — Dónde queda el Document Root, y el `.git` que quedaba al aire
 
 **Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** despliegue

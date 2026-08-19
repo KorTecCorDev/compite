@@ -31,41 +31,52 @@ minificar. Este paso hay que repetirlo antes de **cada** commit que toque
 
 ### 1. Código
 
-Sube el repositorio (git clone o subida por FTP/SSH) y **apunta el Document Root
-del dominio a `public/`**. Hostinger lo permite cambiar; hazlo.
+Sube el repositorio (git clone o subida por FTP/SSH) **a la raíz de
+`public_html`**, no a una subcarpeta.
 
-### Por qué importa dónde queda el Document Root
+### Dónde exactamente, y por qué
 
-Hostinger propone `public_html`, que es la raíz web. Si el proyecto entero cae
-ahí y no mueves el Document Root, **todo el repositorio queda colgando del
-dominio**: `config/`, `core/`, `database/`, `vendor/` y —lo que más duele— el
-directorio `.git` con el código fuente completo y su historial.
+Lo ideal sería apuntar el Document Root del dominio a `public/`, de modo que
+nada más fuera alcanzable. **Si tu plan no lo permite** —solo deja crear
+subcarpetas dentro de `public_html`— quedan dos sitios, y conviene elegir con
+datos:
 
-El proyecto está preparado para sobrevivir a eso: el `.htaccess` de la raíz
-redirige a `public/` por su cuenta y bloquea por ruta, por extensión y todo lo
-que empieza por punto, sin depender de `mod_rewrite`. Comprobado: `/.git/config`,
-`/config/config.php`, `/core/Database.php`, `/database/schema.sql`,
-`/storage/logs/php-error.log`, `/vendor/autoload.php` y `/docs/` responden 403 o
-404.
-
-Pero eso es **defensa por lista**: protege lo que alguien acordó poner en la
-lista. Con el Document Root en `public/`, esos archivos no están en la raíz web
-en absoluto, así que no hay lista que mantener ni `.htaccess` del que depender.
-La diferencia entre «bloqueado» y «no alcanzable».
-
-Las dos disposiciones válidas:
-
-| Disposición | Document Root | Qué es alcanzable |
+| Dónde | URL del sistema | QR del carné |
 |---|---|---|
-| **Recomendada** | `public_html/public` (o `~/compite/public`) | solo `public/` |
-| Aceptable | `public_html` | todo, pero bloqueado por `.htaccess` |
+| **`public_html/`** (recomendado) | `https://dominio/` | **29 × 29 módulos** · 0.466 mm cada uno |
+| `public_html/compite/` | `https://dominio/compite/` | 33 × 33 módulos · 0.409 mm cada uno |
 
-**El código funciona igual en las dos**: el prefijo de las URL se deduce del
-propio front controller (`/index.php` y `/public/index.php` dan los dos la raíz),
-y hay una prueba que lo comprueba con los cuatro `SCRIPT_NAME` posibles.
+La subcarpeta alarga la URL nueve caracteres, y eso mete **cuatro filas más de
+módulos** en el QR. En los 13.5 mm que el carné le reserva, cada módulo pasa de
+0.466 a 0.409 mm: un **12% más pequeño** para que lo resuelva la cámara de un
+teléfono a la luz que haya en la puerta. Es el mismo motivo por el que el QR usa
+la ruta corta `/c/{sufijo}` en vez del código completo (D-25).
 
-Un detalle si te quedas en `public_html`: borra cualquier `index.html` de
-bienvenida que Hostinger deje ahí, o se servirá antes que el front controller.
+**En seguridad las dos son iguales**: con el Document Root en `public_html`, el
+proyecto entero queda dentro de la raíz web y la única defensa es el `.htaccess`.
+Por eso no se deja en una sola lista:
+
+- El `.htaccess` de la raíz redirige a `public/` y bloquea por carpeta, por
+  extensión y todo lo que empieza por punto (incluido `.git`).
+- **Cada directorio sensible lleva además su propio `.htaccess` con
+  `Require all denied`**: `config/`, `core/`, `app/`, `database/`, `storage/`,
+  `scripts/`, `src/`, `resources/` y `docs/`. No dependen de que la lista de la
+  raíz esté al día, ni de dónde esté montado el sitio.
+
+Comprobado sobre Apache: `/config/config.php`, `/core/Url.php`,
+`/app/Models/Usuario.php`, `/database/schema.sql`, `/scripts/crear_usuario.php`,
+`/storage/logs/php-error.log`, `/src/scss/app.scss` y `/docs/` responden **403**;
+`/.git/config` responde **404**; y el login, el CSS y el escudo siguen en 200.
+
+Dos cosas que hay que hacer a mano en `public_html`:
+
+- **Borra el `index.html` de bienvenida** que Hostinger deja ahí, o se servirá
+  antes que el front controller y verás su página en vez del sistema.
+- **No subas `node_modules/`.** No hace falta en el servidor y son miles de
+  archivos dentro de la raíz web.
+
+`vendor/` lo crea Composer en el servidor y no lleva `.htaccess` propio, pero sí
+está en la lista de la raíz.
 
 ### 2. Dependencias
 

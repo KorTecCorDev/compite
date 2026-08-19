@@ -1,0 +1,11 @@
+# Este directorio no se sirve por web. Nunca.
+#
+# Duplica a propósito lo que ya bloquea el .htaccess de la raíz. Con el Document
+# Root en `public_html` —cuando el hosting no deja moverlo—, aquella lista es la
+# ÚNICA defensa del proyecto, y una lista protege solo lo que alguien se acordó
+# de poner en ella: ya faltaba `.git`, y nadie lo vio hasta que se buscó.
+#
+# Este archivo no depende de que esa lista esté al día. Si alguien edita el
+# .htaccess de la raíz y se lleva una línea por delante, este directorio sigue
+# cerrado.
+Require all denied
