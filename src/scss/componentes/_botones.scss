@@ -1,3 +1,5 @@
+@use '../base/medios' as m;
+
 @use '../base/tokens' as t;
 
 .boton {
@@ -28,5 +30,43 @@
             color: var(--tinta);
             border-color: t.$borde-hover;
         }
+    }
+}
+
+// Áreas de toque
+// --------------
+// Los botones del sistema miden unos 36 px de alto: cómodos con un ratón, justos
+// con el dedo. Tanto las WCAG 2.5.5 como Apple piden **44 px**, y aquí no es una
+// cifra de manual: parte del uso es de pie en la puerta del concurso, con el
+// teléfono en una mano y una nómina impresa en la otra.
+//
+// Se aplica por tipo de puntero y no por ancho de pantalla: una tableta grande o
+// un portátil táctil también se manejan con el dedo, y un teléfono conectado a un
+// teclado sigue necesitando el área grande.
+@include m.dedo {
+    .boton,
+    .enlace-peligro,
+    .enlace-boton {
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    // Los enlaces de la columna de acciones son texto suelto: se les da alto sin
+    // convertirlos en botones, para que la fila no se llene de cajas.
+    .tabla__acciones a,
+    .tabla__acciones button {
+        min-height: 2.75rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    // Las casillas de cobro se marcan de a una, deprisa y sobre una fila entera.
+    // Al tamaño por defecto (13 px) se falla más de lo que se acierta.
+    .casilla-pago,
+    #marcar-todas {
+        width: 1.35rem;
+        height: 1.35rem;
     }
 }

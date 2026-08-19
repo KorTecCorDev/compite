@@ -118,25 +118,25 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
                        data-url-verificar="<?= View::e(View::url('/api/participantes/verificar')) ?>">
                 <?php foreach ($filasAPintar as $i => $fila): ?>
                     <tr>
-                        <td class="tenue"><?= $i + 1 ?></td>
-                        <td>
+                        <td class="tenue" data-etiqueta="Fila"><?= $i + 1 ?></td>
+                        <td data-etiqueta="DNI o C.E.">
                             <input type="text" name="p[<?= $i ?>][dni]" maxlength="12"
                                    class="entrada-documento"
                                    value="<?= View::e($fila['dni'] ?? '') ?>">
                         </td>
-                        <td>
+                        <td data-etiqueta="Apellido paterno">
                             <input type="text" name="p[<?= $i ?>][ap_paterno]" maxlength="100"
                                    value="<?= View::e($fila['ap_paterno'] ?? '') ?>">
                         </td>
-                        <td>
+                        <td data-etiqueta="Apellido materno">
                             <input type="text" name="p[<?= $i ?>][ap_materno]" maxlength="100"
                                    value="<?= View::e($fila['ap_materno'] ?? '') ?>">
                         </td>
-                        <td>
+                        <td data-etiqueta="Nombres">
                             <input type="text" name="p[<?= $i ?>][nombres]" maxlength="150"
                                    value="<?= View::e($fila['nombres'] ?? '') ?>">
                         </td>
-                        <td>
+                        <td data-etiqueta="Categoría">
                             <select name="p[<?= $i ?>][categoria_id]">
                                 <option value="">—</option>
                                 <?php foreach ($categorias as $cat): ?>

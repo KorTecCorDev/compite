@@ -1,4 +1,19 @@
+@use '../base/medios' as m;
+
 // Barra superior: marca, menú de módulos y datos del usuario en sesión.
+//
+// En escritorio es una sola fila. Por debajo de tableta no cabe y no puede
+// caber: con el administrador son seis enlaces —Panel, Inscripciones,
+// Apoderados, Control de ingreso, Instituciones y Usuarios—, y solo «Control de
+// ingreso» ya mide unos 130 px. Sumando marca y bloque de usuario, el ancho
+// mínimo real de esta barra pasa de 900 px.
+//
+// La solución no es un menú hamburguesa. Un desplegable esconde la navegación
+// detrás de un toque y necesita JavaScript y un estado abierto/cerrado que puede
+// quedarse pegado; aquí los enlaces son pocos y todos son de uso diario. Se opta
+// por que la barra se parta en dos filas y el menú sea una **tira que se
+// desplaza en horizontal**: la navegación sigue a la vista, se recorre con el
+// pulgar y no hay nada que pueda fallar.
 
 .barra {
     display: flex;
@@ -55,5 +70,57 @@
         gap: .5rem;
         font-size: .9rem;
         color: var(--tinta-suave);
+    }
+
+    @include m.hasta-tableta {
+        flex-wrap: wrap;
+        padding: .7rem 1rem;
+        // La marca y el bloque de usuario comparten la primera fila; el menú
+        // baja entero a la segunda.
+        row-gap: .6rem;
+
+        &__menu {
+            order: 3;
+            width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+            overflow-x: auto;
+            // Sin esto, el último enlace queda pegado al borde y no se ve que
+            // haya más a la derecha.
+            padding-bottom: .15rem;
+            // Cada enlace es un punto de anclaje: el desplazamiento se detiene
+            // en uno completo en vez de dejar medio enlace cortado.
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+
+            &::-webkit-scrollbar {
+                display: none;
+            }
+        }
+
+        &__enlace {
+            white-space: nowrap;
+            scroll-snap-align: start;
+        }
+    }
+
+    @include m.hasta-movil {
+        // El rol del usuario ya se ve en lo que la barra le ofrece; en un
+        // teléfono ese espacio lo necesita el nombre y el botón de salir.
+        &__usuario .etiqueta {
+            display: none;
+        }
+    }
+
+    @include m.hasta-estrecho {
+        // Con menos de 376 px el nombre completo empuja a «Salir» fuera de la
+        // fila. Se recorta con puntos suspensivos en vez de desbordar.
+        &__usuario {
+            max-width: 9rem;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
     }
 }

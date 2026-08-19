@@ -178,13 +178,13 @@ foreach ($inscripciones as $ins) {
             <?php foreach ($inscripciones as $ins): ?>
                 <?php $esPendiente = $ins['estado'] === 'pendiente'; ?>
                 <tr>
-                    <td>
+                    <td data-etiqueta="Cobrar">
                         <?php if ($esPendiente): ?>
                             <input type="checkbox" name="ids[]" value="<?= (int) $ins['id'] ?>"
                                    class="casilla-pago" data-monto="<?= (float) $ins['monto'] ?>">
                         <?php endif; ?>
                     </td>
-                    <td>
+                    <td data-etiqueta="Código">
                         <code><?= View::e($ins['codigo_correlativo']) ?></code>
                         <?php if ($ins['estado'] === 'confirmada'): ?>
                             <br>
@@ -194,12 +194,12 @@ foreach ($inscripciones as $ins) {
                             </a>
                         <?php endif; ?>
                     </td>
-                    <td>
+                    <td class="tabla__principal">
                         <strong><?= View::e($ins['ap_paterno'] . ' ' . $ins['ap_materno']) ?></strong>,
                         <?= View::e($ins['nombres']) ?>
                         <br><span class="tenue"><?= View::e($ins['dni']) ?></span>
                     </td>
-                    <td class="tenue">
+                    <td class="tenue" data-etiqueta="Origen">
                         <?php
                         /* La píldora dice la MODALIDAD con la que se cobró, no el
                            tipo del colegio (D-37): el anfitrión es público y aun así
@@ -215,14 +215,14 @@ foreach ($inscripciones as $ins) {
                             </span>
                         <?php endif; ?>
                     </td>
-                    <td><?= View::e(ucfirst((string) $ins['nivel'])) ?> <?= (int) $ins['grado'] ?>°</td>
-                    <td>
+                    <td data-etiqueta="Categoría"><?= View::e(ucfirst((string) $ins['nivel'])) ?> <?= (int) $ins['grado'] ?>°</td>
+                    <td data-etiqueta="Monto">
                         S/ <?= number_format((float) $ins['monto'], 2) ?>
                         <?php if (!empty($ins['medio_pago'])): ?>
                             <br><span class="tenue"><?= View::e((string) $ins['medio_pago']) ?></span>
                         <?php endif; ?>
                     </td>
-                    <td>
+                    <td data-etiqueta="Estado">
                         <span class="etiqueta etiqueta--estado-<?= View::e((string) $ins['estado']) ?>">
                             <?= View::e((string) $ins['estado']) ?>
                         </span>
@@ -237,8 +237,8 @@ foreach ($inscripciones as $ins) {
                        también quedan guardados, pero no se muestran aquí por
                        decisión del propietario: la columna es una sola. */
                     ?>
-                    <td class="tenue"><?= View::e((string) $ins['registrado_por']) ?></td>
-                    <td class="tabla__acciones">
+                    <td class="tenue" data-etiqueta="Responsable"><?= View::e((string) $ins['registrado_por']) ?></td>
+                    <td class="tabla__acciones" data-etiqueta="Acciones">
                         <?php if ($ins['estado'] !== 'anulada'): ?>
                             <a class="enlace-tenue"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">

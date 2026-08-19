@@ -1,4 +1,5 @@
 @use '../base/tokens' as t;
+@use '../base/medios' as m;
 
 // Contenedor con scroll horizontal propio: los listados tienen muchas columnas
 // y en pantallas chicas debe desplazarse la tabla, no la página entera.
@@ -77,5 +78,170 @@
             outline-offset: 0;
             border-color: var(--acento);
         }
+    }
+}
+
+
+// ---------------------------------------------------------------------------
+// Por debajo de tableta, las tablas dejan de ser tablas
+// ---------------------------------------------------------------------------
+// El listado de inscripciones tiene NUEVE columnas, y varias no se pueden
+// encoger: el código correlativo mide 22 caracteres, la celda de acciones lleva
+// hasta cuatro enlaces y las cabeceras van con `white-space: nowrap`. El ancho
+// mínimo real de esa tabla ronda los 1200 px.
+//
+// El `overflow-x` del contenedor evita que la PÁGINA se rompa, y eso ya estaba.
+// Pero en un teléfono de 360 px deja ver menos de un tercio de la fila: para
+// leer el estado de un estudiante hay que arrastrar la tabla y perder de vista
+// su nombre. Es funcional y es malo.
+//
+// Cada fila pasa a ser una ficha y cada celda una línea «etiqueta → valor», con
+// la etiqueta sacada del atributo `data-etiqueta` del <td>. Se usa `attr()` y no
+// texto repetido en el HTML para que la cabecera siga siendo la única fuente del
+// nombre de cada columna.
+//
+// Las celdas SIN `data-etiqueta` —la casilla de cobro— salen sin rótulo, que es
+// justo lo que se quiere: la casilla se explica sola.
+@include m.hasta-tableta {
+    .tabla-contenedor {
+        // La tarjeta ahora es cada fila, no el contenedor.
+        background: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        overflow-x: visible;
+    }
+
+    .tabla {
+        display: block;
+        font-size: 1rem;
+
+        // La cabecera desaparece: su contenido viaja en `data-etiqueta`.
+        thead {
+            // `clip` y no `display: none` para que los lectores de pantalla
+            // sigan pudiendo anunciar la relación entre celda y columna.
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+            clip-path: inset(50%);
+            white-space: nowrap;
+        }
+
+        tbody,
+        tr,
+        td {
+            display: block;
+        }
+
+        tr {
+            margin-bottom: .85rem;
+            padding: .3rem 1rem;
+            background: var(--papel);
+            border: 1px solid var(--borde);
+            border-radius: var(--radio);
+            box-shadow: var(--sombra);
+        }
+
+        tbody tr:hover {
+            background: var(--papel);
+        }
+
+        td {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: .5rem 0;
+            border-bottom: 1px solid t.$gris-suave;
+            text-align: right;
+
+            &::before {
+                content: attr(data-etiqueta);
+                flex: 0 0 auto;
+                font-size: .7rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: .04em;
+                color: var(--tinta-suave);
+                text-align: left;
+            }
+        }
+
+        tr td:last-child {
+            border-bottom: 0;
+        }
+
+        // La identidad de la ficha —el nombre del estudiante, del colegio, de la
+        // persona— no lleva rótulo: es el título, no un dato más. Ponerle
+        // «Apellidos y nombres» delante en una ficha que ya va encabezada por
+        // ese nombre solo añade ruido.
+        &__principal {
+            display: block;
+            padding: .7rem 0 .55rem;
+            font-size: 1.05rem;
+            line-height: 1.25;
+            text-align: left;
+
+            &::before {
+                content: none;
+            }
+        }
+
+        // La celda de acciones no es un dato: es una barra de botones. Ocupa el
+        // ancho completo y los enlaces se reparten en varias líneas si hace
+        // falta, en vez de salirse por la derecha.
+        &__acciones {
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: .35rem 1rem;
+            white-space: normal;
+
+            &::before {
+                flex-basis: 100%;
+            }
+
+            form {
+                display: inline;
+                margin-left: 0;
+            }
+        }
+    }
+
+    // Nómina de la delegación: misma idea, pero cada ficha es UN estudiante y
+    // sus campos van uno debajo de otro a lo ancho, no en dos columnas.
+    .tabla--formulario {
+        tr {
+            padding: .75rem 1rem;
+        }
+
+        td {
+            display: grid;
+            gap: .3rem;
+            padding: .4rem 0;
+            text-align: left;
+            border-bottom: 0;
+
+            &::before {
+                text-align: left;
+            }
+        }
+    }
+}
+
+// El zoom automático de iOS
+// -------------------------
+// Safari en iPhone amplía la página al enfocar un campo cuya letra mida menos
+// de 16px, y después NO vuelve a alejarla: hay que hacerlo a mano. En la nómina
+// de la delegación, donde se pasa de campo en campo treinta veces seguidas, eso
+// convierte el formulario en un pulso con el navegador.
+//
+// Los inputs de la nómina estaban en `.9rem` (14.4 px). Se suben a 16 px justos
+// en pantallas táctiles; en escritorio siguen pequeños, que es donde el tamaño
+// compacto sí ayuda a ver muchas filas a la vez.
+@include m.dedo {
+    .tabla--formulario input,
+    .tabla--formulario select {
+        font-size: 1rem;
     }
 }

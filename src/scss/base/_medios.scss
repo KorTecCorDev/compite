@@ -1,0 +1,64 @@
+// ---------------------------------------------------------------------------
+// Puntos de corte
+// ---------------------------------------------------------------------------
+// Este archivo NO emite CSS: solo declara los mixins con los que el resto de la
+// hoja escribe sus reglas responsive. Los anchos de LAYOUT viven aquí y en
+// ningún otro sitio, para que cambiar uno no obligue a buscar `@media` por toda
+// la hoja. La única excepción es `paginas/_carne.scss`, que conserva su propio
+// `30rem`: ahí no se reordena nada, solo se encoge el escudo, y ese umbral se
+// midió contra el carné impreso.
+//
+// En `rem` y no en `px` a propósito: quien sube el tamaño de letra del navegador
+// —que en este sistema va a pasar, porque parte del uso es de pie en la puerta
+// del concurso— también necesita el diseño simple antes.
+//
+// Solo hay tres, y cada uno responde a algo concreto que se rompe:
+//
+//   · $tableta (48rem / 768px) — el corte estructural. Por debajo, los listados
+//     dejan de ser tablas y pasan a ser fichas: nueve columnas no caben en un
+//     teléfono ni con scroll horizontal decente.
+//   · $movil (36rem / 576px) — el teléfono en vertical. Se aprietan márgenes y
+//     los botones de acción pasan a ocupar el ancho completo.
+//   · $estrecho (23.5rem / 376px) — el teléfono pequeño (iPhone SE y similares).
+//     Último recurso: solo tipografía y separaciones.
+//
+// Se usan como `@include m.hasta-tableta { ... }`, siempre en `max-width`, es
+// decir escritorio primero. No es la moda —lo habitual hoy es móvil primero—
+// pero es lo honesto aquí: este sistema se diseñó y se probó en escritorio, que
+// es donde la secretaria pasa el día, y lo responsive se añadió después. Fingir
+// lo contrario reescribiendo todo al revés habría cambiado el riesgo de sitio a
+// tres días del concurso.
+
+$tableta: 48rem;
+$movil: 36rem;
+$estrecho: 23.5rem;
+
+@mixin hasta-tableta {
+    @media (max-width: $tableta) {
+        @content;
+    }
+}
+
+@mixin hasta-movil {
+    @media (max-width: $movil) {
+        @content;
+    }
+}
+
+@mixin hasta-estrecho {
+    @media (max-width: $estrecho) {
+        @content;
+    }
+}
+
+// Punteros gruesos: dedo en vez de ratón. No es lo mismo que «pantalla chica»
+// —una tableta grande y una pantalla táctil de escritorio también lo son—, y lo
+// que necesitan no es otro diseño sino **áreas de toque más grandes**.
+//
+// 44px es el mínimo que recomiendan tanto Apple como las WCAG (2.5.5). Los
+// botones del sistema miden hoy unos 36px de alto.
+@mixin dedo {
+    @media (hover: none) and (pointer: coarse) {
+        @content;
+    }
+}

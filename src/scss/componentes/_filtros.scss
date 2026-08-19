@@ -1,3 +1,5 @@
+@use '../base/medios' as m;
+
 // Barra de búsqueda y filtros sobre los listados.
 
 .filtros {
@@ -22,5 +24,32 @@
         border-radius: 8px;
         font: inherit;
         background: var(--papel);
+    }
+}
+
+// Seis <select> en fila no caben en un teléfono: se apilan solos por el
+// `flex-wrap`, pero cada uno conserva su ancho natural y quedan de tamaños
+// distintos, difíciles de acertar con el dedo. En vertical van de dos en dos,
+// que es lo que entra sin que el texto de la opción se corte.
+@include m.hasta-movil {
+    .filtros {
+        gap: .5rem;
+
+        input[type="search"] {
+            flex: 1 1 100%;
+        }
+
+        select {
+            flex: 1 1 calc(50% - .25rem);
+            // Sin esto, un <select> con opciones largas —«IV Concurso Regional
+            // de Conocimientos»— fuerza el ancho de toda la fila.
+            min-width: 0;
+        }
+
+        .boton,
+        .enlace-tenue {
+            flex: 1 1 auto;
+            text-align: center;
+        }
     }
 }

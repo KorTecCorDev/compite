@@ -1,4 +1,5 @@
 @use 'tokens' as t;
+@use 'medios' as m;
 
 * {
     box-sizing: border-box;
@@ -38,4 +39,30 @@ code {
     background: t.$gris-suave;
     border-radius: 4px;
     font-size: .88em;
+}
+
+// Pantallas sin barra —login y carné público— en un teléfono. El carné público
+// es el que más importa: se abre desde el QR, siempre con el móvil, y a menudo
+// con una mano en la puerta del concurso.
+@include m.hasta-movil {
+    body.centrado {
+        padding: 1rem .85rem;
+        // `center` vertical en una pantalla baja empuja el contenido fuera de
+        // la ventana en vez de dejar que se desplace. Arriba y que crezca.
+        align-items: flex-start;
+    }
+}
+
+// Seguro contra desbordes horizontales.
+//
+// No se pone `overflow-x: hidden` en el body: eso no arregla un desborde, lo
+// esconde, y el día que aparezca uno nuevo nadie se enterará. Lo que se hace es
+// quitarle a los sospechosos habituales la capacidad de forzar el ancho: cadenas
+// largas sin espacios —correos, códigos correlativos, nombres de institución—
+// dentro de una celda o una ficha.
+.tabla td,
+.datos__par dd,
+.control-ficha__datos dd {
+    overflow-wrap: break-word;
+    min-width: 0;
 }

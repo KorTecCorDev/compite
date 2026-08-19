@@ -41,24 +41,24 @@ use Core\View;
         <?php foreach ($usuarios as $u): ?>
             <?php $activo = (bool) $u['activo']; $esYo = (int) $u['id'] === $yo; ?>
             <tr>
-                <td>
+                <td class="tabla__principal">
                     <strong><?= View::e($u['nombres']) ?></strong>
                     <?php if ($esYo): ?>
                         <span class="etiqueta etiqueta--neutra">tú</span>
                     <?php endif; ?>
                 </td>
-                <td class="tenue"><?= View::e($u['correo']) ?></td>
-                <td>
+                <td class="tenue" data-etiqueta="Correo"><?= View::e($u['correo']) ?></td>
+                <td data-etiqueta="Rol">
                     <span class="etiqueta <?= $u['rol'] === 'administrador' ? 'etiqueta--organizadora' : 'etiqueta--neutra' ?>">
                         <?= $u['rol'] === 'administrador' ? 'administrador' : 'secretaria' ?>
                     </span>
                 </td>
-                <td>
+                <td data-etiqueta="Acceso">
                     <span class="etiqueta etiqueta--estado-<?= $activo ? 'confirmada' : 'anulada' ?>">
                         <?= $activo ? 'activo' : 'sin acceso' ?>
                     </span>
                 </td>
-                <td class="tabla__acciones">
+                <td class="tabla__acciones" data-etiqueta="Acciones">
                     <a class="enlace-tenue"
                        href="<?= View::e(View::url('/usuarios/' . $u['id'] . '/editar')) ?>">
                         Editar / contraseña

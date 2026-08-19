@@ -1,3 +1,5 @@
+@use '../base/medios' as m;
+
 // Columna central de contenido y encabezado de cada pantalla.
 
 .contenido {
@@ -31,4 +33,33 @@
     text-align: center;
     font-size: .82rem;
     color: var(--tinta-suave);
+}
+
+// En un teléfono, 1.5rem de margen a cada lado se comen el 13% del ancho útil.
+// La ficha ya tiene su propio borde y su sombra, así que no necesita tanto aire
+// alrededor: el espacio se le devuelve al contenido.
+@include m.hasta-movil {
+    .contenido {
+        padding: 1.1rem .85rem 2.5rem;
+        gap: 1rem;
+    }
+
+    .encabezado {
+        gap: .75rem;
+
+        // Con el título y el botón de acción en la misma fila, el botón se
+        // queda sin sitio y parte su texto. Se le da la fila entera.
+        .acciones,
+        > .boton {
+            width: 100%;
+        }
+
+        .boton {
+            text-align: center;
+        }
+    }
+
+    .pie {
+        padding: 1rem .85rem 1.5rem;
+    }
 }

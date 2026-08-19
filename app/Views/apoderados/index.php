@@ -60,8 +60,8 @@ use Core\View;
             <tbody>
             <?php foreach ($apoderados as $a): ?>
                 <tr>
-                    <td><code><?= View::e($a['dni']) ?></code></td>
-                    <td>
+                    <td data-etiqueta="DNI"><code><?= View::e($a['dni']) ?></code></td>
+                    <td class="tabla__principal">
                         <strong><?= View::e($a['ap_paterno'] . ' ' . $a['ap_materno']) ?></strong>,
                         <?= View::e($a['nombres']) ?>
                     </td>
@@ -77,7 +77,7 @@ use Core\View;
                     $delegaciones = (int) $a['delegaciones'];
                     $libres       = (int) $a['estudiantes_libres'];
                     ?>
-                    <td>
+                    <td data-etiqueta="Modalidad">
                         <?php if ($delegaciones > 0): ?>
                             <span class="etiqueta">Encargado de delegación<?= $delegaciones > 1 ? ' (' . $delegaciones . ')' : '' ?></span>
                         <?php endif; ?>
@@ -90,14 +90,14 @@ use Core\View;
                             <span class="tenue">Sin vincular</span>
                         <?php endif; ?>
                     </td>
-                    <td class="tenue"><?= View::e($a['celular']) ?></td>
-                    <td>
+                    <td class="tenue" data-etiqueta="Celular"><?= View::e($a['celular']) ?></td>
+                    <td data-etiqueta="Estudiantes">
                         <?php $n = (int) $a['estudiantes']; ?>
                         <span class="etiqueta<?= $n > 1 ? '' : ' etiqueta--neutra' ?>">
                             <?= $n ?> vinculado<?= $n === 1 ? '' : 's' ?>
                         </span>
                     </td>
-                    <td class="tabla__acciones">
+                    <td class="tabla__acciones" data-etiqueta="Acciones">
                         <a class="enlace-tenue"
                            href="<?= View::e(View::url('/apoderados/' . $a['id'] . '/editar')) ?>">Editar</a>
 

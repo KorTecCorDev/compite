@@ -67,8 +67,8 @@ use Core\View;
             <tbody>
             <?php foreach ($instituciones as $ie): ?>
                 <tr>
-                    <td><strong><?= View::e($ie['nombre']) ?></strong></td>
-                    <td>
+                    <td class="tabla__principal"><strong><?= View::e($ie['nombre']) ?></strong></td>
+                    <td data-etiqueta="Gestión">
                         <?php
                         /* El anfitrión lleva SU papel, no su gestión (D-37). Es de
                            gestión pública y eso sigue guardado, pero mostrarlo aquí
@@ -86,12 +86,12 @@ use Core\View;
                             </span>
                         <?php endif; ?>
                     </td>
-                    <td class="tenue">
+                    <td class="tenue" data-etiqueta="Ubicación">
                         <?= View::e($ie['distrito']) ?>,
                         <?= View::e($ie['provincia']) ?>,
                         <?= View::e($ie['departamento']) ?>
                     </td>
-                    <td class="tabla__acciones">
+                    <td class="tabla__acciones" data-etiqueta="Acciones">
                         <a class="enlace-tenue"
                            href="<?= View::e(View::url('/instituciones/' . $ie['id'] . '/editar')) ?>">Editar</a>
 

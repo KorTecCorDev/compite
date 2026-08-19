@@ -1800,6 +1800,74 @@ documentado pero es manual.
 
 ---
 
+### D-41 — El sistema deja de asumir que hay un escritorio delante
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** sección 2
+
+**El punto de partida, medido y no supuesto:** el proyecto tenía **una sola** media query en toda
+la hoja de estilos, y solo encogía el escudo del carné. El `<meta viewport>` sí estaba en las tres
+plantillas, así que no había zoom forzado, y varias rejillas (`minmax(230px, 1fr)`, `minmax(170px,
+1fr)`) y los `flex-wrap` ya se adaptaban solos. Lo que quedaba roto era concreto:
+
+1. **La barra de navegación no envolvía.** Con el administrador son seis enlaces; solo «Control de
+   ingreso» mide unos 130 px, y sumando marca y bloque de usuario el ancho mínimo real pasaba de
+   900 px. En un teléfono los enlaces se comprimían y partían su texto. Afectaba a **todas** las
+   pantallas.
+2. **Los listados son tablas de hasta nueve columnas** con cabeceras `nowrap`, un código
+   correlativo de 22 caracteres y una celda de acciones con hasta cuatro enlaces: el ancho mínimo
+   ronda los 1200 px. El `overflow-x` del contenedor evitaba que se rompiera la página —eso ya
+   estaba— pero en 360 px dejaba ver menos de un tercio de la fila: para leer el estado de un
+   estudiante había que arrastrar la tabla y perder de vista su nombre.
+3. **Los campos de la nómina estaban en `.9rem` (14.4 px).** Safari en iPhone amplía la página al
+   enfocar un campo de menos de 16 px y **no vuelve a alejarla sola**. Recorriendo treinta campos
+   seguidos, eso convierte el formulario en un pulso con el navegador.
+4. **Áreas de toque de ~36 px**, por debajo de los 44 que piden WCAG 2.5.5 y Apple. No es teoría:
+   parte del uso es de pie en la puerta, con el teléfono en una mano.
+
+**Lo que se hizo:**
+
+- `base/_medios.scss` declara **tres** puntos de corte y un mixin para punteros gruesos, en `rem`
+  y no en `px` para que quien suba el tamaño de letra reciba el diseño simple antes. Los anchos
+  viven ahí y en ningún otro sitio, salvo el `30rem` del carné, que mide otra cosa.
+- **La barra se parte en dos filas** y el menú pasa a ser una tira que se desplaza en horizontal
+  con anclaje por enlace. **No se hizo un menú hamburguesa**: esconde la navegación tras un toque,
+  necesita JavaScript y un estado abierto/cerrado que puede quedarse pegado, y aquí los enlaces
+  son pocos y todos de uso diario.
+- **Por debajo de 48rem los listados dejan de ser tablas**: cada fila es una ficha y cada celda una
+  línea «rótulo → valor», con el rótulo sacado de `data-etiqueta` mediante `attr()`. La cabecera se
+  oculta con `clip-path` y no con `display: none`, para que los lectores de pantalla conserven la
+  relación entre celda y columna. La celda de identidad —el nombre del estudiante, del colegio, de
+  la persona— va sin rótulo y encabeza la ficha: es el título, no un dato más.
+- Nómina, filtros, barra de cobro, encabezados y pantallas centradas, adaptados. Los campos de la
+  nómina suben a 16 px **solo en pantallas táctiles**; en escritorio siguen compactos, que es donde
+  eso ayuda a ver muchas filas.
+- Áreas de toque de 44 px y casillas de cobro más grandes, aplicadas por **tipo de puntero** y no
+  por ancho: una tableta grande o un portátil táctil también se manejan con el dedo.
+- **No se usó `overflow-x: hidden` en el body.** Eso no arregla un desborde, lo esconde, y el
+  siguiente que aparezca pasaría inadvertido. En su lugar se le quita a los sospechosos —correos,
+  códigos, nombres largos— la capacidad de forzar el ancho.
+
+**Lo que NO se hizo, y por qué:**
+
+- **No se reescribió a móvil primero.** Es lo que se estila, pero este sistema se diseñó y se probó
+  en escritorio —donde la secretaria pasa el día— y darle la vuelta a toda la hoja habría cambiado
+  el riesgo de sitio a tres días del concurso. Las reglas van en `max-width`, y el comentario de
+  `_medios.scss` lo dice en vez de disimularlo.
+- **La nómina de la delegación queda usable en un teléfono, no cómoda.** Cada estudiante es una
+  ficha con sus campos apilados; registrar treinta así son treinta pantallas de desplazamiento.
+  Nadie debería inscribir una delegación entera desde un teléfono, y ninguna maquetación arregla
+  eso: lo que se buscaba era que **no estuviera roto** si toca corregir una fila desde el móvil.
+- **Sin verificación en navegador.** El puente con Chrome no estaba conectado en esta sesión, así
+  que el trabajo salió de la estructura del CSS y del HTML, no de medir píxeles en pantalla. Queda
+  **pendiente de comprobación del propietario**, con la lista que se le entregó.
+
+Cubierto por 25 comprobaciones automáticas que verifican que cada celda de cada listado lleva su
+rótulo o es la celda de identidad, que ninguna lo lleva vacío, que hay tantas celdas como
+cabeceras —así una columna nueva sin rótulo falla en vez de salir en blanco— y que el CSS
+compilado trae de verdad los tres puntos de corte y la regla `attr(data-etiqueta)`.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04 — CONFIRMADO** por el propietario (2026-08-18) `[AMPLIADO POR D-37]`. «Modalidad»
   —libre, pública, privada— es el criterio que elige la tarifa, y `tipo_origen` sale de

@@ -15,6 +15,8 @@
 //   · utilidades al final, para que `.oculto` gane sin !important
 
 // --- Base: variables, reset y tipografía ---------------------------------
+// `base/medios` no aparece aquí: no emite CSS, solo declara los mixins de los
+// puntos de corte, y cada parcial que los usa lo carga por su cuenta.
 @use 'base/variables';
 @use 'base/globales';
 @use 'base/tipografia';
