@@ -1930,6 +1930,42 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### Comprobación de portabilidad Windows → Linux, antes de subir
+
+**Fecha:** 2026-08-19
+
+El propietario corri&oacute; en el navegador los cinco bloques que se pueden validar en local
+—`COC`, `REI`, `USU`, `ROL`, `RES`— y **pasaron todos**. `DEP` no se puede correr sin desplegar.
+
+Antes de subir se busc&oacute; la clase de fallo que en Windows no se ve: **Linux distingue
+may&uacute;sculas en los nombres de archivo y Windows no**, as&iacute; que una vista pedida como
+`Inscripciones.index` sobre un archivo `inscripciones/index.php` funciona aqu&iacute; y da un 500
+all&iacute;. Se comprobaron las 18 vistas referenciadas, los nombres de clase contra sus archivos,
+los assets que piden las plantillas y los 110 archivos del proyecto en busca de nombres que
+choquen al perder la distinci&oacute;n.
+
+**Resultado: ningún problema real.** El comprobador levant&oacute; 12 falsos positivos y merece
+constar, porque casi los reporto como fallos:
+
+- *«`namespace Core` no coincide con la carpeta `core`»* — falso. PSR-4 mapea el **prefijo** a la
+  **carpeta** en `composer.json` (`"Core\": "core/"`), no exige que coincidan de forma literal.
+  Confirmado leyendo `vendor/composer/autoload_psr4.php` y el classmap, que trae rutas reales
+  tomadas del disco: `'Core\Database' => .../core/Database.php`.
+- *«rutas de Windows en `medir_responsive.php`»* — falso: es la lista de candidatos donde buscar
+  Chrome, que incluye a prop&oacute;sito las de Windows, Linux y macOS.
+- *«ruta de Windows en `crear_usuario.php`»* — el &uacute;nico con algo de raz&oacute;n, y no era
+  c&oacute;digo sino el ejemplo de uso del comentario, que solo mostraba la forma de XAMPP cuando
+  ese script se ejecuta **en el servidor**. Corregido para los dos entornos.
+
+**Y se cubri&oacute; un riesgo que el plan ten&iacute;a anotado desde D-17 y el verificador no
+miraba:** `Database::ordenEspanol()` comprueba que exista la colaci&oacute;n `utf8mb4_spanish_ci`
+y, si no est&aacute;, **no falla** — deja un aviso en el log y ordena con la colaci&oacute;n por
+defecto. Ese silencio es el problema: nadie lee el log el d&iacute;a del concurso, y una n&oacute;mina
+con las &Ntilde; mezcladas entre las N parece correcta hasta que alguien busca a un «&Ntilde;a&ntilde;ez»
+y no lo encuentra. `verificar_despliegue.php` lo comprueba ahora antes de abrir el registro.
+
+---
+
 ### Dónde viven las pruebas
 
 **Fecha:** 2026-08-19

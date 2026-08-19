@@ -9,8 +9,14 @@ declare(strict_types=1);
  * password_hash() de PHP. Por eso el primer administrador se crea aquí y
  * no en el seed.
  *
- * Uso:
+ * Uso — en Hostinger, por SSH, que es donde se crea el PRIMER administrador:
+ *   php scripts/crear_usuario.php "Nombre Apellido" correo@dominio.pe administrador
+ *
+ * En local (Windows), con el PHP de XAMPP y no el del PATH:
  *   C:\xampp\php\php.exe scripts/crear_usuario.php "Nombre Apellido" correo@dominio.pe administrador
+ *
+ * A partir del primer administrador, el resto de usuarios y todos los cambios de
+ * contraseña se hacen desde `/usuarios`, sin volver a la consola.
  *
  * La contraseña se pide por teclado, para que no quede en el historial de
  * la consola.

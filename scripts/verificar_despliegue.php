@@ -137,6 +137,26 @@ try {
 }
 
 /*
+ * La colación española. `Database::ordenEspanol()` la usa para que la Ñ caiga
+ * después de la N en las nóminas, y si el servidor no la trae **no falla**:
+ * registra un aviso en el log y ordena con la colación por defecto.
+ *
+ * Ese silencio es justo el problema. Nadie mira el log el día del concurso, y
+ * un listado con las Ñ mezcladas entre las N parece correcto hasta que alguien
+ * busca a un «Ñañez» y no lo encuentra donde debería. Por eso se comprueba aquí,
+ * antes de abrir el registro, y no cuando ya hay trescientos apellidos dentro.
+ */
+$colacion = Database::uno(
+    'SELECT 1 AS ok FROM information_schema.COLLATIONS WHERE COLLATION_NAME = :n LIMIT 1',
+    ['n' => Database::ORDEN_ES]
+);
+
+$colacion !== null
+    ? bien('colación ' . Database::ORDEN_ES . ' disponible (la Ñ ordena después de la N)')
+    : aviso('este servidor no trae ' . Database::ORDEN_ES . '. No rompe nada, pero los listados '
+          . 'ordenarán la Ñ mezclada entre las N y solo lo dirá el log');
+
+/*
  * Esquema esperado. Es la lista de columnas que el código de HOY necesita, no
  * la tabla entera: si falta alguna, es que la base viene de una versión
  * anterior y algo va a romperse en producción, probablemente al cobrar.
