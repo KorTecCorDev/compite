@@ -109,10 +109,19 @@ if ($depurar) {
     bien('depurar = false');
 }
 
-// url_base es lo que arma el enlace del QR del carné (D-21). Si queda mal, los
-// carnés impresos apuntan a ningún sitio y no se arregla reimprimiendo.
+/*
+ * `url_base` ya solo afecta al QR del carné (D-43). Enlaces, assets y
+ * redirecciones son relativos a la raíz y funcionan bajo cualquier dominio sin
+ * tocar configuración.
+ *
+ * Vacío es una opción legítima —y la correcta con un dominio provisional—: cada
+ * carné toma el dominio por el que se generó. Se avisa y no se bloquea, pero se
+ * avisa, porque la consecuencia hay que tenerla presente al imprimir.
+ */
 if ($urlBase === '') {
-    mal('url_base vacío — el QR del carné no tendría a dónde apuntar');
+    aviso('url_base vacío: cada carné llevará en su QR el dominio por el que se generó. '
+        . 'Es lo correcto con un dominio provisional — pero imprime los carnés lo más '
+        . 'tarde posible, porque un QR en papel no se puede corregir');
 } elseif (str_contains($urlBase, 'localhost') || str_contains($urlBase, '127.0.0.1')) {
     mal("url_base = {$urlBase} — apunta a la máquina local; TODOS los QR impresos serían inservibles");
 } elseif (preg_match('/TU-DOMINIO|tudominio|CAMBIAR|ejemplo\.|dominio\.pe$|localhost/i', $urlBase)) {

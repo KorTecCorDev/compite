@@ -127,19 +127,44 @@ $pantallas = [
     ], 'principal'],
 ];
 
+/**
+ * Incrusta la hoja de estilos en el HTML.
+ *
+ * Hace falta desde D-43: los enlaces del sistema son relativos a la raíz, y una
+ * página abierta como `file://` resolvería `/build/css/app.css` contra la raíz
+ * del disco. Sin esto, las pantallas se miden **sin CSS** y el banco denuncia
+ * desbordes que no existen — pasó, y las «culpables» eran las tablas en crudo.
+ */
+function conEstilosDentro(string $html, string $css): string
+{
+    $hoja = '<style>' . $css . '</style>';
+
+    return (string) preg_replace('#<link[^>]+app\.css[^>]*>#', $hoja, $html, 1);
+}
+
+$css = (string) file_get_contents(dirname(__DIR__) . '/public/build/css/app.css');
+
+if ($css === '') {
+    echo "No se encontró public/build/css/app.css. Ejecuta `npm run build`.\n";
+    exit(1);
+}
+
 foreach ($pantallas as $nombre => [$vista, $datos, $layout]) {
-    file_put_contents("{$carpeta}/{$nombre}.html", View::renderizar($vista, $datos, $layout));
+    file_put_contents(
+        "{$carpeta}/{$nombre}.html",
+        conEstilosDentro(View::renderizar($vista, $datos, $layout), $css)
+    );
 }
 
 $codigo = Database::uno('SELECT codigo_correlativo FROM participantes LIMIT 1');
 
 if ($codigo !== null) {
     $pantallas['carne'] = null;
-    file_put_contents("{$carpeta}/carne.html", View::renderizar('carne.publico', [
+    file_put_contents("{$carpeta}/carne.html", conEstilosDentro(View::renderizar('carne.publico', [
         'titulo' => 'Carné',
         'ficha'  => Participante::porCodigo((string) $codigo['codigo_correlativo']),
         'estado' => 'confirmada',
-    ], 'publico'));
+    ], 'publico'), $css));
 }
 
 // ---------------------------------------------------------------------

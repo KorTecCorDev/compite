@@ -83,7 +83,7 @@ Cuatro cosas que importan:
 |---|---|---|
 | `app.entorno` | `produccion` | |
 | `app.depurar` | **`false`** | Con `true`, cualquier error enseña rutas del servidor y trozos de consulta al visitante. |
-| `app.url_base` | `https://tu-dominio.pe` | **Es lo que arma el enlace del QR del carné.** Si queda mal, todos los carnés impresos apuntan a ningún sitio y no se arregla reimprimiendo: hay que volver a repartirlos. |
+| `app.url_base` | **vacío**, o tu dominio | Desde D-43 **solo afecta al QR del carné**; los enlaces y los assets son relativos a la raíz y funcionan bajo cualquier dominio. Déjalo vacío si el dominio es provisional: cada carné tomará el dominio por el que se generó. Ponlo cuando tengas uno propio y quieras que los QR apunten siempre ahí. |
 | `db.*` | credenciales de cPanel | |
 
 `config.local.php` está en `.gitignore` y nunca debe subirse al repositorio.
@@ -188,3 +188,8 @@ Guárdalo fuera del servidor. Los `.sql`, `.sql.gz` y `.zip` de la raíz están 
 - **El listado se corta en 2000 filas** y avisa cuando lo hace. La hoja de
   carnés por delegación se niega a generarse si la delegación pasa de ahí, antes
   que salir incompleta.
+- **Cambiar de dominio no rompe el sitio** (D-43): enlaces, assets y
+  redirecciones son relativos a la raíz. Lo único que no se puede arreglar es un
+  **QR ya impreso**, que lleva dentro el dominio de cuando se imprimió. Por eso:
+  imprime los carnés lo más tarde posible, y recuerda que la puerta funciona
+  tecleando el código en `/control` sin necesidad del QR.

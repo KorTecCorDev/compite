@@ -12,6 +12,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Writer\PngWriter;
 use Core\Config;
 use Core\Correlativo;
+use Core\Url;
 use Core\View;
 
 /**
@@ -215,20 +216,26 @@ final class GeneradorCarne
      * impreso. Por eso el sufijo tiene que ser único por sí solo —ver
      * Participante::existeSufijo().
      *
-     * Lee `app.url_base` a propósito, y NUNCA Core\View::url(): esta URL se
-     * imprime en el carné del estudiante y no se puede corregir después. Si se
-     * derivara del request, un carné generado mientras se prueba con el proxy
-     * de BrowserSync quedaría apuntando a localhost:3000 de forma permanente.
+     * Usa Core\Url::absoluta() y NUNCA Core\View::url(): esta URL se imprime en
+     * el carné del estudiante y no se puede corregir después, así que necesita
+     * esquema y host dentro.
+     *
+     * `Url::absoluta()` respeta `app.url_base` si está configurado —así se fija
+     * un dominio canónico para los QR aunque se entre por otro— y, si está
+     * vacío, toma el dominio por el que se está generando el carné (D-43).
+     *
+     * Por eso el entorno LOCAL sigue declarando `url_base`: con BrowserSync
+     * delante, un carné generado a través del proxy quedaría apuntando a
+     * localhost:3000. Ahí el dominio no es provisional, es falso.
      */
     public static function urlPublica(string $codigo): string
     {
-        $base   = rtrim((string) Config::obtener('app.url_base', ''), '/');
         $sufijo = Correlativo::sufijoDe($codigo);
 
         // Sin sufijo reconocible se cae a la ruta larga: siempre resuelve.
         return $sufijo === null
-            ? $base . '/carne/' . $codigo
-            : $base . '/c/' . $sufijo;
+            ? Url::absoluta('/carne/' . $codigo)
+            : Url::absoluta('/c/' . $sufijo);
     }
 
     /**

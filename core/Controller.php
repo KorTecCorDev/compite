@@ -21,8 +21,8 @@ abstract class Controller
 
     protected function redirigir(string $ruta): never
     {
-        $base = rtrim((string) Config::obtener('app.url_base', ''), '/');
-        header('Location: ' . $base . $ruta);
+        // Relativa a la raíz (D-43). El porqué, en Core\Url.
+        header('Location: ' . Url::a($ruta));
         exit;
     }
 

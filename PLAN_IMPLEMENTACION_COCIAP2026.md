@@ -1930,6 +1930,69 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-43 — Las URL dejan de depender de un dominio fijo
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-20, D-21, D-25
+
+El propietario avisa de que el dominio es **provisional y va a cambiar**, quizá varias veces.
+
+**El problema, mapeado antes de tocar:** `app.url_base` hac&iacute;a **dos trabajos** en un solo
+valor —el prefijo de instalaci&oacute;n (`/compite` en local, vac&iacute;o en producci&oacute;n) y
+el host— y de &eacute;l depend&iacute;an tres cosas: `View::url()` para **todos** los enlaces y
+assets, las cabeceras `Location` de `Auth` y `Controller`, y el QR del carn&eacute;. En
+producci&oacute;n no hab&iacute;a derivaci&oacute;n ninguna: se devolv&iacute;a el valor tal cual.
+
+Cambiar de dominio sin editar esa l&iacute;nea no romp&iacute;a el sitio de forma visible. Era peor:
+si el dominio viejo segu&iacute;a vivo, **la hoja de estilos cargaba desde all&iacute; y todo se
+ve&iacute;a bien**, pero cada enlace sacaba a la secretaria del dominio nuevo hacia el viejo —contra
+otra base de datos— y cada redirecci&oacute;n hac&iacute;a lo mismo. Un fallo silencioso.
+
+**La separaci&oacute;n**, en `core/Url.php`, que pasa a ser el &uacute;nico sitio donde se decide
+una URL:
+
+- **`Url::a()`** — enlaces, assets y redirecciones. **Relativos a la ra&iacute;z**, sin esquema ni
+  host. El sitio funciona bajo cualquier dominio sin tocar configuraci&oacute;n. Una cabecera
+  `Location` relativa es v&aacute;lida (RFC 7231) y universal.
+- **`Url::absoluta()`** — solo el QR, que se imprime y necesita el dominio dentro. Respeta
+  `app.url_base` si est&aacute; configurado; si est&aacute; vac&iacute;o, toma el dominio por el que
+  se gener&oacute; ese carn&eacute;.
+- **El prefijo se deduce del servidor**, no de la configuraci&oacute;n: `dirname(SCRIPT_NAME)` sin
+  el `/public` final. Producci&oacute;n con Document Root en `public/` da `/index.php` → prefijo
+  vac&iacute;o; local con el `.htaccess` de la ra&iacute;z da `/compite/public/index.php` →
+  `/compite`. La condici&oacute;n para saber si hay petici&oacute;n web es que `SCRIPT_NAME`
+  **empiece por barra**, y no `PHP_SAPI`: as&iacute; es la misma funci&oacute;n en los dos casos y
+  **se puede probar de verdad** —con `PHP_SAPI` esa rama era inalcanzable desde las pruebas, y la
+  primera versi&oacute;n de la prueba llevaba una copia del algoritmo, que no comprueba nada—.
+
+**Efecto secundario que importa:** al no usar el host en la navegaci&oacute;n, la cabecera `Host`
+—que la controla quien hace la petici&oacute;n— deja de poder decidir a d&oacute;nde apuntan los
+enlaces y las redirecciones. Esa era la raz&oacute;n documentada en D-20 para no derivar nada en
+producci&oacute;n, y **desaparece**: no se deriva ning&uacute;n host porque no se usa ninguno.
+
+**Lo que esto NO arregla, y hay que decirlo:** un QR **ya impreso** lleva dentro el dominio de
+cuando se imprimi&oacute;. Si el dominio cambia despu&eacute;s, ese papel apunta a donde ya no
+est&aacute;s, y ninguna configuraci&oacute;n lo deshace. Dos mitigaciones, las dos operativas:
+imprimir los carn&eacute;s lo m&aacute;s tarde posible, y recordar que **la puerta no depende del
+QR** — `/control` busca por c&oacute;digo, documento o apellido tecleado, y el correlativo va
+impreso en grande en el propio carn&eacute;.
+
+`app.url_base` pasa a ser **opcional** y solo para el QR. `verificar_despliegue.php` ya no lo
+exige: avisa de la consecuencia en vez de bloquear.
+
+**Comprobado:** 14 comprobaciones nuevas en `scripts/pruebas/urls-sin-dominio.php` —el prefijo con
+los tres `SCRIPT_NAME` reales, que ninguna URL de navegaci&oacute;n lleve host, que el QR s&iacute;
+lo lleve, y que sin dominio can&oacute;nico el QR siga al de la petici&oacute;n—, m&aacute;s las
+151 de la suite y la medici&oacute;n responsive. Y contra el servidor local de verdad: el CSS sale
+como `/compite/build/css/app.css` y responde 200, y `/panel` sin sesi&oacute;n redirige a
+`/compite/login`.
+
+**Efecto colateral en el banco de medici&oacute;n:** sus fixtures son `file://`, y una URL relativa
+a la ra&iacute;z all&iacute; resuelve contra la ra&iacute;z del disco. Las pantallas se med&iacute;an
+**sin CSS** y el banco denunci&oacute; 18 desbordes inexistentes —las «culpables» eran las tablas en
+crudo—. `medir_responsive.php` ahora incrusta la hoja en cada fixture.
+
+---
+
 ### Comprobación de portabilidad Windows → Linux, antes de subir
 
 **Fecha:** 2026-08-19

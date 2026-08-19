@@ -126,8 +126,10 @@ final class Auth
 
     private static function redirigir(string $ruta): never
     {
-        $base = rtrim((string) Config::obtener('app.url_base', ''), '/');
-        header('Location: ' . $base . $ruta);
+        // Relativa a la raíz (D-43): la redirección te deja en el dominio por el
+        // que entraste, sea cual sea, y no en uno escrito a mano en la
+        // configuración. Una cabecera `Location` relativa es válida y universal.
+        header('Location: ' . Url::a($ruta));
         exit;
     }
 }

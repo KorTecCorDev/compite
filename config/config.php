@@ -20,8 +20,23 @@ return [
         'entorno'   => 'local',            // 'local' | 'produccion'
         'depurar'   => true,               // en producción DEBE ser false
         'zona'      => 'America/Lima',
-        // URL base pública. Se usa para armar el enlace que codifica el QR.
-        // En Hostinger será algo como 'https://tudominio.pe'
+        /*
+         * Dominio canónico. **Opcional desde D-43.**
+         *
+         * Ya NO decide los enlaces ni los assets ni las redirecciones: todo eso
+         * es relativo a la raíz y funciona bajo cualquier dominio sin tocar
+         * nada. Lo único que queda aquí es el QR del carné, que se imprime en
+         * papel y necesita el dominio dentro.
+         *
+         *   · Con valor  → los QR apuntan siempre ahí, aunque se entre por otro
+         *                  dominio. Es lo que se quiere con un dominio propio.
+         *   · Vacío      → cada carné toma el dominio por el que se generó. Es
+         *                  lo razonable con un dominio provisional.
+         *
+         * En LOCAL se deja con valor a propósito: con BrowserSync delante, un
+         * carné generado a través del proxy quedaría apuntando a localhost:3000.
+         * Aquí el dominio no es provisional, es falso.
+         */
         'url_base'  => 'http://localhost/compite',
     ],
 
