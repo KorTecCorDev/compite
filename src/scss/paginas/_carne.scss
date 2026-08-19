@@ -66,6 +66,30 @@
 
 .carne-cabecera {
     margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: .8rem;
+}
+
+/* El escudo del carné impreso, aquí sin la restricción de los 54 mm de alto:
+   a este tamaño sí se le lee el texto del borde curvo. Se encoge en pantallas
+   estrechas para no comerse la línea del nombre del concurso, que es lo que la
+   mesa de la puerta necesita leer primero. */
+.carne-escudo {
+    flex: 0 0 auto;
+    width: auto;
+    height: 3.4rem;
+
+    @media (max-width: 30rem) {
+        height: 2.6rem;
+    }
+}
+
+/* min-width 0: sin esto, un nombre de concurso largo desborda el flex en vez
+   de partirse, porque los elementos flexibles no bajan de su ancho de contenido
+   por defecto. */
+.carne-identidad {
+    min-width: 0;
 }
 
 .carne-evento {

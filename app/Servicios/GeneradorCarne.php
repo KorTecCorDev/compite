@@ -73,6 +73,47 @@ final class GeneradorCarne
      */
     private const QR_SILENCIO_MM = 2.1;
 
+    /**
+     * Alto del escudo institucional en la cabecera, en milímetros.
+     *
+     * Calibrado midiendo, no elegido a ojo. Generando hojas de diez carnés con
+     * los casos más largos que el sistema puede recibir, el techo está en
+     * **6.2 mm**: a 6.4 mm la hoja se parte en dos páginas. Se fija en 6.0 mm
+     * para no trabajar al filo, y a esa altura el escudo no cuesta ni un carné
+     * —la hoja aguanta exactamente los mismos casos que aguantaba sin él—.
+     *
+     * Sale 6.0 × 5.0 mm impresos, verificado sobre las matrices de colocación
+     * del propio PDF.
+     *
+     * **Si cambia, hay que volver a generar la hoja de diez y comprobar que no
+     * se parte en dos páginas.** El presupuesto vertical del carné no tiene
+     * holgura para estimaciones.
+     */
+    private const ESCUDO_ALTO_MM = 6.0;
+
+    /** Aire entre el escudo y el texto de la cabecera. */
+    private const ESCUDO_SEPARACION_MM = 2.0;
+
+    /**
+     * Cuerpo base del nombre del concurso, en puntos, y ancho medio de sus
+     * caracteres a ese cuerpo.
+     *
+     * El milímetro por carácter está medido con las métricas reales de la
+     * fuente (DejaVu Sans bold, 6.4 pt, mayúsculas), no estimado: el nombre del
+     * concurso ocupa 75.17 mm de los 80.40 mm útiles del carné. Le sobran 5.2
+     * mm, y ahí está el problema que el escudo destapa —cualquier escudo se los
+     * come y empuja el nombre a una segunda línea, que cuesta 2.6 mm de altura
+     * y parte la hoja de diez en dos páginas—.
+     *
+     * Por eso el nombre del concurso se encoge lo justo para seguir en una
+     * línea, igual que ya se hace con los apellidos y con la procedencia. El
+     * suelo del 85% es deliberado: por debajo, el rótulo del evento empieza a
+     * competir con los rótulos de 4.6 pt y deja de leerse como titular.
+     */
+    private const CONCURSO_PT          = 6.4;
+    private const CONCURSO_MM_POR_CAR  = 1.534;
+    private const CONCURSO_PT_MINIMO   = 5.4;
+
     /** Cuerpo base del nombre y de la procedencia, en puntos. */
     private const NOMBRE_PT = 8.4;
     private const ORIGEN_PT = 6.2;
@@ -244,6 +285,105 @@ final class GeneradorCarne
     }
 
     /**
+     * Escudo institucional de la cabecera: ruta y medidas ya resueltas.
+     *
+     * El ancho se deriva de las proporciones reales del archivo en lugar de
+     * fijarse a mano —mismo criterio que la marca de agua—: si algún año llega
+     * un escudo con otro recorte, el carné se adapta solo en vez de imprimirlo
+     * deformado.
+     *
+     * Se pasa por ruta y no como data URI por lo mismo que la marca de agua: en
+     * una hoja de diez, el base64 viajaría diez veces dentro del HTML.
+     *
+     * @return array{ruta: string, ancho: float, alto: float}|null
+     */
+    private static function escudo(): ?array
+    {
+        /** @var array{ruta: string, ancho: float, alto: float}|null|false $cache */
+        static $cache = false;
+
+        if ($cache !== false) {
+            return $cache;
+        }
+
+        $ruta = Config::ruta('public/img/logo-cociap.png');
+
+        if (!is_file($ruta)) {
+            // El carné se genera igual, sin escudo: un lote de carnés no puede
+            // quedarse sin emitir porque falte una imagen decorativa.
+            return $cache = null;
+        }
+
+        $medidas = @getimagesize($ruta);
+        $alto    = self::ESCUDO_ALTO_MM;
+
+        return $cache = [
+            'ruta'  => str_replace('\\', '/', $ruta),
+            'alto'  => $alto,
+            'ancho' => $medidas === false ? $alto : round($alto * $medidas[0] / $medidas[1], 2),
+        ];
+    }
+
+    /**
+     * Cabecera del carné: escudo a la izquierda, identidad del evento a la
+     * derecha.
+     *
+     * Dos columnas y no una fila encima de otra: así el escudo y el texto se
+     * reparten los mismos milímetros de alto en vez de sumarlos. Apilados, el
+     * escudo le cobraba su altura entera al cuerpo del carné, que es lo que en
+     * D-27 obligó a quitarlo.
+     *
+     * **El nombre del concurso se encoge para seguir en una sola línea.** No es
+     * una preferencia tipográfica: medido sobre la fuente real ocupa 75.2 mm de
+     * los 80.4 mm útiles, así que el escudo —cualquier escudo— lo empuja a una
+     * segunda línea, y esa línea cuesta 2.6 mm que parten la hoja de diez en
+     * dos páginas. Encogerlo de 6.4 a 6.1 pt devuelve esos 2.6 mm y es la razón
+     * de que el escudo salga gratis en altura.
+     */
+    private static function cabecera(string $concurso): string
+    {
+        $org    = 'Colegio de Aplicación «Víctor Valenzuela Guardia» — UNASAM';
+        $escudo = self::escudo();
+
+        if ($escudo === null) {
+            return <<<HTML
+    <div class="cab">
+        <div class="cab-evento">{$concurso}</div>
+        <div class="cab-org">{$org}</div>
+    </div>
+HTML;
+        }
+
+        /*
+         * Ancho que le queda al texto una vez el escudo se lleva su columna, y
+         * cuerpo que hace que el nombre del concurso siga cabiendo en una sola
+         * línea. Se calcula sobre el ancho real disponible en vez de fijarse a
+         * un número: si el escudo cambia de tamaño, el titular se reajusta solo.
+         */
+        $disponible = self::CARNE_ANCHO_MM - 2 * 2.6
+                    - $escudo['ancho'] - self::ESCUDO_SEPARACION_MM;
+
+        $pt = self::titularQueQuepa(html_entity_decode($concurso, ENT_QUOTES, 'UTF-8'), $disponible);
+
+        return <<<HTML
+    <div class="cab">
+        <table class="cab-marco">
+            <tr>
+                <td class="cab-escudo">
+                    <img src="{$escudo['ruta']}" alt=""
+                         style="width: {$escudo['ancho']}mm; height: {$escudo['alto']}mm">
+                </td>
+                <td class="cab-texto">
+                    <div class="cab-evento" style="font-size: {$pt}pt">{$concurso}</div>
+                    <div class="cab-org">{$org}</div>
+                </td>
+            </tr>
+        </table>
+    </div>
+HTML;
+    }
+
+    /**
      * @param array<int, array<int, array<string, mixed>>> $paginas
      */
     private static function documento(array $paginas): string
@@ -354,6 +494,8 @@ HTML;
         $ptApellidos = self::tamanoQueQuepa($apellidos, self::NOMBRE_PT, self::NOMBRE_POR_LINEA);
         $ptNombres   = self::tamanoQueQuepa($nombres,   self::NOMBRE_PT, self::NOMBRE_POR_LINEA);
 
+        $cabecera = self::cabecera($e($d['concurso'] ?? 'COCIAP 2026'));
+
         $codigo = (string) ($d['codigo_correlativo'] ?? '');
         [$qr, $qrMm] = self::qr(self::urlPublica($codigo));
 
@@ -370,7 +512,7 @@ HTML;
 
         if (!$esLibre) {
             $origen   = (string) ($d['institucion'] ?? '—');
-            $ptOrigen = self::tamanoQueQuepa($origen, self::ORIGEN_PT, self::ORIGEN_POR_LINEA);
+            $ptOrigen = self::tamanoQueQuepa($origen, self::ORIGEN_PT, self::ORIGEN_POR_LINEA, 0.65);
 
             $procedencia = '<div class="rotulo">Procedencia</div>'
                 . '<div class="valor valor--origen" style="font-size: ' . $ptOrigen . 'pt">'
@@ -380,10 +522,7 @@ HTML;
         return <<<HTML
 <div class="carne">
 
-    <div class="cab">
-        <div class="cab-evento">{$e($d['concurso'] ?? 'COCIAP 2026')}</div>
-        <div class="cab-org">Colegio de Aplicación «Víctor Valenzuela Guardia» — UNASAM</div>
-    </div>
+{$cabecera}
 
     <table class="cuerpo">
         <tr>
@@ -445,19 +584,78 @@ HTML;
      * objetivo es una sola línea por campo: el presupuesto de altura del carné
      * no da para que ninguno de ellos salte a la siguiente.
      */
-    private static function tamanoQueQuepa(string $texto, float $base, int $porLinea): float
-    {
+    private static function tamanoQueQuepa(
+        string $texto,
+        float $base,
+        int $porLinea,
+        float $suelo = 0.7
+    ): float {
         $largo = mb_strlen($texto);
 
         if ($largo <= $porLinea) {
             return $base;
         }
 
-        // Nunca por debajo del 70% del cuerpo base: más pequeño deja de leerse
-        // a un metro de distancia, que es justo para lo que sirve el carné. Un
-        // texto tan largo que ni así entre hará dos líneas, y para eso está la
-        // holgura vertical que el layout se reserva.
-        return max(round($base * 0.7, 1), round($base * $porLinea / $largo, 1));
+        /*
+         * Nunca por debajo del suelo: más pequeño deja de leerse a un metro de
+         * distancia, que es justo para lo que sirve el carné.
+         *
+         * El suelo se puede aflojar por campo porque no todos se leen igual. El
+         * nombre conserva el 70% —es el dato que se lee en la fila de la
+         * puerta—, pero la procedencia baja al 65%, y esa diferencia de cinco
+         * puntos no es cosmética: el nombre oficial de una I.E. peruana pasa de
+         * los 70 caracteres («Institución Educativa Emblemática 86002 Virgen de
+         * Fátima de Independencia»), y al 70% se quedaba en 4.34 pt ocupando
+         * 59.8 mm de los 57.7 disponibles. Saltaba a dos líneas por dos
+         * milímetros, y esa línea de más partía la hoja de diez en dos páginas.
+         * Al 65% entra en una, y sigue en el mismo orden de tamaño que los
+         * rótulos de 4.6 pt que ya lleva el carné.
+         */
+        return max(round($base * $suelo, 1), round($base * $porLinea / $largo, 1));
+    }
+
+    /**
+     * Cuerpo que hace caber el nombre del concurso en una línea.
+     *
+     * Va aparte de tamanoQueQuepa() porque el criterio es distinto: allí se
+     * cuentan caracteres contra un cupo calibrado; aquí se compara el ancho
+     * estimado del texto contra los milímetros que el escudo deja libres, que
+     * es un número que cambia con el tamaño del escudo.
+     *
+     * El 3% que se descuenta es el margen por composición: el ancho medio por
+     * carácter se midió sobre el nombre del concurso actual, y un nombre con
+     * más letras anchas —M, W, mayúsculas seguidas— ocupa algo más a igual
+     * número de caracteres.
+     */
+    private static function titularQueQuepa(string $texto, float $disponibleMm): float
+    {
+        $necesarioMm = mb_strlen($texto) * self::CONCURSO_MM_POR_CAR;
+
+        if ($necesarioMm <= $disponibleMm) {
+            return self::CONCURSO_PT;
+        }
+
+        $ajustado = round(self::CONCURSO_PT * ($disponibleMm * 0.97) / $necesarioMm, 1);
+
+        /*
+         * Ni al cuerpo mínimo entra: el nombre del concurso ocupará dos líneas
+         * y la cabecera crecerá ~2.6 mm. El carné se genera igual —dos líneas
+         * se leen perfectamente—, pero queda constancia, porque una hoja de
+         * diez puede pasar a partirse en dos páginas y eso no se descubre hasta
+         * tener el papel delante. Mismo criterio que el aviso del QR: es un
+         * problema del dato, no del maquetado, y se arregla acortando el nombre
+         * del concurso.
+         */
+        if ($ajustado < self::CONCURSO_PT_MINIMO) {
+            error_log(sprintf(
+                'Carné: el nombre del concurso «%s» (%d caracteres) no cabe en una línea '
+                . 'junto al escudo ni a %.1f pt; ocupará dos líneas. Acórtalo o revisa que '
+                . 'la hoja de diez siga entrando en un A4.',
+                $texto, mb_strlen($texto), self::CONCURSO_PT_MINIMO
+            ));
+        }
+
+        return max(self::CONCURSO_PT_MINIMO, $ajustado);
     }
     private static function css(?string $marca): string
     {
@@ -465,6 +663,15 @@ HTML;
         $alto  = self::CARNE_ALTO_MM;
 
         $silencio = self::QR_SILENCIO_MM;
+
+        /*
+         * Ancho de la columna del escudo. Si el archivo no está, la cabecera
+         * cae a su forma de una sola columna y estos valores quedan a cero sin
+         * dejar un hueco fantasma.
+         */
+        $escudo    = self::escudo();
+        $colEscudo = $escudo === null ? 0 : $escudo['ancho'];
+        $sepEscudo = $escudo === null ? 0 : self::ESCUDO_SEPARACION_MM;
 
         /*
          * Fondo del carné. El tamaño se calcula a partir de las proporciones
@@ -539,13 +746,38 @@ FONDO;
     /* Cabecera: identidad del evento                                      */
     /* ------------------------------------------------------------------ */
 
-    /* Sin escudo. La marca de agua del fondo ya contiene el mismo escudo del
-       Colegio de Aplicación, y repetirlo a 12.5 mm en la cabecera lo dejaba
-       como una mancha de color ilegible además de duplicado. Quitarlo devuelve
-       el ancho completo al nombre del concurso —que antes se partía en dos
-       líneas— y libera la altura que necesitan Modalidad y Procedencia. */
+    /* El escudo vuelve a la cabecera por decisión del propietario (D-33), tras
+       haberse quitado en D-27. Lo que cambia respecto de entonces no es el
+       tamaño sino la maqueta: antes ocupaba una fila propia encima del texto y
+       le cobraba su altura al cuerpo; ahora comparte fila con la identidad del
+       evento, así que los milímetros que impone se reparten entre los dos.
+
+       El borde y el padding viven en el div y no en la tabla: en Dompdf, un
+       borde sobre un elemento de tabla se dibuja de forma desigual según haya
+       o no `border-collapse`, y aquí la cabecera lleva su propia tabla. */
 
     .cab { border-bottom: 1pt solid #1d4ed8; padding-bottom: .8mm; }
+
+    .cab-marco { width: 100%; border-collapse: collapse; }
+
+    /* La columna del escudo se fija al ancho exacto de la imagen más su aire:
+       sin ancho declarado, Dompdf reparte la tabla a partes iguales y el escudo
+       se lleva media cabecera. */
+    .cab-escudo {
+        width: {$colEscudo}mm;
+        padding: 0 {$sepEscudo}mm 0 0;
+        vertical-align: middle;
+        /* line-height 0: la imagen es un elemento en línea y arrastra debajo el
+           hueco del descender de la fuente. Es medio milímetro invisible en
+           pantalla que en una hoja de diez carnés se multiplica por cinco filas
+           y basta para empujar la última a una página nueva. */
+        line-height: 0;
+    }
+
+    /* Centrado vertical y no arriba: el escudo es más alto que las dos líneas
+       de texto, y alinearlo por arriba dejaba el bloque de texto colgando con
+       todo el aire debajo. */
+    .cab-texto { vertical-align: middle; padding: 0; }
 
     .cab-evento {
         font-size: 6.4pt;
@@ -611,11 +843,30 @@ FONDO;
 
     /* DNI, grado y modalidad comparten fila: los tres son cortos y ninguno
        merece una línea propia en un carné donde la altura es el recurso
-       escaso. Los porcentajes no son estéticos —«1° Secundaria» y un carné de
-       extranjería de 12 dígitos son los valores más largos que puede recibir
-       cada columna, y cada una tiene el ancho justo para que no partan. */
-    .trio { width: 100%; }
-    .trio-dni   { width: 34%; }
+       escaso.
+
+       Los porcentajes no son estéticos: son el ancho que necesita el valor más
+       largo de cada columna, medido con las métricas de la fuente a 7.2 pt
+       sobre los 57.7 mm de la columna de datos.
+
+         · DNI       «CE1234567890» (extranjería, 12 dígitos) → 21.3 mm
+         · Grado     «1° Secundaria»                          → 20.0 mm
+         · Modalidad «Privada»                                → 10.9 mm
+
+       El reparto anterior —34 / 36 / 30— daba 19.6 mm al DNI y 20.8 mm al
+       grado, y **los dos primeros partían en dos líneas**: el de extranjería
+       siempre, y el grado en cuanto era de secundaria. Cada línea de más suma
+       altura al carné, y con cinco filas por hoja bastaba para que la última se
+       fuera a una página nueva. Estaba en el código como si se hubiera medido;
+       no lo estaba.
+
+       `padding: 0` en las celdas no es cosmético: sin él, Dompdf aplica el
+       relleno por defecto de las tablas HTML y se pierde algo más de un
+       milímetro y medio repartido entre las tres columnas, que es justo el
+       margen que separa a «1° Secundaria» de partirse. */
+    .trio { width: 100%; border-collapse: collapse; }
+    .trio td    { padding: 0; }
+    .trio-dni   { width: 38%; }
     .trio-grado { width: 36%; }
 
     /* ------------------------------------------------------------------ */

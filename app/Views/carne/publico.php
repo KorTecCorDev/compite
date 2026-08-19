@@ -41,11 +41,22 @@ $fecha = !empty($ficha['fecha_evento'])
     <?php endif; ?>
 
     <header class="carne-cabecera">
-        <h1 class="carne-evento"><?= View::e($ficha['concurso']) ?></h1>
-        <p class="carne-sede">
-            <?= View::e($ficha['sede'] ?? '') ?>
-            <?php if ($fecha !== ''): ?> · <?= View::e($fecha) ?><?php endif; ?>
-        </p>
+        <!--
+            El escudo acompaña al nombre del concurso igual que en el carné de
+            papel (D-33). Aquí no compite por milímetros —esto es una página, no
+            una tarjeta de 54 mm—, así que va más grande y sí se le distingue el
+            texto del borde. alt vacío a propósito: es decorativo, y el nombre
+            de la institución ya viaja como texto en el encabezado.
+        -->
+        <img class="carne-escudo" src="<?= View::e(View::url('img/logo-cociap.png')) ?>" alt="">
+
+        <div class="carne-identidad">
+            <h1 class="carne-evento"><?= View::e($ficha['concurso']) ?></h1>
+            <p class="carne-sede">
+                <?= View::e($ficha['sede'] ?? '') ?>
+                <?php if ($fecha !== ''): ?> · <?= View::e($fecha) ?><?php endif; ?>
+            </p>
+        </div>
     </header>
 
     <dl class="carne-datos">

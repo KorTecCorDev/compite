@@ -1026,7 +1026,8 @@ de la que tiene en la mano, deja de poder contrastar un dato con el otro.
 
 **Queda huérfano** `public/img/logo-cociap.png` (y su original en `resources/img/`):
 ya no lo usa nada. No se borra sin consultar — el escudo suelto puede quererse en la
-interfaz web.
+interfaz web. **Resuelto en D-33** (2026-08-19): vuelve a la cabecera del carné, a 6 mm
+y maquetado en dos columnas.
 
 ---
 
@@ -1290,6 +1291,109 @@ sin el dato a la vista— se paga una vez, al pedirle que mire el celular antes 
 intenta enfocar algo que no se ve y no muestra ningún mensaje—. Cobrar en efectivo se habría
 quedado colgado sin error visible. Por eso el `required` no está en el HTML: lo pone y lo quita
 el JS junto con la visibilidad, y el servidor lo exige igual aunque el JS no llegue a cargar.
+
+---
+
+### D-33 — El escudo vuelve a la cabecera del carné, a 6 mm y en dos columnas
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-27
+
+El propietario pide devolver `public/img/logo-cociap.png` a la cabecera del carné, al
+costado del nombre del concurso. Revierte en parte D-27, que lo había quitado.
+
+**Por qué D-27 lo quitó, y por qué eso no invalida traerlo de vuelta.** Entonces el
+escudo iba a 12.5 mm y **apilado encima** del texto, así que le cobraba su altura
+entera al cuerpo del carné —y esa altura era justo la que necesitaban Modalidad y
+Procedencia—. Maquetado **en dos columnas**, escudo y texto se reparten los mismos
+milímetros en vez de sumarlos, y a 6 mm el escudo cabe dentro de lo que el bloque de
+texto ya ocupaba.
+
+**El obstáculo real no era la altura del escudo sino el ancho del titular.** Medido
+con las métricas de la fuente, «IV Concurso Regional de Conocimientos COCIAP 2026»
+ocupa **75.2 mm de los 80.4 mm útiles**: le sobran 5.2 mm. Cualquier escudo, aunque
+midiera 3 mm, se los come y empuja el nombre a una segunda línea que cuesta 2.6 mm de
+alto —y con ellos, la hoja de diez se parte en dos páginas—. Por eso el titular ahora
+**se encoge lo justo para seguir en una línea** (6.4 → 6.1 pt con el nombre actual),
+igual que ya hacían los apellidos y la procedencia. Ese ajuste es lo que hace que el
+escudo salga gratis en altura, no el tamaño que se le dé.
+
+**Calibrado generando hojas, no estimando.** El techo está en **6.2 mm**: a 6.4 mm la
+hoja se parte. Se fija **6.0 mm** (6.0 × 5.0 mm impresos, verificado sobre las
+matrices de colocación del PDF) para no trabajar al filo. A esa altura la hoja aguanta
+exactamente los mismos casos que aguantaba sin escudo, y el QR conserva sus 16.5 mm:
+el escudo no le quitó ni un módulo.
+
+**Medio milímetro que costaba un carné.** La imagen es un elemento en línea y arrastra
+debajo el hueco del descender de la fuente. Es invisible en pantalla, pero se multiplica
+por las cinco filas de la hoja y bastaba para empujar la última a una página nueva. La
+celda del escudo lleva `line-height: 0` por eso.
+
+**Queda un aviso en el log** si algún año el nombre del concurso es tan largo que no
+entra en una línea ni al cuerpo mínimo (5.4 pt): el carné se genera igual con dos
+líneas, pero conviene comprobar la hoja antes de imprimir mil. Mismo criterio que el
+aviso de `app.url_base` en D-25.
+
+**La duplicación con la marca de agua es consciente.** El logo de aniversario del fondo
+contiene el mismo escudo, así que ahora aparece dos veces. Al 10% de opacidad la marca
+funciona como textura y no como logo, de modo que en el papel se leen como cosas
+distintas; si el propietario prefiere lo contrario, la salida es bajar la marca de agua,
+no encoger el escudo de la cabecera.
+
+**La vista pública lleva el mismo escudo.** Es lo que abre el QR del papel, y el
+criterio de D-27 sigue mandando: si la mesa de la puerta ve en la pantalla una
+estructura distinta de la que tiene en la mano, deja de poder contrastar un dato con
+el otro. Ahí no hay pelea por milímetros —es una página, no una tarjeta de 54 mm—, así
+que va a 3.4 rem y se le distingue el texto del borde curvo.
+
+**El escudo deja de estar huérfano:** D-27 lo había dejado sin uso y anotado como
+pendiente de decidir. Queda resuelto.
+
+---
+
+### D-34 — La fila DNI / Grado / Modalidad estaba mal repartida desde D-23
+
+**Fecha:** 2026-08-19 · **Estado:** corregido · **Afecta:** D-23, D-27
+
+Encontrado midiendo para D-33, **es anterior al escudo y no lo causó el escudo**.
+Generando hojas de diez carnés con los casos más largos que el sistema puede recibir,
+**tres de cada diez partían la hoja en dos páginas con el código tal como estaba**.
+Dos causas independientes, las dos con la misma firma: un valor que no cabe en su
+columna salta a una segunda línea, esa línea suma altura, y con cinco filas por hoja
+la última se va a una página nueva.
+
+**1. El reparto 34 / 36 / 30 no daba el ancho que decía dar.** El comentario del código
+afirmaba que cada columna tenía «el ancho justo para que no partan» los valores más
+largos. Medido con las métricas de la fuente a 7.2 pt sobre los 57.7 mm de la columna
+de datos, no era cierto:
+
+| Columna | Valor más largo | Necesita | Tenía |
+|---|---|---:|---:|
+| DNI | `CE1234567890` (extranjería) | 21.3 mm | 19.6 mm |
+| Grado | `1° Secundaria` | 20.0 mm | 20.8 mm |
+| Modalidad | `Privada` | 10.9 mm | 17.3 mm |
+
+El DNI de extranjería partía **siempre**; el grado partía en cuanto era de secundaria,
+porque su margen de 0.8 mm se lo comía el relleno por defecto que Dompdf aplica a las
+celdas de tabla. Pasa a **38 / 36 / 26** con `padding: 0` explícito, que recupera algo
+más de milímetro y medio repartido entre las tres.
+
+**2. El suelo del 70% dejaba la procedencia a dos milímetros de caber.** El nombre
+oficial de una I.E. peruana pasa de los 70 caracteres. Al 70% del cuerpo base se
+quedaba en 4.34 pt ocupando 59.8 mm de los 57.7 disponibles: dos líneas por dos
+milímetros. El suelo pasa a ser **parámetro por campo** —el nombre conserva el 70%
+porque es el dato que se lee a un metro en la fila de la puerta; la procedencia baja al
+65%, donde entra en una línea y sigue en el mismo orden de tamaño que los rótulos de
+4.6 pt del propio carné—.
+
+**Resultado medido:** los diez casos extremos entran en una hoja, y también el peor
+carné que el sistema puede producir —extranjería de 12 dígitos, `1° Secundaria`,
+apellidos de 26 caracteres, nombres de 24 y una I.E. de 81— repetido diez veces. Antes
+de esto entraban siete de diez.
+
+**La lección para la próxima recalibración:** el comentario daba por medido algo que no
+lo estaba, y sobrevivió a dos revisiones del carné. Las medidas del carné se comprueban
+generando la hoja y contando páginas, que es barato; deducirlas leyendo el CSS es lo
+que dejó el fallo dentro.
 
 ---
 
