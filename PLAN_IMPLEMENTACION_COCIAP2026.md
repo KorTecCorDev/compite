@@ -1868,6 +1868,35 @@ compilado trae de verdad los tres puntos de corte y la regla `attr(data-etiqueta
 
 ---
 
+### Dónde viven las pruebas
+
+**Fecha:** 2026-08-19
+
+Las comprobaciones automáticas que citan D-37 a D-41 estaban en archivos sueltos fuera del
+repositorio, y se habrían perdido al cerrar la sesión de trabajo. Viven en **`scripts/pruebas/`**,
+y se ejecutan todas con:
+
+```
+php scripts/pruebas/todas.php
+```
+
+Trece pruebas, 137 comprobaciones. Corren **contra la base real de trabajo** —no contra una
+maqueta— porque es lo que las hace valer: así detectan que MariaDB rellena un ENUM `NOT NULL` en
+vez de rechazar el INSERT, que la colación española ordena la Ñ donde debe y que el esquema tiene
+las columnas que el código espera. Cada una abre su transacción y la revierte, y `_comun.php` la
+deshace igual si la prueba se cae a mitad: **no dejan una sola fila**.
+
+Nada en ellas está atado al entorno: ni rutas absolutas ni identificadores fijos. El administrador
+y el concurso se buscan, no se escriben, así que valen igual en Hostinger o tras restaurar otro
+respaldo.
+
+**Lo que NO cubren:** renderizan las vistas y leen el HTML, así que ven si falta un rótulo o si un
+enlace aparece a quien no debe; **no ven la pantalla**. Que algo se salga del ancho, que un botón
+quede bajo el teclado o que el QR se lea de verdad sigue siendo comprobación humana, y para eso
+está `docs/protocolo-pruebas.html`.
+
+---
+
 ### Decisiones pendientes de resolución por el propietario
 - **P-04 — CONFIRMADO** por el propietario (2026-08-18) `[AMPLIADO POR D-37]`. «Modalidad»
   —libre, pública, privada— es el criterio que elige la tarifa, y `tipo_origen` sale de

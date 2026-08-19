@@ -119,6 +119,20 @@ decides tú.
 > migraciones aplicadas, así que comprobar el esquema es la única forma de
 > saberlo.
 
+Y si quieres ir más allá de la configuración, **las pruebas del sistema**:
+
+```
+php scripts/pruebas/todas.php
+```
+
+Trece pruebas, 137 comprobaciones, contra la base real y **sin dejar nada**: cada
+una abre su transacción y la revierte, incluso si se cae a mitad. Cubren la
+modalidad COCIAP, la reinscripción, las firmas de cobro y anulación, la frontera
+entre secretaria y administrador, el tope del listado y los rótulos responsive.
+
+No sustituyen la comprobación en navegador —ven el HTML, no la pantalla—: para
+eso está `docs/protocolo-pruebas.html`.
+
 ---
 
 ## Antes del primer estudiante
