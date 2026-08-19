@@ -452,11 +452,13 @@ code, .cod {
 .aviso--critico { background: var(--crit-soft); border-color: color-mix(in srgb, var(--crit) 35%, transparent); }
 .aviso--ojo     { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 35%, transparent); }
 .aviso--info    { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.aviso--pass    { background: var(--pass-soft); border-color: color-mix(in srgb, var(--pass) 32%, transparent); }
 
 .aviso__titulo { font-weight: 700; font-size: .88rem; }
 .aviso--critico .aviso__titulo { color: var(--crit); }
 .aviso--ojo .aviso__titulo     { color: var(--warn); }
 .aviso--info .aviso__titulo    { color: var(--accent); }
+.aviso--pass .aviso__titulo    { color: var(--pass); }
 .aviso p { margin: 0; color: var(--ink-mid); }
 .aviso--critico p, .aviso--ojo p { color: var(--ink); }
 
@@ -540,32 +542,41 @@ code, .cod {
         <button class="progreso__reset" type="button" id="reiniciar">Reiniciar marcas</button>
     </div>
 
-    <div class="aviso aviso--critico">
-        <span class="aviso__titulo">Por d&oacute;nde retomar &mdash; cierre del 18 de agosto</span>
+    <div class="aviso aviso--pass">
+        <span class="aviso__titulo">Banco de pruebas completo &mdash; cierre del 18 de agosto</span>
         <p>
-            La Parte A qued&oacute; cerrada y pasando de principio a fin: se registr&oacute; la
-            delegaci&oacute;n, se cobr&oacute;, salieron los carn&eacute;s y la puerta encontr&oacute; a los
-            estudiantes. De los once bloques, el &uacute;nico trabajo que queda son
-            <strong>siete comprobaciones</strong>, todas de lo que se corrigi&oacute; o se a&ntilde;adi&oacute;
-            ese mismo d&iacute;a y ninguna probada todav&iacute;a:
+            Los once bloques quedaron corridos. Las siete comprobaciones que faltaban &mdash;<span
+            class="cod">IE-6</span>, <span class="cod">IE-10</span>, <span class="cod">DEL-6</span>,
+            <span class="cod">LIB-7</span>, <span class="cod">PAG-4</span>, <span class="cod">PAG-6</span>
+            y <span class="cod">PAG-13</span>&mdash; <strong>pasaron todas</strong>, sobre una
+            delegaci&oacute;n nueva registrada para la ocasi&oacute;n: al limpiar los duplicados no
+            quedaba ninguna inscripci&oacute;n pendiente que cobrar.
         </p>
         <p>
-            <span class="cod">IE-6</span> &middot; <span class="cod">IE-10</span> &middot;
-            <span class="cod">DEL-6</span> &middot; <span class="cod">LIB-7</span> &middot;
-            <span class="cod">PAG-4</span> &middot; <span class="cod">PAG-6</span> &middot;
-            <span class="cod">PAG-13</span>
+            <strong>Antes de correrlas se comprob&oacute; en la base que el &iacute;ndice
+            <span class="cod">uq_participante_documento</span> UNIQUE (concurso_id, dni) estuviera
+            realmente creado</strong>, y no solo escrito en la migraci&oacute;n. Sin esa
+            verificaci&oacute;n, <span class="cod">DEL-6</span> y <span class="cod">LIB-7</span>
+            habr&iacute;an <em>parecido</em> pasar: el aviso en rojo lo pinta el JavaScript, y se ve
+            igual de convincente con la red de seguridad puesta que sin ella.
         </p>
         <p>
-            <strong>Antes de las tres de PAG hay que registrar una delegaci&oacute;n nueva.</strong> Al
-            limpiar los participantes duplicados desaparecieron las tres inscripciones pendientes que
-            quedaban, y sin ninguna pendiente la barra de cobro no tiene nada que cobrar &mdash;que es,
-            adem&aacute;s, lo que <span class="cod">PAG-2</span> comprueba&mdash;.
+            <strong>El carn&eacute; qued&oacute; comprobado en papel:</strong> mide 85.6 &times; 54 mm
+            con regla &mdash;tama&ntilde;o ID-1, la impresora no escal&oacute; la hoja&mdash; y el QR
+            engancha r&aacute;pido con la c&aacute;mara del celular. Son las dos &uacute;nicas cosas
+            que ning&uacute;n c&oacute;digo puede verificar por ti.
         </p>
         <p>
-            <strong>Y queda una decisi&oacute;n tuya, no una prueba:</strong> confirmar que
-            &laquo;Modalidad&raquo; &mdash;libre, p&uacute;blica, privada&mdash; es el criterio que elige la
-            tarifa (P-04). Ya est&aacute; impresa en los carn&eacute;s que tienes en la mano, as&iacute; que
-            es lo m&aacute;s urgente de lo que sigue abierto.
+            <strong><span class="cod">P-04</span> queda confirmado por el propietario:</strong>
+            &laquo;Modalidad&raquo; &mdash;libre, p&uacute;blica, privada&mdash; es el criterio que
+            elige la tarifa. Era la &uacute;ltima decisi&oacute;n que bloqueaba, porque ese mismo dato
+            ya est&aacute; impreso en los carn&eacute;s entregados.
+        </p>
+        <p>
+            <strong>Lo que sigue ya no es probar, es construir:</strong> la <strong>Fase 5</strong>
+            &mdash;el Excel de estudiantes con filtros combinables y la pantalla del fondo de
+            devoluciones&mdash;. Cuando est&eacute;, este banco necesitar&aacute; un bloque nuevo para
+            ella: hoy no cubre ni una sola prueba de reportes.
         </p>
     </div>
 

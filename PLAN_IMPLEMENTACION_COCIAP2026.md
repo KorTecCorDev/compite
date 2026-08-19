@@ -997,9 +997,10 @@ Modalidad y —solo si no es libre— Procedencia.
 - **Modalidad** (Libre / Pública / Privada) se deriva de `tipo_participante` y
   `instituciones_educativas.tipo` —los mismos tres valores que `tarifas.tipo_origen`
   usa para decidir cuánto paga el estudiante— para que el carné no pueda contradecir
-  a la tarifa que se cobró. **Esto convierte a P-04 en bloqueante de verdad:** hasta
-  ahora esa correspondencia solo afectaba a un cálculo interno; ahora se imprime en
-  un documento irreversible.
+  a la tarifa que se cobró. **Esto convirtió a P-04 en bloqueante de verdad:** hasta
+  entonces esa correspondencia solo afectaba a un cálculo interno; al imprimirse pasó a
+  un documento irreversible. **Confirmado por el propietario el 2026-08-18** — ver P-04
+  en «Decisiones pendientes».
 - **Un estudiante libre no lleva Procedencia.** Repetirla como «Estudiante libre»
   sería decir dos veces lo que ya dice Modalidad.
 
@@ -1293,11 +1294,13 @@ el JS junto con la visibilidad, y el servidor lo exige igual aunque el JS no lle
 ---
 
 ### Decisiones pendientes de resolución por el propietario
-- **P-04** Origen del `tipo_origen` que selecciona la tarifa (presumiblemente
-  `instituciones_educativas.tipo` para delegación y `'libre'` para libre — sin confirmar).
-  **Subió de prioridad con D-27:** el carné ahora imprime esa misma correspondencia
-  bajo el rótulo «Modalidad». Deja de ser un cálculo interno corregible y pasa a un
-  documento en papel que ya está en manos del estudiante. Necesita un sí explícito.
+- **P-04 — CONFIRMADO** por el propietario (2026-08-18). «Modalidad» —libre, pública,
+  privada— es el criterio que elige la tarifa, y `tipo_origen` sale de
+  `instituciones_educativas.tipo` para las delegaciones y de `'libre'` para el estudiante
+  libre. Es lo que `Inscripcion::listar()` ya venía aplicando y lo que el carné imprime
+  bajo ese rótulo desde D-27, así que la confirmación no cambia código: **lo que cierra es
+  el riesgo de que el papel ya entregado contradijera la regla**. Tarifas vigentes:
+  pública S/ 10.00, privada S/ 15.00, libre S/ 15.00.
 - **P-06** Reinscribir a un participante ya registrado. Con D-31, un estudiante anulado
   definitivamente no puede volver a darse de alta desde el formulario: su documento ya existe.
   Hoy solo «Corregir categoría» lo recupera. Decidir si hace falta una pantalla propia antes
