@@ -29,16 +29,21 @@ $flash = Sesion::tomarFlash();
     $enlaces = [
         '/panel'          => 'Panel',
         '/inscripciones'  => 'Inscripciones',
-        '/instituciones'  => 'Instituciones',
         '/apoderados'     => 'Apoderados',
         '/control'        => 'Control de ingreso',
     ];
 
-    // Solo el administrador gestiona usuarios (sección 7 del plan). El enlace
-    // se oculta además de estar protegido en el controlador: enseñarle a la
-    // secretaria una puerta que le va a dar 403 no ayuda a nadie.
+    /*
+     * Instituciones y Usuarios son administrativas (§3 y §7 del plan): el
+     * catálogo de colegios es global y compartido, y darlo de alta mal afecta a
+     * la tarifa y a la bolsa de competencia de toda una delegación.
+     *
+     * Se ocultan además de estar protegidas en el controlador: enseñarle a la
+     * secretaria una puerta que le va a dar 403 no ayuda a nadie.
+     */
     if (Auth::esAdministrador()) {
-        $enlaces['/usuarios'] = 'Usuarios';
+        $enlaces['/instituciones'] = 'Instituciones';
+        $enlaces['/usuarios']      = 'Usuarios';
     }
     ?>
     <nav class="barra__menu">

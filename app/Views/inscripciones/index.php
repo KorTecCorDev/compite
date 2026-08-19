@@ -11,6 +11,8 @@ use Core\View;
 /** @var array<int, array<string, mixed>> $instituciones */
 /** @var array<string, mixed> $filtros */
 /** @var array<string, mixed> $resumen */
+/** @var int $total */
+/** @var int $tope */
 
 $sel = static fn (string $clave, string $valor): string
     => (string) ($filtros[$clave] ?? '') === $valor ? 'selected' : '';
@@ -126,6 +128,18 @@ foreach ($inscripciones as $ins) {
             </span>
         </p>
     <?php endif; ?>
+<?php endif; ?>
+
+<?php if (count($inscripciones) < $total): ?>
+    <?php /* El corte por tope deja de ser silencioso (D-40): la misma consulta
+             alimenta la hoja de carnés por delegación, y una hoja incompleta no
+             se nota hasta que faltan carnés en la puerta. */ ?>
+    <div class="aviso aviso--aviso">
+        <strong>Se están mostrando <?= count($inscripciones) ?> de <?= (int) $total ?> inscripciones.</strong>
+        El listado se corta en <?= (int) $tope ?> filas. Afina los filtros —por delegación,
+        modalidad o grado— para verlas todas; <strong>la hoja de carnés de una delegación
+        también se corta ahí</strong>.
+    </div>
 <?php endif; ?>
 
 <?php if ($inscripciones === []): ?>

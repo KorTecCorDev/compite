@@ -44,6 +44,11 @@ final class InscripcionController extends Controller
             'instituciones' => InstitucionEducativa::listar('', null, 500),
             'filtros'       => $filtros,
             'resumen'       => Inscripcion::resumen((int) $concurso['id']),
+            // Para avisar cuando el tope deja filas fuera (D-40). Antes se
+            // cortaba en silencio, y con el colegio anfitrión entero bajo una
+            // sola delegación eso deja de ser teórico.
+            'total'         => Inscripcion::contarFiltradas((int) $concurso['id'], $filtros),
+            'tope'          => Inscripcion::TOPE_LISTADO,
         ]);
     }
 

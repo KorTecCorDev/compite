@@ -17,6 +17,23 @@ use InvalidArgumentException;
 final class Inscripcion
 {
     /**
+     * Tope de filas del listado.
+     *
+     * Existe para que una consulta sin filtrar no intente pintar el concurso
+     * entero en una sola tabla. Era 500, y 500 se quedó corto cuando el colegio
+     * anfitrión pasó a inscribir a sus propios estudiantes (D-37): todas sus
+     * secciones cuelgan de UN solo `institucion_id`, así que filtrar por esa
+     * delegación puede traer cientos de filas.
+     *
+     * Lo grave no era el número sino el silencio: se cortaba sin avisar, y la
+     * misma consulta alimenta `/delegaciones/{id}/carnes.pdf`, así que la hoja
+     * de carnés habría salido incompleta y nadie lo habría notado hasta que
+     * faltaran carnés en la puerta. Ahora el listado compara con
+     * `contarFiltradas()` y lo dice.
+     */
+    public const TOPE_LISTADO = 2000;
+
+    /**
      * @param array<string, mixed> $datos
      */
     public static function crear(array $datos): int
@@ -139,6 +156,66 @@ final class Inscripcion
              LEFT JOIN instituciones_educativas ie ON ie.id = p.institucion_id
                  WHERE p.concurso_id = :concurso";
 
+        [$filtro, $parametros] = self::condiciones($concursoId, $filtros);
+        $sql .= $filtro;
+
+        /*
+         * Orden de nómina peruana: apellido paterno, materno y nombres, con la
+         * colación española para que la Ñ caiga después de la N y no mezclada
+         * entre ellas.
+         *
+         * El desempate final por `i.id` importa cuando un participante tiene
+         * una inscripción anulada y su reinscripción: quedan juntas y en el
+         * orden en que ocurrieron, que es como se lee el historial.
+         */
+        $es = Database::ordenEspanol();
+
+        $sql .= ' ORDER BY p.ap_paterno' . $es . ' ASC,
+                           p.ap_materno' . $es . ' ASC,
+                           p.nombres'    . $es . ' ASC,
+                           i.id ASC
+                  LIMIT ' . self::TOPE_LISTADO;
+
+        return Database::todos($sql, $parametros);
+    }
+
+    /**
+     * Cuántas inscripciones cumplen esos filtros, sin tope.
+     *
+     * La usa el listado para saber si `TOPE_LISTADO` dejó filas fuera. Comparte
+     * las condiciones con `listar()` a través de `condiciones()`: con el WHERE
+     * duplicado, cualquier filtro nuevo se aplicaría en un sitio y no en el
+     * otro, y el aviso de «hay más» mentiría.
+     *
+     * @param array<string, mixed> $filtros
+     */
+    public static function contarFiltradas(int $concursoId, array $filtros = []): int
+    {
+        [$filtro, $parametros] = self::condiciones($concursoId, $filtros);
+
+        $fila = Database::uno(
+            'SELECT COUNT(*) AS total
+               FROM inscripciones i
+               JOIN participantes p ON p.id = i.participante_id
+               JOIN categorias cat ON cat.id = i.categoria_id
+          LEFT JOIN instituciones_educativas ie ON ie.id = p.institucion_id
+              WHERE p.concurso_id = :concurso' . $filtro,
+            $parametros
+        );
+
+        return (int) ($fila['total'] ?? 0);
+    }
+
+    /**
+     * Las condiciones del listado, compartidas por `listar()` y por
+     * `contarFiltradas()`.
+     *
+     * @param array<string, mixed> $filtros
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    private static function condiciones(int $concursoId, array $filtros): array
+    {
+        $sql = '';
         $parametros = ['concurso' => $concursoId];
 
         if (!empty($filtros['institucion_id'])) {
@@ -185,24 +262,7 @@ final class Inscripcion
             }
         }
 
-        /*
-         * Orden de nómina peruana: apellido paterno, materno y nombres, con la
-         * colación española para que la Ñ caiga después de la N y no mezclada
-         * entre ellas.
-         *
-         * El desempate final por `i.id` importa cuando un participante tiene
-         * una inscripción anulada y su reinscripción: quedan juntas y en el
-         * orden en que ocurrieron, que es como se lee el historial.
-         */
-        $es = Database::ordenEspanol();
-
-        $sql .= ' ORDER BY p.ap_paterno' . $es . ' ASC,
-                           p.ap_materno' . $es . ' ASC,
-                           p.nombres'    . $es . ' ASC,
-                           i.id ASC
-                  LIMIT 500';
-
-        return Database::todos($sql, $parametros);
+        return [$sql, $parametros];
     }
 
     /**

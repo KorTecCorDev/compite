@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Concurso;
+use Core\Auth;
 use Core\Sesion;
 use Core\View;
 
@@ -69,8 +70,15 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
                     <?php endforeach; ?>
                 </select>
                 <span class="campo__ayuda">
-                    ¿No está en la lista?
-                    <a href="<?= View::e(View::url('/instituciones/nueva')) ?>">Regístrala primero</a>.
+                    <?php /* Dar de alta un colegio es cosa del administrador (D-40): el
+                             catálogo es global y su gestión decide tarifa y bolsa. */ ?>
+                    <?php if (Auth::esAdministrador()): ?>
+                        ¿No está en la lista?
+                        <a href="<?= View::e(View::url('/instituciones/nueva')) ?>">Regístrala primero</a>.
+                    <?php else: ?>
+                        ¿No está en la lista? Pídele al administrador que la registre:
+                        el catálogo de colegios lo gestiona él.
+                    <?php endif; ?>
                 </span>
             </label>
         </div>

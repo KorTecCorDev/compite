@@ -250,6 +250,8 @@ CREATE TABLE carnes (
 | Anular inscripciones | ✅ | ✅ |
 | Exportar reportes Excel | ✅ | ✅ |
 | Gestionar Concurso, Categorías, Tarifas | ❌ | ✅ |
+| Gestionar Instituciones Educativas (D-40) | ❌ | ✅ |
+| Gestionar Apoderados | ✅ | ✅ |
 | Reinscribir a un participante que quedó fuera (D-38) | ✅ | ✅ |
 | Gestionar usuarios y contraseñas en `/usuarios` (D-39) | ❌ | ✅ |
 | Gestionar Organización | ❌ | ✅ |
@@ -1741,6 +1743,60 @@ del administrador. Añadir `/perfil` después es aditivo y no toca nada de esto.
 **Fuera de alcance por tiempo:** una bitácora general que firme también instituciones y apoderados.
 El propietario la aplaza a después del concurso. Hoy esas dos tablas siguen sin registrar quién
 las creó o editó.
+
+---
+
+### D-40 — Instituciones pasa a ser administrativa, y el despliegue deja de ser folclore
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** secciones 7 y 8
+
+**El catálogo de colegios pasa a ser exclusivo del administrador.** Decisión del propietario, y
+en realidad **corrige el código para que cumpla el plan**: la §3 ya decía que las funciones
+administrativas incluyen «gestión de Concurso, Categorías, Tarifas, **Instituciones Educativas**,
+Usuarios». El controlador era más permisivo que el documento.
+
+Tiene sentido más allá de la jerarquía: el catálogo es **global y compartido**, y al dar de alta
+un colegio se decide su gestión y su papel en el concurso, que es lo que fija **su tarifa y su
+bolsa de competencia**. Un alta mal hecha no se nota en esa pantalla, se nota en el cobro de toda
+una delegación.
+
+Se cerró el controlador entero, incluida la API `/api/instituciones/buscar` —comprobado que solo
+la consume el propio formulario de instituciones, no el de inscripción—. Y se taparon los tres
+sitios que habrían dejado a la secretaria contra una puerta cerrada: el enlace de la barra, el
+módulo del panel y, sobre todo, el «¿No está en la lista? Regístrala primero» del formulario de
+delegación, que ahora le dice **a quién pedírselo**. `Apoderados` sigue siendo suya: lo necesita
+para inscribir estudiantes libres.
+
+**El tope del listado deja de cortar en silencio.** `Inscripcion::listar()` terminaba en
+`LIMIT 500` sin paginación y sin avisar. Daba igual mientras las delegaciones fueran de 5 a 30,
+pero con D-37 el colegio anfitrión entero cuelga de **un solo `institucion_id`**. Y la misma
+consulta alimenta `/delegaciones/{id}/carnes.pdf`: la hoja habría salido incompleta y **nadie lo
+habría notado hasta que faltaran carnés en la puerta**.
+
+El tope sube a 2000 y, sobre todo, se vuelve visible: `contarFiltradas()` comparte las condiciones
+con `listar()` a través de un método privado —con el WHERE duplicado, un filtro nuevo se aplicaría
+en un sitio y no en el otro y el aviso mentiría—, el listado dice «se muestran N de M», y la hoja
+de carnés **se niega a generarse** si la delegación pasa del tope, antes que salir incompleta.
+
+**Y el despliegue deja de depender de que alguien recuerde los pasos:**
+
+- `scripts/verificar_despliegue.php` — comprueba PHP y extensiones, que `depurar` esté en false y
+  que `url_base` no apunte a localhost, **el esquema de la base columna por columna**, las cuatro
+  tarifas y las 11 categorías, que la I.E. anfitriona esté marcada, que haya un administrador
+  activo, que los assets estén minificados y que `storage/logs` sea escribible. Sale con código 1
+  si algo bloquea.
+  Existe por el fallo real de las pruebas: restaurar un respaldo dejó la base desfasada de las
+  migraciones y el cobro se cayó con un error 1364 sin ningún aviso previo. No hay tabla de
+  migraciones aplicadas, así que comprobar el esquema es la única forma de saberlo.
+- `DESPLIEGUE.md` — la guía de una pasada, con lo que de verdad se olvida: que `public/build` está
+  rastreado por git y hay que compilar en producción **antes de commitear**; que en una base nueva
+  **no se ejecuta ninguna migración** porque `schema.sql` ya las lleva; que `url_base` es lo que
+  codifica el QR y equivocarlo obliga a repartir los carnés otra vez; y el `mysqldump` al cerrar
+  cada jornada, que es la única red que hay sobre el dinero cobrado.
+
+**Lo que sigue sin cubrirse:** no hay tabla de migraciones aplicadas —el verificador la sustituye
+comprobando el esquema, que resuelve el síntoma— ni respaldo automático: el `mysqldump` está
+documentado pero es manual.
 
 ---
 

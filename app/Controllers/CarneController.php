@@ -127,10 +127,34 @@ final class CarneController extends Controller
          * inscripción pendiente de pago o anulada pone en circulación un
          * documento que parece válido y no lo es.
          */
-        $fichas = Inscripcion::listar($concursoId, [
+        $filtros = [
             'institucion_id' => (int) $institucionId,
             'estado'         => 'confirmada',
-        ]);
+        ];
+
+        /*
+         * El listado se corta en `TOPE_LISTADO` filas, y esta hoja usa esa misma
+         * consulta (D-40). Un PDF al que le faltan carnés no se nota hasta que
+         * faltan en la puerta el día del concurso, así que aquí se prefiere no
+         * generarlo antes que generarlo incompleto.
+         *
+         * Es defensivo: con el tope actual haría falta una delegación de más de
+         * dos mil confirmadas, y un PDF de ese tamaño tampoco terminaría de
+         * generarse en un hosting compartido.
+         */
+        $cuantas = Inscripcion::contarFiltradas($concursoId, $filtros);
+
+        if ($cuantas > Inscripcion::TOPE_LISTADO) {
+            Sesion::flash(
+                'error',
+                "Esa delegación tiene {$cuantas} carnés confirmados y la hoja se corta en "
+                . Inscripcion::TOPE_LISTADO . '. Se generaría incompleta, así que no se generó. '
+                . 'Imprímelos por grado desde el listado.'
+            );
+            $this->redirigir('/inscripciones?institucion_id=' . (int) $institucionId);
+        }
+
+        $fichas = Inscripcion::listar($concursoId, $filtros);
 
         if ($fichas === []) {
             Sesion::flash('error', 'Esa delegación todavía no tiene inscripciones confirmadas.');

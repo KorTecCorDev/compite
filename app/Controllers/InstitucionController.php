@@ -18,7 +18,7 @@ final class InstitucionController extends Controller
 {
     public function index(): void
     {
-        Auth::exigirSesion();
+        Auth::exigirAdministrador();
 
         $busqueda = trim((string) ($_GET['q'] ?? ''));
         $tipo     = (string) ($_GET['tipo'] ?? '');
@@ -36,7 +36,7 @@ final class InstitucionController extends Controller
 
     public function formularioNueva(): void
     {
-        Auth::exigirSesion();
+        Auth::exigirAdministrador();
 
         $this->ver('instituciones.formulario', [
             'titulo'      => 'Nueva Institución Educativa',
@@ -48,7 +48,7 @@ final class InstitucionController extends Controller
 
     public function formularioEditar(string $id): void
     {
-        Auth::exigirSesion();
+        Auth::exigirAdministrador();
 
         $institucion = InstitucionEducativa::porId((int) $id);
 
@@ -81,7 +81,7 @@ final class InstitucionController extends Controller
 
     public function guardar(?string $id = null): void
     {
-        Auth::exigirSesion();
+        Auth::exigirAdministrador();
         $this->exigirCsrf();
 
         $idNumerico = $id === null ? null : (int) $id;
@@ -259,7 +259,7 @@ final class InstitucionController extends Controller
      */
     public function buscarJson(): void
     {
-        Auth::exigirSesion();
+        Auth::exigirAdministrador();
 
         $termino = trim((string) ($_GET['q'] ?? ''));
 

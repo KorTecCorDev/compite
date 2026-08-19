@@ -96,7 +96,11 @@ $hoy = new DateTimeImmutable('today');
             Acceso y sesiones <span class="etiqueta">Fase 1 · listo</span>
         </li>
         <li class="lista-modulos__item lista-modulos__item--listo">
-            <a href="<?= View::e(View::url('/instituciones')) ?>">Instituciones Educativas y Apoderados</a>
+            <?php /* El catálogo de colegios es administrativo (D-40); Apoderados no. */ ?>
+            <?php if (Auth::esAdministrador()): ?>
+                <a href="<?= View::e(View::url('/instituciones')) ?>">Instituciones Educativas</a> y
+            <?php endif; ?>
+            <a href="<?= View::e(View::url('/apoderados')) ?>">Apoderados</a>
             <span class="etiqueta">Fase 2 · listo</span>
         </li>
         <li class="lista-modulos__item lista-modulos__item--listo">
