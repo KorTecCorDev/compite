@@ -19,15 +19,37 @@
     }
 }
 
+/*
+ * `display: block`, y no flex, y esto era un fallo de verdad.
+ *
+ * En un contenedor flex **cada elemento hijo es un ítem**; solo los tramos de
+ * texto suelto se agrupan en ítems anónimos. Los 22 avisos que las vistas
+ * escriben a mano llevan HTML dentro —`<strong>`, `<ul>`, `<code>`—, así que un
+ * párrafo como «Cada inscripción guarda <strong>quién la registró</strong>, y
+ * cada cobro…» se maquetaba como CINCO columnas en fila, con 12 px de separación
+ * metidos alrededor de cada `<strong>` y sin envolver la línea.
+ *
+ * Medido en el aviso de /usuarios a 320 px: la caja medía 293 px y su contenido
+ * 380, con un `<strong>` sobresaliendo 13 px por fuera. Eso ensanchaba el
+ * documento entero y obligaba a desplazarse en horizontal.
+ *
+ * El flex solo lo necesita el aviso de resultado, que lleva texto y botón de
+ * cerrar uno al lado del otro: ese pide `--cerrable` y lo recupera.
+ */
 .aviso {
-    display: flex;
-    align-items: flex-start;
-    gap: .75rem;
+    display: block;
     padding: .7rem .9rem;
     border-radius: 8px;
     border: 1px solid;
     font-size: .9rem;
     margin-bottom: 1rem;
+
+    // El aviso de resultado: texto a la izquierda, aspa a la derecha.
+    &--cerrable {
+        display: flex;
+        align-items: flex-start;
+        gap: .75rem;
+    }
 
     &--exito {
         background: var(--exito-suave);

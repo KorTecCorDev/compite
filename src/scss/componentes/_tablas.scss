@@ -151,7 +151,11 @@
             display: flex;
             align-items: baseline;
             justify-content: space-between;
-            gap: 1rem;
+            // Si el valor no cabe al lado de su rótulo, cae debajo en vez de
+            // empujar la ficha. Pasa con las píldoras —«Encargado de delegación
+            // (2)»— que van con `white-space: nowrap` y no pueden encogerse.
+            flex-wrap: wrap;
+            gap: .15rem 1rem;
             padding: .5rem 0;
             border-bottom: 1px solid t.$gris-suave;
             text-align: right;
@@ -176,7 +180,11 @@
         // persona— no lleva rótulo: es el título, no un dato más. Ponerle
         // «Apellidos y nombres» delante en una ficha que ya va encabezada por
         // ese nombre solo añade ruido.
-        &__principal {
+        // `td#{&}` y no `&`: `.tabla__principal` (0,1,0) pierde por especificidad
+        // contra `.tabla td` (0,1,1), así que el `display: block` no se aplicaba
+        // y la celda del nombre seguía repartiéndose a los extremos como si
+        // fuera un par rótulo→valor. Se vio en el pantallazo, no en los números.
+        td#{&}__principal {
             display: block;
             padding: .7rem 0 .55rem;
             font-size: 1.05rem;
@@ -191,7 +199,7 @@
         // La celda de acciones no es un dato: es una barra de botones. Ocupa el
         // ancho completo y los enlaces se reparten en varias líneas si hace
         // falta, en vez de salirse por la derecha.
-        &__acciones {
+        td#{&}__acciones {
             flex-wrap: wrap;
             justify-content: flex-start;
             gap: .35rem 1rem;

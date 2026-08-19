@@ -1,4 +1,5 @@
 @use '../base/tokens' as t;
+@use '../base/medios' as m;
 
 // Cifras del panel: total de inscripciones, confirmadas, recaudado, etc.
 
@@ -31,5 +32,24 @@
     &__nombre {
         font-size: .82rem;
         color: var(--tinta-suave);
+    }
+}
+
+// En un teléfono de 360 px quedan 333 útiles, y dos columnas de 170 más su
+// separación piden 356: por 23 px las cuatro cifras se apilaban una debajo de
+// otra y empujaban la tabla —lo que la secretaria viene a ver— fuera de la
+// pantalla. Bajando el mínimo a 140 entran de dos en dos y el listado sube.
+@include m.hasta-movil {
+    .metricas {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: .6rem;
+    }
+
+    .metrica {
+        padding: .8rem .9rem;
+
+        &__valor {
+            font-size: 1.35rem;
+        }
     }
 }

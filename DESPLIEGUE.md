@@ -130,8 +130,18 @@ una abre su transacción y la revierte, incluso si se cae a mitad. Cubren la
 modalidad COCIAP, la reinscripción, las firmas de cobro y anulación, la frontera
 entre secretaria y administrador, el tope del listado y los rótulos responsive.
 
-No sustituyen la comprobación en navegador —ven el HTML, no la pantalla—: para
-eso está `docs/protocolo-pruebas.html`.
+Y la medición responsive, que necesita Chrome instalado:
+
+```
+php scripts/medir_responsive.php
+```
+
+Carga cada pantalla dentro de un `<iframe>` de ancho exacto —un iframe sí crea un
+viewport de verdad— y comprueba que ninguna desborda entre 320 y 1440 px,
+nombrando al elemento culpable si alguna lo hace.
+
+Ninguna de las dos sustituye la comprobación en navegador: ven el HTML y el
+ancho, no el diseño. Para eso está `docs/protocolo-pruebas.html`.
 
 ---
 

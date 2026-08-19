@@ -8,6 +8,15 @@ use Core\View;
 
 /** @var string $contenido */
 /** @var string $titulo */
+/** @var bool|null $columnaAncha */
+
+/*
+ * Las pantallas que muestran una tabla de datos piden la columna ancha con
+ * `'columnaAncha' => true`. Va como dato de la vista y no deducido del nombre de
+ * la plantilla: quien añada un listado nuevo tiene que decidirlo, no heredarlo
+ * por parecido.
+ */
+$claseContenido = 'contenido' . (!empty($columnaAncha) ? ' contenido--ancho' : '');
 
 $flash = Sesion::tomarFlash();
 ?>
@@ -66,7 +75,7 @@ $flash = Sesion::tomarFlash();
     </nav>
 </header>
 
-<main class="contenido">
+<main class="<?= View::e($claseContenido) ?>">
     <?php /*
        Los avisos del resultado de una acción van en una franja pegajosa: al
        desplazarse por una tabla larga o un formulario de veinte campos, el
@@ -78,7 +87,7 @@ $flash = Sesion::tomarFlash();
         <div class="avisos" id="avisos-flash">
             <?php foreach ($flash as $tipo => $mensajes): ?>
                 <?php foreach ($mensajes as $mensaje): ?>
-                    <div class="aviso aviso--<?= View::e($tipo) ?>"
+                    <div class="aviso aviso--cerrable aviso--<?= View::e($tipo) ?>"
                          role="<?= $tipo === 'error' ? 'alert' : 'status' ?>">
                         <span class="aviso__texto"><?= View::e($mensaje) ?></span>
                         <button type="button" class="aviso__cerrar" aria-label="Cerrar aviso">&times;</button>

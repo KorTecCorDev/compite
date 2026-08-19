@@ -8,6 +8,51 @@
     padding: 1.75rem 1.5rem 3rem;
     display: grid;
     gap: 1.25rem;
+
+    /*
+     * `min-width: 0` en los hijos, y no es cosmético: sin él la página entera se
+     * ensancha más que la ventana.
+     *
+     * Un elemento de rejilla arranca con `min-width: auto`, que significa «no te
+     * encojas por debajo de tu contenido». El listado de inscripciones tiene una
+     * tabla de nueve columnas cuyo ancho mínimo ronda los 1180 px, así que la
+     * PISTA de la rejilla se estiraba hasta ahí. `.contenido` seguía midiendo sus
+     * 960 px —el `max-width` sí se respeta— pero su pista se salía, y con ella
+     * TODOS los demás elementos: el encabezado, las métricas y los filtros, que
+     * se estiran a la pista.
+     *
+     * De ahí los dos síntomas que se veían: el contenido aparecía pegado a la
+     * izquierda en vez de centrado —porque el bloque aparente medía 1180 y no
+     * 912— y la barra superior, que mide el 100% de la VENTANA y no del
+     * documento, se cortaba en cuanto uno se desplazaba a la derecha.
+     *
+     * Con `min-width: 0` la pista vuelve a valer lo que la ventana permite, y el
+     * `overflow-x: auto` de `.tabla-contenedor` por fin hace su trabajo: la que
+     * se desplaza es la tabla, dentro de su caja, no la página.
+     */
+    > * {
+        min-width: 0;
+    }
+}
+
+/*
+ * Columna ancha, para las pantallas que muestran una tabla de datos.
+ *
+ * Los 960 px de la columna normal son los correctos para leer: por encima de esa
+ * medida el ojo pierde el renglón al volver a la izquierda. Pero un listado no
+ * se lee como un texto, se recorre, y el de inscripciones necesita 1176 px para
+ * enseñar sus nueve columnas.
+ *
+ * Sin esta variante, en un monitor de 1920 la secretaria arrastraba la tabla de
+ * lado mientras media pantalla quedaba vacía — medido: la caja daba 910 px a una
+ * tabla de 1176, igual a 1920 que a 1024.
+ *
+ * 1280 y no más: deja 1232 px de contenido, que cubre la tabla con holgura, y
+ * por debajo de esa ventana la tabla sigue desplazándose DENTRO de su caja, que
+ * es el comportamiento correcto.
+ */
+.contenido--ancho {
+    max-width: 1280px;
 }
 
 // Título de la pantalla a la izquierda, acciones a la derecha.

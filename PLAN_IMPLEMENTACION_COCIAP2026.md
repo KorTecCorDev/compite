@@ -1868,6 +1868,68 @@ compilado trae de verdad los tres puntos de corte y la regla `attr(data-etiqueta
 
 ---
 
+### D-42 — Lo responsive, ahora medido: cuatro desbordes reales que D-41 no vio
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-41
+
+El propietario reporta dos síntomas en `/inscripciones` al 100% de zoom: la tabla aparece pegada a
+la izquierda y hay que desplazarse para verla, y **la barra superior se corta justo en la zona que
+no se ve**. Son el mismo fallo: el documento era más ancho que la ventana, y la barra mide el 100%
+de la VENTANA, no del documento, así que al desplazarse a la derecha se acababa.
+
+**Y desmiente lo que yo había afirmado en D-41.** Ahí escribí que el `overflow-x` del contenedor
+«evitaba que se rompiera la página — eso ya estaba». Era falso, y lo había dado por bueno sin
+medirlo.
+
+**La causa, medida:** `.contenido` es una rejilla, y **un elemento de rejilla no se encoge por
+debajo de su contenido** (`min-width: auto`). La tabla de inscripciones tiene un ancho mínimo de
+1176 px, así que la PISTA se estiraba hasta ahí. `.contenido` seguía midiendo sus 960 px —el
+`max-width` sí se respeta— pero su pista se salía, y con ella el encabezado, las métricas y los
+filtros, que se estiran a la pista. De ahí que el contenido pareciera pegado a la izquierda: el
+bloque aparente medía 1176 y no 912.
+
+**Corregido el error de método antes que el de código.** Se montó una medición real con Chrome sin
+interfaz. La primera versión también mentía: `--window-size=360` **no baja de ~500 px en Windows**,
+así que las medidas «de teléfono» eran de 485 px y no probaban nada. La segunda versión carga cada
+pantalla **dentro de un `<iframe>` de ancho exacto**, que sí crea un viewport de verdad. Vive en
+`scripts/medir_responsive.php`.
+
+**Cuatro desbordes reales, ninguno detectado por revisión visual:**
+
+1. **La rejilla de `.contenido`** — descrito arriba. `min-width: 0` en sus hijos, y el
+   `overflow-x` de la tabla por fin hace su trabajo: se desplaza la tabla, no la página.
+2. **`.aviso` era `display: flex`, y eso rompía los 22 avisos escritos a mano.** En un contenedor
+   flex **cada elemento hijo es un ítem**; solo los tramos de texto suelto se agrupan. Un párrafo
+   como «Cada inscripción guarda `<strong>`quién la registró`</strong>`, y cada cobro…» se
+   maquetaba como **cinco columnas en fila**, con 12 px de separación metidos alrededor de cada
+   `<strong>`. Medido en `/usuarios` a 320 px: caja de 293, contenido de 380. Pasa a `display:
+   block`; el flex queda solo para el aviso de resultado, que sí lleva texto y aspa de cerrar y
+   ahora pide `--cerrable`. **Este se veía mal en todos los anchos, también en escritorio.**
+3. **El `<select>` de delegación** toma su ancho de la opción más larga, no del hueco: forzaba una
+   columna de 406 px en un teléfono. `min-width: 0` en la rejilla y `width: 100%` en el campo.
+4. **Las píldoras con `white-space: nowrap`** no podían encogerse dentro de la celda-ficha. Ahora
+   el valor cae bajo su rótulo si no cabe.
+
+**Y dos fallos de la propia D-41, encontrados mirando un pantallazo y no un número:** las reglas
+`.tabla__principal` y `.tabla__acciones` (0,1,0) **perdían por especificidad** contra `.tabla td`
+(0,1,1), así que nunca se aplicaron — la celda del nombre seguía repartiéndose a los extremos
+(«Arellano Luciano … , Claudio»). Pasan a `td.tabla__principal`.
+
+**Además, dos mejoras de UX que la medición dejó a la vista:**
+
+- **Columna ancha para el listado.** La tabla necesita 1176 px y la columna daba 910, **igual en un
+  monitor de 1920 que en uno de 1024**: la secretaria arrastraba la tabla con media pantalla vacía.
+  `.contenido--ancho` (1280 px) solo en `/inscripciones` — medidas las cuatro tablas del sistema,
+  las otras tres entran de sobra en 910 y ensancharlas solo dificultaría leerlas.
+- **Métricas de dos en dos en el teléfono.** Por 23 px las cuatro cifras se apilaban y empujaban la
+  tabla fuera de la pantalla.
+
+**Estado:** 6 pantallas × 8 anchos (320 a 1440) = **48 medidas, ningún desborde**, más las 137
+comprobaciones de `scripts/pruebas/`. Verificado además por pantallazo a 360 px y a 1366 px. Sigue
+sin comprobarse en un teléfono físico.
+
+---
+
 ### Dónde viven las pruebas
 
 **Fecha:** 2026-08-19

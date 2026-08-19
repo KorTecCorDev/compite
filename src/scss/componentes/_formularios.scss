@@ -46,10 +46,25 @@
     }
 }
 
+/*
+ * `min-width: 0` en los hijos, por el mismo motivo que en `.contenido`: un
+ * elemento de rejilla no se encoge por debajo de su contenido salvo que se le
+ * diga, y aquí el contenido puede ser enorme.
+ *
+ * El caso concreto: el `<select>` de delegación toma su ancho natural de la
+ * OPCIÓN MÁS LARGA —«86002 Virgen de Fátima — Independencia (publica)»—, no del
+ * hueco disponible. Medido a 320 px: forzaba una columna de 406 px y con ella el
+ * documento entero, así que la página se desplazaba en horizontal en un
+ * teléfono.
+ */
 .rejilla {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 1rem;
+
+    > * {
+        min-width: 0;
+    }
 }
 
 .campo {
@@ -64,6 +79,10 @@
 
     input,
     select {
+        // `width: 100%` para que llenen la columna en vez de imponerla: sin
+        // esto el <select> se dimensiona por su opción más larga.
+        width: 100%;
+        min-width: 0;
         padding: .6rem .7rem;
         border: 1px solid var(--borde);
         border-radius: 8px;

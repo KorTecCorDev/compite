@@ -49,6 +49,15 @@ final class InscripcionController extends Controller
             // sola delegación eso deja de ser teórico.
             'total'         => Inscripcion::contarFiltradas((int) $concurso['id'], $filtros),
             'tope'          => Inscripcion::TOPE_LISTADO,
+            /*
+             * Columna ancha: esta tabla necesita 1176 px para sus nueve columnas
+             * y la columna normal le da 910, así que en cualquier monitor se
+             * desplazaba de lado con media pantalla vacía. Es la ÚNICA pantalla
+             * que la pide — medidas las cuatro tablas del sistema, las otras
+             * tres entran de sobra en 910 px y ensancharlas solo haría más
+             * difícil leerlas.
+             */
+            'columnaAncha'  => true,
         ]);
     }
 
