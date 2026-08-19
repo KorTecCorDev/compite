@@ -27,4 +27,16 @@
 # sin depender de ningún módulo opcional.
 RedirectMatch 404 ^/?(config|core|app|database|storage|scripts|vendor|resources|docs|src|node_modules)(/|$)
 
+# Tercera capa: nada que empiece por punto.
+#
+# Es la que faltaba, y no es teórica: si el proyecto se despliega dentro de
+# `public_html` sin mover el Document Root, el directorio `.git` queda colgando
+# del dominio. `https://dominio/.git/config` y los packfiles entregan el código
+# fuente completo con su historial, y es de lo primero que prueba un escáner
+# automático. Las dos reglas de arriba no lo cubren: bloquean por nombre de
+# carpeta y por extensión, y `.git/config` no encaja en ninguna.
+#
+# La excepción es `/.well-known`, que es por donde se validan los certificados.
+RedirectMatch 404 ^/?\.(?!well-known)
+
 Options -Indexes

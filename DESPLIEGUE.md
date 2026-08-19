@@ -31,13 +31,41 @@ minificar. Este paso hay que repetirlo antes de **cada** commit que toque
 
 ### 1. Código
 
-Sube el repositorio (git clone o subida por FTP/SSH), y en cPanel apunta el
-**Document Root del dominio a `public/`**.
+Sube el repositorio (git clone o subida por FTP/SSH) y **apunta el Document Root
+del dominio a `public/`**. Hostinger lo permite cambiar; hazlo.
 
-Si no puedes cambiar el Document Root, el `.htaccess` de la raíz redirige a
-`public/` por su cuenta, y además bloquea por ruta `config/`, `core/`, `app/`,
-`database/`, `storage/`, `scripts/` y `vendor/` sin depender de `mod_rewrite`.
-Aun así, apuntar el dominio a `public/` es lo correcto.
+### Por qué importa dónde queda el Document Root
+
+Hostinger propone `public_html`, que es la raíz web. Si el proyecto entero cae
+ahí y no mueves el Document Root, **todo el repositorio queda colgando del
+dominio**: `config/`, `core/`, `database/`, `vendor/` y —lo que más duele— el
+directorio `.git` con el código fuente completo y su historial.
+
+El proyecto está preparado para sobrevivir a eso: el `.htaccess` de la raíz
+redirige a `public/` por su cuenta y bloquea por ruta, por extensión y todo lo
+que empieza por punto, sin depender de `mod_rewrite`. Comprobado: `/.git/config`,
+`/config/config.php`, `/core/Database.php`, `/database/schema.sql`,
+`/storage/logs/php-error.log`, `/vendor/autoload.php` y `/docs/` responden 403 o
+404.
+
+Pero eso es **defensa por lista**: protege lo que alguien acordó poner en la
+lista. Con el Document Root en `public/`, esos archivos no están en la raíz web
+en absoluto, así que no hay lista que mantener ni `.htaccess` del que depender.
+La diferencia entre «bloqueado» y «no alcanzable».
+
+Las dos disposiciones válidas:
+
+| Disposición | Document Root | Qué es alcanzable |
+|---|---|---|
+| **Recomendada** | `public_html/public` (o `~/compite/public`) | solo `public/` |
+| Aceptable | `public_html` | todo, pero bloqueado por `.htaccess` |
+
+**El código funciona igual en las dos**: el prefijo de las URL se deduce del
+propio front controller (`/index.php` y `/public/index.php` dan los dos la raíz),
+y hay una prueba que lo comprueba con los cuatro `SCRIPT_NAME` posibles.
+
+Un detalle si te quedas en `public_html`: borra cualquier `index.html` de
+bienvenida que Hostinger deje ahí, o se servirá antes que el front controller.
 
 ### 2. Dependencias
 

@@ -52,6 +52,14 @@ echo "1) El prefijo de instalación sale del servidor, no del config\n";
 $prefijo = static fn (string $script): string => Url::prefijoDe($script);
 
 $c('producción, Document Root en public/', '', $prefijo('/index.php'));
+
+/*
+ * El caso de Hostinger cuando el repo se despliega dentro de `public_html` y no
+ * se mueve el Document Root: el front controller queda en `/public/index.php` y
+ * el prefijo público sigue siendo la raíz, porque `/public` es ruta interna.
+ */
+$c('repo en public_html, Document Root sin mover', '', $prefijo('/public/index.php'));
+
 $c('local, XAMPP con el .htaccess de la raíz', '/compite', $prefijo('/compite/public/index.php'));
 $c('subcarpeta sin public/', '/compite', $prefijo('/compite/index.php'));
 

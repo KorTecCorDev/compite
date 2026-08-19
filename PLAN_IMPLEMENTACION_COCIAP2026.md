@@ -1930,6 +1930,43 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-44 — Dónde queda el Document Root, y el `.git` que quedaba al aire
+
+**Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** despliegue
+
+Al desplegar, Hostinger propone `public_html` —la ra&iacute;z web— y ofrece cambiarlo.
+
+**El c&oacute;digo funciona en cualquiera de las dos disposiciones**, y est&aacute; comprobado: el
+prefijo de las URL se deduce del propio front controller, y `/index.php` (Document Root en
+`public/`) y `/public/index.php` (repo en `public_html`) dan los dos la ra&iacute;z. Los cuatro
+`SCRIPT_NAME` posibles est&aacute;n en `scripts/pruebas/urls-sin-dominio.php`.
+
+Lo que cambia no es si funciona, sino **qu&eacute; queda alcanzable desde internet**. Con el repo
+en `public_html`, cuelgan del dominio `config/`, `core/`, `database/`, `vendor/` y el directorio
+**`.git`** con el c&oacute;digo fuente completo y su historial.
+
+**Y ah&iacute; hab&iacute;a un agujero real.** El `.htaccess` de la ra&iacute;z bloqueaba por
+nombre de carpeta —`config|core|app|database|storage|scripts|vendor|resources|docs|src|node_modules`—
+y por extensi&oacute;n —`sql|md|json|lock|log|ini`—, y **`.git/config` no encaja en ninguna de las
+dos**. `https://dominio/.git/config` y los packfiles habr&iacute;an entregado el repositorio
+entero, que es de lo primero que prueba un esc&aacute;ner autom&aacute;tico. La contrase&ntilde;a
+de la base no estaba en riesgo —`config.local.php` nunca se versiona— pero el c&oacute;digo
+s&iacute;.
+
+Se a&ntilde;ade una tercera regla: **nada que empiece por punto**, con la excepci&oacute;n de
+`/.well-known`, que es por donde se validan los certificados. Comprobado contra el Apache local:
+`/.git/config`, `/.git/HEAD`, `/.gitignore`, `/config/config.php`, `/core/Database.php`,
+`/database/schema.sql`, `/storage/logs/php-error.log`, `/vendor/autoload.php` y `/docs/` responden
+403 o 404, mientras el login, el CSS y el escudo siguen dando 200.
+
+**Recomendaci&oacute;n al propietario: mover el Document Root a `public/`.** El `.htaccess` es
+defensa por lista, y una lista protege lo que alguien se acord&oacute; de poner en ella; con el
+Document Root en `public/`, esos archivos no est&aacute;n en la ra&iacute;z web en absoluto. Es la
+diferencia entre «bloqueado» y «no alcanzable». La regla nueva se queda igualmente: protege la
+disposici&oacute;n de respaldo y no cuesta nada.
+
+---
+
 ### D-43 — Las URL dejan de depender de un dominio fijo
 
 **Fecha:** 2026-08-19 · **Estado:** aprobado por el propietario · **Afecta:** D-20, D-21, D-25
