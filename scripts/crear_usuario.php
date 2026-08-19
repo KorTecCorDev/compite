@@ -72,12 +72,36 @@ $confirmacion = leerPasswordOculta();
 echo PHP_EOL;
 
 if (!hash_equals($password, $confirmacion)) {
-    exit("Las contraseñas no coinciden.\n");
+    exit('Las contraseñas no coinciden. No se creó nada; vuelve a ejecutarlo.' . PHP_EOL);
 }
 
-$id = Usuario::crear($nombres, $correo, $password, $rol);
+/*
+ * El alta va envuelta porque este script se ejecuta en servidores donde el
+ * `display_errors` de la consola está apagado, y ahí una excepción sin capturar
+ * termina el proceso **sin imprimir una sola línea**. Le pasó al propietario en
+ * el despliegue del 19 de agosto: escribió la contraseña dos veces, el script
+ * volvió al prompt sin decir nada, y no había forma de saber si el problema era
+ * la contraseña, los permisos de la base o el propio script.
+ *
+ * Un script que crea la primera credencial del sistema no puede permitirse
+ * fallar en silencio.
+ */
+try {
+    $id = Usuario::crear($nombres, $correo, $password, $rol);
+} catch (Throwable $e) {
+    exit(PHP_EOL . 'No se pudo crear el usuario.' . PHP_EOL
+        . '  ' . $e->getMessage() . PHP_EOL . PHP_EOL
+        . 'Si habla de permisos, comprueba lo que puede hacer tu usuario de MySQL:' . PHP_EOL
+        . '  php -r \'require "core/autoload.php"; print_r(Core\Database::todos("SHOW GRANTS"));\'' . PHP_EOL);
+}
 
 echo "Usuario creado (id {$id}): {$nombres} <{$correo}> como {$rol}." . PHP_EOL;
+
+if ($rol === 'administrador') {
+    echo PHP_EOL
+       . 'Entra al sistema y cambia esa contraseña desde /usuarios si la escribiste' . PHP_EOL
+       . 'a la vista. En esta pantalla queda escrita hasta que hagas `clear`.' . PHP_EOL;
+}
 
 /**
  * Lee una contraseña sin mostrarla en pantalla.
