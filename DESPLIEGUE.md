@@ -35,14 +35,28 @@ cambiaba, y una hoja vieja dejaba los íconos del listado a 300 px.
 
 **2. Commitea y sube.** El servidor toma el código de git, no de tu disco.
 
+> ### `git push` a `main` ES desplegar
+>
+> Hostinger tiene **autodeploy desde GitHub**: todo push a `main` sale en vivo,
+> sin paso manual y sin revisión intermedia. No hay ventana entre subir y
+> publicar.
+>
+> Eso convierte el paso 1 en obligatorio, no en recomendable: unos assets sin
+> minificar no se quedan en tu disco, **se publican**. Y significa que un fallo
+> que solo se ve en producción ya está en producción cuando alguien lo reporta.
+>
+> Sube cuando esté verificado, no cuando esté escrito.
+
 ---
 
 ## En el servidor
 
 ### 1. Código
 
-Sube el repositorio (git clone o subida por FTP/SSH) **a la raíz de
-`public_html`**, no a una subcarpeta.
+El repositorio va **a la raíz de `public_html`**, no a una subcarpeta. Hoy eso
+lo hace solo el autodeploy de Hostinger a partir de `main`; los pasos manuales
+—`git clone` o subida por FTP/SSH— solo hacen falta para montarlo de cero o en
+un servidor nuevo.
 
 ### Dónde exactamente, y por qué
 
