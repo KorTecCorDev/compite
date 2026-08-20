@@ -1,4 +1,4 @@
-# Punto de retomada — 19 de agosto de 2026, noche
+# Punto de retomada — 20 de agosto de 2026, tarde
 
 Este archivo vive en el repositorio a propósito: se lee desde cualquier máquina.
 Lo que hay en él es **estado**, no decisiones — las decisiones están en la §11 de
@@ -62,13 +62,83 @@ tecleado, y el correlativo va impreso en grande en el carné.
 
 ---
 
+## LO INMEDIATO: D-50 — corregir el registro de participación
+
+**Es lo siguiente que se implementa, antes de los reportes Excel.** El plan
+detallado lo guardó el propietario aparte; aquí queda lo que no puede perderse.
+
+**El agujero.** `Participante` solo tiene `crear()`: no existe ninguna forma de
+corregir el DNI, los apellidos, los nombres ni la institución de un estudiante
+mal registrado. Hoy solo se puede cambiar el grado, y por un camino que anula y
+reinscribe. Salió al intentar arreglar un DNI mal tecleado.
+
+**Cuatro decisiones ya tomadas por el propietario (20 ago):**
+
+1. **Un solo formulario** con datos del estudiante + grado + procedencia + motivo
+   obligatorio, en `/inscripciones/{id}/corregir`.
+2. **Tabla `correcciones`** con valor anterior legible, motivo, firma y lote —
+   `participantes` es hoy la única mutación del sistema sin firma, contra D-39.
+3. **La corrección de grado deja de anular y reinscribir**: pasa a ser un
+   `UPDATE` registrado. La inscripción conserva su id y su carné, y el listado
+   deja de mostrar dos filas por corrección.
+4. **Cambiar procedencia:** permitido si está pendiente; si está pagada, **solo
+   si la tarifa nueva es igual a la actual**, comparando valores en tiempo de
+   ejecución y no grupos escritos a mano (D-37 avisó de que la tarifa COCIAP
+   puede cambiar). Con las tarifas de hoy: `publica ↔ organizadora` y
+   `privada ↔ libre` pasan aun pagadas; cualquier cruce se bloquea.
+   Convertir libre ↔ delegación entra, en ambos sentidos.
+5. **Permisos:** datos y grado, ambos roles. **Procedencia, solo administrador**,
+   rechazando el POST y no ignorándolo en silencio.
+
+**Cinco preguntas que quedaron SIN responder** y que hay que resolver antes de
+escribir código:
+
+1. ¿Convertir libre ↔ delegación es también solo-administrador?
+2. ¿Las 2 anuladas de correcciones previas que hay en la base se quedan como
+   historia mixta?
+3. ¿Hace falta una pantalla para **ver** el historial de correcciones, o basta
+   con guardarlo? Cambia el tamaño del trabajo de forma notable.
+4. ¿«Corregir» aparece también en filas anuladas? Hoy no, y entonces un DNI mal
+   escrito en alguien anulado **no se puede arreglar** y viaja con él al
+   reinscribirlo.
+5. Al pasar de delegación a libre, ¿se reutiliza el buscador de apoderado por
+   DNI de la pantalla de estudiante libre?
+
+**Lo que arrastra:** `AnulacionController::corregir()` deja de tener sentido ahí
+—la acción ya no anula— y pasa a un `CorreccionController`. El redirect vuelve a
+`#ins-{$id}`, porque la inscripción conserva su id. Y hay que corregir el
+comentario del listado que dice que cada corrección deja una anulada detrás.
+
+---
+
+## Después de D-50: los reportes Excel (Fase 5)
+
+Analizado el 20 ago, **sin empezar**. Lo que no se puede perder de ese análisis:
+
+- **La bolsa de competencia NO es la modalidad.** D-37 fija tres bolsas por
+  nivel+grado: `privada + libre` juntos, `publica`, `organizadora`. Agrupar por
+  las cuatro modalidades separaría a privados de libres y daría **dos ganadores
+  donde las bases dicen uno**.
+- **Esa regla vive hoy solo en un `CASE` dentro de
+  `scripts/pruebas/modalidad-organizadora.php`.** Antes de generar nada tiene
+  que subir al dominio, o habrá dos copias que pueden divergir.
+- Son **dos reportes distintos**: el acta para los jurados (solo confirmadas,
+  **sin ningún dato de dinero**) y el administrativo para dirección (con montos
+  y los filtros combinables del §8).
+- Hay **bolsas con un solo participante**. El reporte tiene que hacerlo visible:
+  descubrirlo en la premiación es mucho peor.
+- `vendor/` no viaja con el autodeploy. **Verificar que PhpSpreadsheet esté
+  instalado en el servidor** antes, no después: allí los errores no se ven.
+
+---
+
 ## Deuda consciente, aplazada por el propietario
 
 - **Sin respaldo automático.** El `mysqldump` está documentado en
   `DESPLIEGUE.md` y es manual. Es la única red sobre el dinero cobrado.
 - **Sin reportes (Fase 5).** `Inscripcion::fondoDevoluciones()` existe en el
   modelo, pero no hay pantalla ni exportación a Excel. No bloquea el registro;
-  sí bloqueará el descargo cuando dirección lo pida.
+  sí bloqueará el descargo cuando dirección lo pida. Ya analizado — ver arriba.
 - **Sin bitácora general.** Se firma quién registra, quién cobra y quién anula
   una inscripción, pero no quién crea o edita instituciones y apoderados.
 - **Sin `/perfil`.** Las contraseñas solo las cambia el administrador desde
