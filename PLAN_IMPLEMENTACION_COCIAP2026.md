@@ -1982,6 +1982,40 @@ añada un `<script>` nuevo copiando el patrón viejo.
 **Lo que no cubre:** que el archivo llegue de verdad al servidor. Eso sigue siendo el despliegue, y
 lo comprueba `verificar_despliegue.php`.
 
+#### Lo que apareció al diagnosticarlo en el servidor: hay un CDN delante
+
+Publicado el arreglo, el propietario probó con Ctrl+R y Ctrl+F5 y **no cambió nada**. Medido contra
+producción, el porqué:
+
+```
+GET /build/css/app.css
+Cache-Control: public, max-age=604800     ← siete días
+x-hcdn-cache-status: HIT
+Server: hcdn
+```
+
+**Hay un CDN de Hostinger delante del servidor**, y cachea la hoja **siete días** bajo un nombre de
+archivo que nunca cambia. Ctrl+F5 vacía la caché del navegador, pero la petición sigue llegando al
+borde del CDN, que responde con su copia guardada. Ninguna recarga, por dura que sea, puede
+arreglar eso desde el lado del cliente.
+
+Comprobado desde la propia página, pidiendo el MISMO URL dos veces —una normal y otra con un
+parámetro que el CDN no había visto nunca—:
+
+| | bytes | ¿trae `.icono`? |
+|---|---|---|
+| Lo que estaba usando la página | 17 680 | **no** — la hoja anterior a D-48 |
+| Lo que había en el servidor | 18 711 | sí |
+
+El mismo archivo, dos contenidos. Eso convierte el `?v=` de arriba en **la única salida posible**,
+no en una mejora: con una URL estable y siete días de TTL, cualquier cambio de CSS es invisible
+para quien ya haya visitado el sitio, durante una semana. El problema no era de este despliegue: lo
+tiene el sistema desde el primer día y solo se notó ahora porque el síntoma era espectacular.
+
+Y una segunda causa encima: el autodeploy **no había publicado `028b7a2`** quince minutos después
+del push. El siguiente push arrastró los dos commits. Conviene comprobar que el despliegue llegó
+—`curl -s DOMINIO/login | grep app.css` y ver el `?v=`— antes de dar por bueno un arreglo de CSS.
+
 ---
 
 ### D-48 — La columna de acciones pasa a íconos, y el listado deja de filtrarse solo

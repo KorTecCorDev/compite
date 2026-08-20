@@ -29,9 +29,22 @@ minificar. Este paso hay que repetirlo antes de **cada** commit que toque
 > tamaño de `public/build/css/app.css` antes de commitear: si pasa de 20 KB,
 > está sin minificar. La prueba `responsive` también lo caza.
 
-Los assets se enlazan con `?v=<fecha del archivo>` desde D-49, así que el
-navegador no puede quedarse con la hoja anterior. Antes sí podía: la URL nunca
-cambiaba, y una hoja vieja dejaba los íconos del listado a 300 px.
+Los assets se enlazan con `?v=<fecha del archivo>` desde D-49, y **no es un
+detalle**: hay un **CDN de Hostinger** (`hcdn`) delante del servidor que cachea
+`/build/css/app.css` con `max-age=604800` —**siete días**— bajo un nombre que
+nunca cambiaba. Ctrl+F5 no lo arregla: vacía la caché del navegador, pero la
+petición sigue llegando al borde del CDN, que devuelve su copia. Sin el `?v=`,
+cualquier cambio de CSS es invisible una semana para quien ya visitó el sitio.
+
+**Después de desplegar un cambio de CSS o JS, comprueba que llegó:**
+
+```
+curl -s https://TU-DOMINIO/login | grep app.css
+```
+
+Tiene que salir con `?v=` y un número distinto al de antes. Si sale sin `?v=` o
+con el número viejo, el autodeploy todavía no ha publicado (pasó: tardó más de
+quince minutos en tomar un commit).
 
 **2. Commitea y sube.** El servidor toma el código de git, no de tu disco.
 
