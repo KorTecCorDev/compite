@@ -166,5 +166,5 @@ $msg = static fn (string $c): string => isset($errores[$c])
     </div>
 </form>
 
-<script src="<?= View::e(View::url('build/js/apoderado-reutilizable.js')) ?>" defer></script>
-<script src="<?= View::e(View::url('build/js/libre.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/apoderado-reutilizable.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/libre.js')) ?>" defer></script>

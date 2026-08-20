@@ -1930,6 +1930,60 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-49 — Los íconos salieron a 300 px en producción · corrige D-48
+
+**Fecha:** 2026-08-20 · **Estado:** encontrado por el propietario en producción · **Afecta:** D-48
+
+Desplegado D-48, el propietario reportó que en el servidor **los íconos salían enormes**, cosa que
+en local no pasaba. Reproducido y medido: **300×150 px**, tanto cada ícono como el bloque del
+sprite al pie de la página.
+
+**La causa es de manual, y el error de diseño es mío.** Un `<svg>` sin atributos `width` y `height`
+no mide lo que dice su `viewBox`: mide **300×150 px**, que es el tamaño por defecto de un elemento
+reemplazado sin dimensiones. Yo dejé el tamaño viviendo **solo** en la regla `.icono` del CSS. Con
+la hoja en su sitio se ve perfecto; en cuanto la hoja no llega —o llega la de ayer— cada fila del
+listado se convierte en seis dibujos de 300 px y el sprite, que no debería verse nunca, se dibuja
+como un rectángulo gigante al final de todas las páginas.
+
+En local nunca se vio porque en local la hoja siempre era la recién compilada.
+
+**Dos arreglos, y hacen falta los dos:**
+
+**1. Los íconos ya no dependen del CSS para tener tamaño.** Cada `<svg class="icono">` lleva
+`width="18" height="18"`, y el sprite lleva `width="0" height="0"`. Son atributos presentacionales:
+pierden contra cualquier regla CSS, así que `.icono` sigue siendo quien manda cuando la hoja está.
+Son la red de abajo, no el mecanismo. Comprobado en el navegador desactivando la hoja: de 300×150
+a **18×18**, y el sprite a **0×0**.
+
+**2. La hoja se enlaza con versión.** El enlace era `build/css/app.css` a secas: una dirección que
+**nunca cambia**. Un navegador que ya tenía la anterior se la quedaba, y por bien que estuviera el
+archivo en el servidor, al usuario no le llegaba. El nuevo `View::asset()` le añade
+`?v=<filemtime>` — a la hoja y a los seis scripts—, así que cada despliegue estrena dirección.
+
+Se usa `filemtime` y no un hash del contenido porque cuesta una llamada al sistema en vez de leer
+y digerir 18 KB en cada página, y hace lo mismo: cambia cuando el archivo cambia. Al desplegar por
+git, la fecha del archivo es la de la copia en el servidor, así que sirve igual. Si el archivo no
+está donde se espera, devuelve la URL sin marca en vez de fallar: una página sin estilos se
+arregla, una página que no carga no.
+
+**Y una trampa del entorno que apareció por el camino, dos veces:** con `npm run dev` escuchando,
+un `git checkout` que reescriba `src/scss/` o `src/js/` **dispara el watcher**, que recompila en
+modo desarrollo y deja `public/build/` —que está rastreado por git— con CSS y JS sin minificar. Es
+decir: el propio watcher puede deshacer el `npm run build` que `DESPLIEGUE.md` exige antes de
+commitear, y hacerlo *después* de que lo hayas ejecutado. La prueba `responsive` lo cazó las dos
+veces, porque comprueba que los puntos de corte estén en el CSS compilado.
+
+**Lo que lo protege:** tres comprobaciones nuevas en
+`scripts/pruebas/iconos-y-listado-sin-filtrar.php` — que todos los `<svg class="icono">` traigan sus
+medidas, que el sprite mida cero por sí mismo, y que **ningún** enlace a `build/` salga sin `?v=`.
+Esta última es la que impide que el problema vuelva por la puerta de atrás: basta con que alguien
+añada un `<script>` nuevo copiando el patrón viejo.
+
+**Lo que no cubre:** que el archivo llegue de verdad al servidor. Eso sigue siendo el despliegue, y
+lo comprueba `verificar_despliegue.php`.
+
+---
+
 ### D-48 — La columna de acciones pasa a íconos, y el listado deja de filtrarse solo
 
 **Fecha:** 2026-08-20 · **Estado:** aprobado por el propietario · **Afecta:** D-30, D-38, D-40, D-41

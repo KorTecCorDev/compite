@@ -23,9 +23,17 @@ declare(strict_types=1);
  * Los trazos van sin `fill` ni `stroke` propios: los pone `.icono` en el CSS,
  * con `stroke: currentColor`, que es lo que permite que cada ícono tome el color
  * del enlace que lo contiene.
+ *
+ * El `width="0" height="0"` del contenedor NO sobra por tener ya la clase.
+ * Un <svg> sin medidas propias mide 300×150 px por defecto —es el tamaño de un
+ * elemento reemplazado sin dimensiones—, así que si la hoja de estilos no llega
+ * o llega vieja, este bloque de definiciones se dibujaría como un rectángulo
+ * enorme al pie de TODAS las páginas. Los atributos son presentacionales y
+ * pierden contra cualquier regla CSS, así que la clase sigue mandando cuando la
+ * hoja está donde debe. Ver D-49.
  */
 ?>
-<svg xmlns="http://www.w3.org/2000/svg" class="sprite-iconos" aria-hidden="true" focusable="false">
+<svg xmlns="http://www.w3.org/2000/svg" class="sprite-iconos" width="0" height="0" aria-hidden="true" focusable="false">
     <!-- Corregir categoría: lápiz. -->
     <symbol id="i-lapiz" viewBox="0 0 24 24">
         <path d="M12 20h9"/>

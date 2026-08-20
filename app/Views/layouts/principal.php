@@ -26,7 +26,7 @@ $flash = Sesion::tomarFlash();
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= View::e($titulo ?? '') ?> · COCIAP 2026</title>
-    <link rel="stylesheet" href="<?= View::e(View::url('build/css/app.css')) ?>">
+    <link rel="stylesheet" href="<?= View::e(View::asset('build/css/app.css')) ?>">
 </head>
 <body>
 
@@ -104,7 +104,7 @@ $flash = Sesion::tomarFlash();
     I.E. Víctor Valenzuela Guardia · IV Concurso Regional de Conocimientos
 </footer>
 
-<script src="<?= View::e(View::url('build/js/avisos.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/avisos.js')) ?>" defer></script>
 
 <?php
 /*

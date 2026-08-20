@@ -278,5 +278,5 @@ $msg = static function (string $campo) use ($errores): string {
          cambia el encargado—. Cada bloque de instituciones.js comprueba que
          sus elementos existan antes de engancharse, así que cargarlo en las dos
          pantallas no activa lo que no toca. */ ?>
-<script src="<?= View::e(View::url('build/js/apoderado-reutilizable.js')) ?>" defer></script>
-<script src="<?= View::e(View::url('build/js/instituciones.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/apoderado-reutilizable.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/instituciones.js')) ?>" defer></script>

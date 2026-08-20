@@ -23,6 +23,16 @@ que se despliega. Con `gulp` de desarrollo escuchando, ahí queda CSS y JS sin
 minificar. Este paso hay que repetirlo antes de **cada** commit que toque
 `src/scss/` o `src/js/`.
 
+> **Ojo con el watcher.** Si tienes `npm run dev` corriendo, un `git checkout`
+> que reescriba `src/` lo dispara y **vuelve a compilar en modo desarrollo**,
+> deshaciendo este paso *después* de haberlo hecho. Ha pasado dos veces. Mira el
+> tamaño de `public/build/css/app.css` antes de commitear: si pasa de 20 KB,
+> está sin minificar. La prueba `responsive` también lo caza.
+
+Los assets se enlazan con `?v=<fecha del archivo>` desde D-49, así que el
+navegador no puede quedarse con la hoja anterior. Antes sí podía: la URL nunca
+cambiaba, y una hoja vieja dejaba los íconos del listado a 300 px.
+
 **2. Commitea y sube.** El servidor toma el código de git, no de tu disco.
 
 ---

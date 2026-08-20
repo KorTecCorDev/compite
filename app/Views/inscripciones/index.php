@@ -222,7 +222,7 @@ foreach ($inscripciones as $ins) {
                             <a class="accion enlace-tenue" target="_blank"
                                title="Ver el carné (la misma página que abre el QR)"
                                href="<?= View::e(View::url('/carne/' . $ins['codigo_correlativo'])) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
                                 <span class="accion__texto">Ver carné</span>
                             </a>
                         <?php endif; ?>
@@ -291,7 +291,7 @@ foreach ($inscripciones as $ins) {
                         <?php if ($ins['estado'] !== 'anulada'): ?>
                             <a class="accion enlace-tenue" title="Corregir categoría"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
                                 <span class="accion__texto">Corregir categoría</span>
                             </a>
                             <button type="button" class="accion enlace-peligro boton-anular"
@@ -300,7 +300,7 @@ foreach ($inscripciones as $ins) {
                                     data-nombre="<?= View::e($ins['ap_paterno'] . ' ' . $ins['nombres']) ?>"
                                     data-pagada="<?= $ins['estado'] === 'confirmada' ? '1' : '0' ?>"
                                     data-monto="<?= number_format((float) $ins['monto'], 2) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
                                 <span class="accion__texto">Anular</span>
                             </button>
                         <?php endif; ?>
@@ -316,7 +316,7 @@ foreach ($inscripciones as $ins) {
                         <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo'])): ?>
                             <a class="accion enlace-tenue" title="Reinscribir"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/reinscribir')) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
                                 <span class="accion__texto">Reinscribir</span>
                             </a>
                         <?php endif; ?>
@@ -324,7 +324,7 @@ foreach ($inscripciones as $ins) {
                         <?php if ($ins['estado'] === 'confirmada'): ?>
                             <a class="accion enlace-tenue" title="Descargar el carné en PDF"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne.pdf')) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
                                 <span class="accion__texto">PDF</span>
                             </a>
 
@@ -346,7 +346,7 @@ foreach ($inscripciones as $ins) {
                                     title="Regenerar el carné"
                                     form="form-regenerar"
                                     formaction="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne/regenerar')) ?>">
-                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
+                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
                                 <span class="accion__texto">Regenerar</span>
                             </button>
                         <?php endif; ?>
@@ -425,27 +425,27 @@ foreach ($inscripciones as $ins) {
 ?>
 <ul class="leyenda">
     <li class="leyenda__item">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
         Ver carné
     </li>
     <li class="leyenda__item">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
         Corregir categoría
     </li>
     <li class="leyenda__item leyenda__item--peligro">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
         Anular
     </li>
     <li class="leyenda__item">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
         Descargar PDF
     </li>
     <li class="leyenda__item">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
         Regenerar carné
     </li>
     <li class="leyenda__item">
-        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
+        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
         Reinscribir
     </li>
 </ul>
@@ -456,6 +456,6 @@ foreach ($inscripciones as $ins) {
     «Anular» es definitiva y, si ya estaba pagada, suma el monto al fondo de devoluciones.
 </p>
 
-<script src="<?= View::e(View::url('build/js/inscripciones.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/inscripciones.js')) ?>" defer></script>
 
 <?php endif; ?>

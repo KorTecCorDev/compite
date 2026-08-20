@@ -100,6 +100,43 @@ $titulos  = preg_match_all('/class="accion[ "][^>]*title="/', $html)
 
 $comprobar($acciones > 0 && $titulos === $acciones, "las {$acciones} acciones llevan title (con title: {$titulos})");
 
+/*
+ * El tamaño del ícono no puede depender SOLO del CSS (D-49).
+ *
+ * Un <svg> sin medidas propias mide 300×150 px: es el tamaño por defecto de un
+ * elemento reemplazado sin dimensiones. Mientras el tamaño vivió solo en la
+ * regla `.icono`, bastó con que la hoja llegara vieja a producción para que cada
+ * fila saliera con seis dibujos de 300 px. Los atributos pierden contra
+ * cualquier CSS, así que la hoja sigue mandando; son la red de abajo.
+ */
+$svgs = preg_match_all('/<svg class="icono"[^>]*>/', $html, $encontrados);
+$conMedidas = 0;
+
+foreach ($encontrados[0] as $etiqueta) {
+    if (str_contains($etiqueta, 'width="') && str_contains($etiqueta, 'height="')) {
+        $conMedidas++;
+    }
+}
+
+$comprobar($svgs > 0 && $conMedidas === $svgs, "los {$svgs} íconos traen su propio tamaño ({$conMedidas} con medidas)");
+
+// Y el sprite, que si se dibuja lo hace como un rectángulo enorme al pie de la
+// página, tiene que ser de tamaño cero sin ayuda de la hoja.
+$comprobar(
+    preg_match('/<svg[^>]*class="sprite-iconos"[^>]*width="0"[^>]*height="0"/', $html) === 1,
+    'el sprite mide cero por sí mismo, sin depender del CSS'
+);
+
+/*
+ * Y la hoja tiene que llegar. El enlace llevaba una dirección que nunca cambia,
+ * así que un navegador con la versión anterior en caché se la quedaba y el
+ * despliegue no le llegaba nunca. Ver D-49.
+ */
+$sinVersion = preg_match_all('#(?:href|src)="[^"]*build/(?:css|js)/[^"?]+"#', $html);
+$conVersion = preg_match_all('#(?:href|src)="[^"]*build/(?:css|js)/[^"]+\?v=\d+"#', $html);
+
+$comprobar($conVersion > 0 && $sinVersion === 0, "los {$conVersion} assets se enlazan con versión, y ninguno sin ella ({$sinVersion})");
+
 // ---------------------------------------------------------------------------
 // El listado no se filtra solo
 // ---------------------------------------------------------------------------

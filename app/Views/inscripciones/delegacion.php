@@ -165,4 +165,4 @@ $filasAPintar = $filas !== [] ? $filas : array_fill(0, 5, []);
     </div>
 </form>
 
-<script src="<?= View::e(View::url('build/js/delegacion.js')) ?>" defer></script>
+<script src="<?= View::e(View::asset('build/js/delegacion.js')) ?>" defer></script>

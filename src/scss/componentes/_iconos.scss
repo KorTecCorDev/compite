@@ -24,6 +24,15 @@
     overflow: hidden;
 }
 
+// El tamaño se declara DOS veces a propósito: aquí y como atributos
+// `width`/`height` en cada `<svg>` de la vista.
+//
+// No es redundancia: un `<svg>` sin medidas propias mide 300×150 px, que es el
+// tamaño por defecto de un elemento reemplazado sin dimensiones. Mientras el
+// tamaño vivía solo en esta regla, bastaba con que la hoja llegara vieja —o no
+// llegara— para que cada fila del listado saliera con seis dibujos de 300 px.
+// Pasó en producción. Los atributos son presentacionales y pierden contra
+// cualquier CSS, así que esta regla sigue siendo la que manda. Ver D-49.
 .icono {
     width: 1.15rem;
     height: 1.15rem;

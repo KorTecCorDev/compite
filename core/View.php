@@ -78,6 +78,34 @@ final class View
         return self::capturar(self::archivo('parciales/' . $vista), $datos);
     }
 
+    /**
+     * URL de un archivo compilado, con la marca de su última modificación.
+     *
+     * Existe por un fallo real en producción (D-49). La hoja se enlazaba como
+     * `build/css/app.css` a secas: una dirección que **nunca cambia**. Un
+     * navegador que ya tenía la versión anterior se la quedaba, y el despliegue
+     * no le llegaba por mucho que el archivo estuviera bien en el servidor.
+     *
+     * Ahí no fue un detalle estético: sin la regla `.icono`, cada `<svg>` de la
+     * columna de acciones se dibujaba a su tamaño por defecto de 300×150 px.
+     *
+     * La marca es `filemtime`, no un hash del contenido: cuesta una llamada al
+     * sistema en vez de leer y digerir 18 KB en cada página, y el resultado es
+     * el mismo —cambia cuando el archivo cambia—. Al desplegar por git, la
+     * fecha del archivo es la de la copia, así que sirve igual.
+     *
+     * Si el archivo no está donde se espera, se devuelve la URL sin marca en
+     * lugar de fallar: una página sin estilos se arregla; una página que no
+     * carga, no.
+     */
+    public static function asset(string $ruta): string
+    {
+        $absoluta = Config::ruta('public/' . ltrim($ruta, '/'));
+        $marca    = is_file($absoluta) ? filemtime($absoluta) : false;
+
+        return self::url($ruta) . ($marca === false ? '' : '?v=' . $marca);
+    }
+
     private static function archivo(string $vista): string
     {
         $ruta = Config::ruta('app/Views/' . str_replace('.', '/', $vista) . '.php');
