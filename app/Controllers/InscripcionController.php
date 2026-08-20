@@ -21,6 +21,12 @@ final class InscripcionController extends Controller
     /**
      * Listado con los filtros combinables del plan: delegación, tipo de
      * origen y grado.
+     *
+     * **Sin filtro no hay filtro (D-48).** Los seis valores salen de la URL y de
+     * ningún otro sitio: entrar a `/inscripciones` a secas lista TODO, y ninguna
+     * acción del sistema puede devolver aquí con un filtro que el usuario no
+     * eligió. Lo que se filtra solo, se filtra a espaldas de quien mira, y en
+     * esta pantalla lo que queda fuera de la vista son pagos por cobrar.
      */
     public function index(): void
     {
@@ -28,14 +34,21 @@ final class InscripcionController extends Controller
 
         $concurso = $this->concursoOFallar();
 
-        $filtros = [
-            'institucion_id' => $_GET['institucion_id'] ?? '',
-            'tipo_origen'    => $_GET['tipo_origen'] ?? '',
-            'nivel'          => $_GET['nivel'] ?? '',
-            'grado'          => $_GET['grado'] ?? '',
-            'estado'         => $_GET['estado'] ?? '',
-            'q'              => $_GET['q'] ?? '',
-        ];
+        /*
+         * La lista de claves vive en el modelo, junto a las condiciones SQL que
+         * las aplican, para que un filtro nuevo no se declare en un sitio y se
+         * consulte en otro.
+         *
+         * El `is_scalar` no es paranoia de manual: `?q[]=x` llega como array, y
+         * la vista imprime este valor con un cast a string. Sin el guardia, una
+         * URL escrita a mano tumbaba el listado entero.
+         */
+        $filtros = [];
+
+        foreach (Inscripcion::FILTROS as $clave) {
+            $valor = $_GET[$clave] ?? '';
+            $filtros[$clave] = is_scalar($valor) ? (string) $valor : '';
+        }
 
         $this->ver('inscripciones.index', [
             'titulo'        => 'Inscripciones',
@@ -278,6 +291,21 @@ final class InscripcionController extends Controller
             . "Total por cobrar: S/ {$total}."
         );
 
+        /*
+         * LA EXCEPCIÓN a D-48, y la única.
+         *
+         * En todo el sistema ninguna acción devuelve al listado con un filtro
+         * que el usuario no pidió. Aquí sí, porque este filtro no es un recorte
+         * de la vista: es lo que HABILITA el siguiente paso. El botón «Imprimir
+         * carnés de esta delegación» solo se dibuja cuando hay una delegación
+         * elegida —la hoja necesita un destinatario, imprimir el concurso entero
+         * son cientos de páginas y un PDF que se queda sin tiempo de ejecución—,
+         * así que sin el filtro el camino de «acabo de inscribir a 30 chicos» a
+         * «imprimo sus carnés» se queda sin ningún letrero.
+         *
+         * Aprobado por el propietario el 2026-08-20 como excepción consciente.
+         * El filtro queda a la vista en el desplegable y se quita con «Limpiar».
+         */
         $this->redirigir('/inscripciones?institucion_id=' . $ieId);
     }
 
@@ -394,12 +422,18 @@ final class InscripcionController extends Controller
             'nombres'    => $v->limpio('nombres'),
         ];
 
+        /*
+         * La transacción devuelve el código Y el id de la inscripción (D-48).
+         * El código es lo que se le dice a la secretaria en el aviso; el id es
+         * lo que ancla el listado en la fila recién creada, ahora que ya no se
+         * vuelve con `?q=CÓDIGO` filtrando la pantalla a esa sola fila.
+         */
         try {
-            $codigo = Database::transaccion(
+            [$codigo, $inscripcionId] = Database::transaccion(
                 static function () use (
                     $datosApoderado, $datosEstudiante, $concursoId,
                     $categoriaId, $monto, $prefijo, $usuario
-                ): string {
+                ): array {
                     /*
                      * El apoderado se reutiliza si ya existe (caso hermanos) y
                      * se actualizan sus datos de contacto, que es lo que suele
@@ -421,7 +455,7 @@ final class InscripcionController extends Controller
                         'apoderado_id'      => $apoderadoId,
                     ], $prefijo);
 
-                    Inscripcion::crear([
+                    $inscripcionId = Inscripcion::crear([
                         'participante_id' => $participanteId,
                         'categoria_id'    => $categoriaId,
                         'usuario_id'      => $usuario,
@@ -433,7 +467,7 @@ final class InscripcionController extends Controller
 
                     $participante = Participante::porId($participanteId);
 
-                    return (string) ($participante['codigo_correlativo'] ?? '');
+                    return [(string) ($participante['codigo_correlativo'] ?? ''), $inscripcionId];
                 }
             );
         } catch (Throwable $e) {
@@ -448,7 +482,10 @@ final class InscripcionController extends Controller
             . number_format($monto, 2) . '.'
         );
 
-        $this->redirigir('/inscripciones?q=' . urlencode($codigo));
+        // Lista completa, anclada en la inscripción nueva. Con `?q=CÓDIGO` se
+        // volvía a una pantalla de una sola fila que parecía decir que en el
+        // concurso solo había un inscrito.
+        $this->redirigir('/inscripciones#ins-' . (int) $inscripcionId);
     }
 
     // ==================================================================

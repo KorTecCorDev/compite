@@ -155,6 +155,25 @@ foreach ($inscripciones as $ins) {
 <form method="post" action="<?= View::e(View::url('/pagos/confirmar')) ?>" id="form-cobro">
     <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
 
+    <?php
+    /*
+     * Los filtros que el usuario eligió, para poder devolvérselos si el cobro no
+     * pasa la validación (D-48).
+     *
+     * Antes ese error redirigía a `?estado=pendiente`: imponía un filtro que
+     * nadie pidió y, de paso, tiraba el que sí se había elegido. Se corregía el
+     * medio de pago y se volvía mirando un conjunto de filas distinto del que se
+     * estaba cobrando.
+     *
+     * Va como campo del formulario y no leyendo `HTTP_REFERER`, que lo pone el
+     * cliente y no se puede usar como destino sin comprobarlo. Al volver, la
+     * cadena se pasa por `Inscripcion::urlListado()`, que solo deja pasar las
+     * seis claves conocidas.
+     */
+    $filtrosActivos = array_filter($filtros, static fn ($v): bool => trim((string) $v) !== '');
+    ?>
+    <input type="hidden" name="volver" value="<?= View::e(http_build_query($filtrosActivos)) ?>">
+
     <div class="tabla-contenedor">
         <table class="tabla">
             <thead>
@@ -177,7 +196,19 @@ foreach ($inscripciones as $ins) {
             <tbody>
             <?php foreach ($inscripciones as $ins): ?>
                 <?php $esPendiente = $ins['estado'] === 'pendiente'; ?>
-                <tr>
+                <?php
+                /*
+                 * Ancla por inscripción (D-48). Sustituye a los redirects que
+                 * volvían con `?q=CÓDIGO` puesto: aquellos mostraban el listado
+                 * FILTRADO a una sola fila, escondiendo todo lo demás. Ahora la
+                 * acción devuelve a la lista completa con `#ins-N`, el navegador
+                 * baja hasta la fila y `:target` la resalta, sin filtrar nada.
+                 *
+                 * El listado se ordena por apellido, no por fecha, así que sin
+                 * el ancla la fila recién tocada queda enterrada a media tabla.
+                 */
+                ?>
+                <tr id="ins-<?= (int) $ins['id'] ?>">
                     <td data-etiqueta="Cobrar">
                         <?php if ($esPendiente): ?>
                             <input type="checkbox" name="ids[]" value="<?= (int) $ins['id'] ?>"
@@ -188,9 +219,11 @@ foreach ($inscripciones as $ins) {
                         <code><?= View::e($ins['codigo_correlativo']) ?></code>
                         <?php if ($ins['estado'] === 'confirmada'): ?>
                             <br>
-                            <a class="enlace-tenue" target="_blank"
+                            <a class="accion enlace-tenue" target="_blank"
+                               title="Ver el carné (la misma página que abre el QR)"
                                href="<?= View::e(View::url('/carne/' . $ins['codigo_correlativo'])) ?>">
-                                ver carné
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
+                                <span class="accion__texto">Ver carné</span>
                             </a>
                         <?php endif; ?>
                     </td>
@@ -238,18 +271,37 @@ foreach ($inscripciones as $ins) {
                        decisión del propietario: la columna es una sola. */
                     ?>
                     <td class="tenue" data-etiqueta="Responsable"><?= View::e((string) $ins['registrado_por']) ?></td>
+                    <?php
+                    /*
+                     * Columna de solo íconos en escritorio (D-48). El rótulo NO
+                     * desaparece del HTML: sigue en un <span class="accion__texto">
+                     * que el CSS recorta con `clip-path`. Eso lo mantiene en el
+                     * árbol de accesibilidad —es el nombre del enlace para un
+                     * lector de pantalla— y lo devuelve a la vista en la ficha de
+                     * teléfono, donde hay sitio de sobra y cuatro dibujos sueltos
+                     * se identifican peor que en el escritorio.
+                     *
+                     * El `title` es lo que da el globo al pasar el ratón. Aquí no
+                     * es un adorno: «anular» es irreversible y mueve dinero al
+                     * fondo de devoluciones, y queda pegada a «corregir», que es
+                     * la acción inofensiva.
+                     */
+                    ?>
                     <td class="tabla__acciones" data-etiqueta="Acciones">
                         <?php if ($ins['estado'] !== 'anulada'): ?>
-                            <a class="enlace-tenue"
+                            <a class="accion enlace-tenue" title="Corregir categoría"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">
-                                Corregir categoría
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
+                                <span class="accion__texto">Corregir categoría</span>
                             </a>
-                            <button type="button" class="enlace-peligro boton-anular"
+                            <button type="button" class="accion enlace-peligro boton-anular"
+                                    title="Anular definitivamente"
                                     data-id="<?= (int) $ins['id'] ?>"
                                     data-nombre="<?= View::e($ins['ap_paterno'] . ' ' . $ins['nombres']) ?>"
                                     data-pagada="<?= $ins['estado'] === 'confirmada' ? '1' : '0' ?>"
                                     data-monto="<?= number_format((float) $ins['monto'], 2) ?>">
-                                Anular
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+                                <span class="accion__texto">Anular</span>
                             </button>
                         <?php endif; ?>
 
@@ -262,16 +314,18 @@ foreach ($inscripciones as $ins) {
                            duplicar la inscripción de alguien que ya está dentro. */
                         ?>
                         <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo'])): ?>
-                            <a class="enlace-tenue"
+                            <a class="accion enlace-tenue" title="Reinscribir"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/reinscribir')) ?>">
-                                Reinscribir
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
+                                <span class="accion__texto">Reinscribir</span>
                             </a>
                         <?php endif; ?>
 
                         <?php if ($ins['estado'] === 'confirmada'): ?>
-                            <a class="enlace-tenue"
+                            <a class="accion enlace-tenue" title="Descargar el carné en PDF"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne.pdf')) ?>">
-                                PDF
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
+                                <span class="accion__texto">PDF</span>
                             </a>
 
                             <!--
@@ -288,10 +342,12 @@ foreach ($inscripciones as $ins) {
                                 quedaba fuera de cualquier formulario, y por eso no
                                 se podía cobrar nada desde el listado completo.
                             -->
-                            <button type="submit" class="enlace-tenue enlace-boton"
+                            <button type="submit" class="accion enlace-tenue enlace-boton"
+                                    title="Regenerar el carné"
                                     form="form-regenerar"
                                     formaction="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/carne/regenerar')) ?>">
-                                Regenerar
+                                <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
+                                <span class="accion__texto">Regenerar</span>
                             </button>
                         <?php endif; ?>
                     </td>
@@ -353,6 +409,46 @@ foreach ($inscripciones as $ins) {
     <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
     <input type="hidden" name="motivo" id="motivo-anulacion">
 </form>
+
+<?php
+/*
+ * Leyenda de la columna de acciones (D-48).
+ *
+ * No es un adorno ni una concesión: en el escritorio el rótulo de cada acción
+ * está recortado, así que esta lista es el ÚNICO sitio de la pantalla donde las
+ * palabras aparecen. Sin ella, un ícono que no se reconoce no se puede
+ * averiguar más que probándolo, y una de las seis acciones es irreversible.
+ *
+ * Aquí los rótulos van visibles siempre —sin `.accion__texto`—, que es
+ * justamente lo que distingue una leyenda de un botón.
+ */
+?>
+<ul class="leyenda">
+    <li class="leyenda__item">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-ojo"></use></svg>
+        Ver carné
+    </li>
+    <li class="leyenda__item">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
+        Corregir categoría
+    </li>
+    <li class="leyenda__item leyenda__item--peligro">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+        Anular
+    </li>
+    <li class="leyenda__item">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
+        Descargar PDF
+    </li>
+    <li class="leyenda__item">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-recargar"></use></svg>
+        Regenerar carné
+    </li>
+    <li class="leyenda__item">
+        <svg class="icono" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
+        Reinscribir
+    </li>
+</ul>
 
 <p class="nota">
     Mostrando <?= count($inscripciones) ?> inscripción(es).

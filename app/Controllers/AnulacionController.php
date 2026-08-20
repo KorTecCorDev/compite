@@ -102,9 +102,15 @@ final class AnulacionController extends Controller
         $motivo  = trim((string) ($_POST['motivo'] ?? '')) ?: 'Corrección de categoría';
         $usuario = (int) Auth::id();
 
+        /*
+         * La transacción DEVUELVE el id de la inscripción nueva (D-48). Antes no
+         * devolvía nada porque nadie lo necesitaba: se volvía al listado con
+         * `?q=CÓDIGO` y el filtro se encargaba de enseñar la fila. Ahora se
+         * vuelve a la lista completa y hace falta el id para anclarla.
+         */
         try {
-            Database::transaccion(
-                static function () use ($inscripcion, $inscripcionId, $categoriaId, $motivo, $usuario): void {
+            $nuevaId = Database::transaccion(
+                static function () use ($inscripcion, $inscripcionId, $categoriaId, $motivo, $usuario): int {
                     // esDefinitiva = false: no hay devolución, el dinero se traslada.
                     Inscripcion::anular($inscripcionId, $motivo, false, $usuario);
 
@@ -141,6 +147,8 @@ final class AnulacionController extends Controller
                     if ($inscripcion['estado'] === 'confirmada') {
                         Carne::registrar($nuevaId, (string) $inscripcion['codigo_correlativo']);
                     }
+
+                    return $nuevaId;
                 }
             );
         } catch (Throwable $e) {
@@ -155,7 +163,16 @@ final class AnulacionController extends Controller
             . $inscripcion['codigo_correlativo'] . '.'
         );
 
-        $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
+        /*
+         * Al listado COMPLETO, anclado en la fila corregida (D-48). El `?q=` que
+         * había aquí dejaba la pantalla con dos filas —la anulada y la nueva— y
+         * el resto del concurso escondido detrás de un filtro que nadie eligió.
+         *
+         * Se ancla en la NUEVA, que es la que está vigente y la que se quería
+         * comprobar. El listado ordena por apellido, no por fecha, así que sin
+         * ancla la fila queda enterrada a media tabla.
+         */
+        $this->redirigir('/inscripciones#ins-' . (int) $nuevaId);
     }
 
     /**
@@ -173,7 +190,7 @@ final class AnulacionController extends Controller
 
         if ($motivo === '') {
             Sesion::flash('error', 'Indica el motivo de la anulación definitiva.');
-            $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
+            $this->redirigir('/inscripciones#ins-' . $inscripcionId);
         }
 
         $estabaPagada = $inscripcion['estado'] === 'confirmada';
@@ -189,7 +206,7 @@ final class AnulacionController extends Controller
         }
 
         Sesion::flash('exito', $mensaje);
-        $this->redirigir('/inscripciones');
+        $this->redirigir('/inscripciones#ins-' . $inscripcionId);
     }
 
     /**
@@ -265,9 +282,11 @@ final class AnulacionController extends Controller
         $motivo      = trim((string) ($_POST['motivo'] ?? ''));
         $usuario     = (int) Auth::id();
 
+        // Igual que en «Corregir categoría»: la transacción devuelve el id de la
+        // inscripción nueva para poder anclar el listado en ella (D-48).
         try {
-            Database::transaccion(
-                static function () use ($inscripcion, $inscripcionId, $categoriaId, $habiaPagado, $motivo, $usuario): void {
+            $nuevaId = Database::transaccion(
+                static function () use ($inscripcion, $inscripcionId, $categoriaId, $habiaPagado, $motivo, $usuario): int {
                     $nuevaId = Inscripcion::crear([
                         'participante_id'       => (int) $inscripcion['participante_id'],
                         'categoria_id'          => $categoriaId,
@@ -288,6 +307,8 @@ final class AnulacionController extends Controller
                     if ($motivo !== '') {
                         Inscripcion::anotarEnAnulacion($inscripcionId, 'Reinscrito: ' . $motivo);
                     }
+
+                    return $nuevaId;
                 }
             );
         } catch (Throwable $e) {
@@ -308,7 +329,7 @@ final class AnulacionController extends Controller
         }
 
         Sesion::flash('exito', $mensaje);
-        $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
+        $this->redirigir('/inscripciones#ins-' . (int) $nuevaId);
     }
 
     /**
@@ -344,7 +365,7 @@ final class AnulacionController extends Controller
                 'Ese participante ya tiene una inscripción vigente: no hay nada que reinscribir. '
                 . 'Si lo que quieres es cambiarle el grado, usa «Corregir categoría» sobre la vigente.'
             );
-            $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
+            $this->redirigir('/inscripciones#ins-' . (int) $activa['id']);
         }
 
         return $inscripcion;

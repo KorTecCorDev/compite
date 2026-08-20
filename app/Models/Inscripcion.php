@@ -34,6 +34,42 @@ final class Inscripcion
     public const TOPE_LISTADO = 2000;
 
     /**
+     * Claves de filtro que entiende el listado, en un solo sitio.
+     *
+     * Existe desde D-48. El listado ya no puede volver con un filtro que el
+     * usuario no eligió, pero sí tiene que poder devolverle EL SUYO cuando una
+     * validación lo saca de la pantalla a medio cobrar. Esta lista es la que
+     * decide qué se acepta al reconstruir esa URL: sin ella, el «volver» del
+     * formulario de cobro sería una cadena arbitraria puesta por el cliente y
+     * quedaría a un paso de una redirección abierta.
+     *
+     * Comparte propósito con `condiciones()` —son las mismas seis claves— y va
+     * junto a ella a propósito: quien añada un filtro nuevo tiene los dos sitios
+     * a la vista.
+     */
+    public const FILTROS = ['institucion_id', 'tipo_origen', 'nivel', 'grado', 'estado', 'q'];
+
+    /**
+     * Reconstruye la URL del listado quedándose solo con las claves conocidas.
+     *
+     * @param array<string, mixed> $origen
+     */
+    public static function urlListado(array $origen): string
+    {
+        $limpios = [];
+
+        foreach (self::FILTROS as $clave) {
+            $valor = trim((string) ($origen[$clave] ?? ''));
+
+            if ($valor !== '') {
+                $limpios[$clave] = $valor;
+            }
+        }
+
+        return '/inscripciones' . ($limpios === [] ? '' : '?' . http_build_query($limpios));
+    }
+
+    /**
      * @param array<string, mixed> $datos
      */
     public static function crear(array $datos): int

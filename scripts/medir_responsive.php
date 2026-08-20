@@ -211,7 +211,28 @@ function medir(pagina, ancho) {
             return c.el.tagName.toLowerCase() + cls + '[' + Math.round(c.r.left) + '..' + Math.round(c.r.right) + ']';
           });
         }
-        lineas.push(pagina + '|' + ancho + '|' + cw + '|' + sw + '|' + malos.join(' '));
+        // Segunda medida: ¿van los botones de la columna de acciones al mismo
+        // alto que el resto de su fila? Solo tiene sentido en el diseño de
+        // tabla: en la ficha de teléfono cada dato ocupa su propio renglón y no
+        // existe un «centro de la fila» con el que comparar.
+        let torcido = 0;
+        if (cw > 768) {
+          d.querySelectorAll('tbody tr').forEach(function (tr) {
+            const celda = tr.querySelector('.tabla__acciones');
+            if (!celda) return;
+            const hijos = Array.from(celda.children).filter(function (e) {
+              return e.getBoundingClientRect().height > 0;
+            });
+            if (hijos.length === 0) return;
+            const rf = tr.getBoundingClientRect();
+            const arriba = Math.min.apply(null, hijos.map(function (e) { return e.getBoundingClientRect().top; }));
+            const abajo  = Math.max.apply(null, hijos.map(function (e) { return e.getBoundingClientRect().bottom; }));
+            const desvio = ((arriba + abajo) / 2) - (rf.top + rf.height / 2);
+            if (Math.abs(desvio) > Math.abs(torcido)) torcido = desvio;
+          });
+        }
+        lineas.push(pagina + '|' + ancho + '|' + cw + '|' + sw + '|' + malos.join(' ')
+                  + '|' + Math.round(torcido * 10) / 10);
         listo();
       }, 120);
     };
@@ -248,24 +269,63 @@ if (!preg_match('/<title>FIN&gt;&gt;(.*?)<\/title>/s', $dom, $m)) {
 echo "Medición responsive — " . count($pantallas) . ' pantallas × ' . count(ANCHOS) . " anchos\n";
 echo str_repeat('-', 70) . "\n";
 
-$fallos = 0;
+/*
+ * Cuánto se le tolera a los botones de acción antes de decir que están torcidos.
+ *
+ * No es cero, y no debe serlo: `vertical-align: middle` alinea con el medio de
+ * la equis minúscula y no con el centro geométrico del renglón, así que en una
+ * fila alta los íconos quedan un par de píxeles por debajo del centro. Eso es
+ * correcto y no se ve.
+ *
+ * Lo que este umbral caza es otra cosa: una celda de acciones que **ha dejado de
+ * ser una celda**. Al ponerle `display: flex` a un `<td>` deja de ser
+ * `table-cell`, pierde el `vertical-align: middle` del que dependía, y el
+ * navegador lo envuelve en una celda anónima donde la caja —con alto de
+ * contenido— se queda arriba del todo. Ahí el desvío no son dos píxeles: en el
+ * listado de inscripciones fueron 26.8 px sobre una fila de 94, y en apoderados
+ * 12.6 sobre una de 70. Ver D-48.
+ */
+const TOLERANCIA_ALINEACION = 6.0;
+
+$fallos   = 0;
+$torcidas = 0;
 
 foreach (explode('~~', html_entity_decode($m[1])) as $linea) {
-    [$pagina, $ancho, $cw, $sw, $malos] = array_pad(explode('|', $linea, 5), 5, '');
+    [$pagina, $ancho, $cw, $sw, $malos, $torcido] = array_pad(explode('|', $linea, 6), 6, '');
 
     if ((int) $sw > (int) $cw + 1) {
         $fallos++;
         printf("  DESBORDA  %-16s %5spx  documento %spx (+%s)\n", $pagina, $ancho, $sw, (int) $sw - (int) $cw);
         printf("            culpables: %s\n", $malos !== '' ? $malos : '(ninguno sin recortar — mira dentro de una caja con overflow)');
     }
+
+    if (abs((float) $torcido) > TOLERANCIA_ALINEACION) {
+        $torcidas++;
+        printf(
+            "  TORCIDA   %-16s %5spx  botones de acción a %s px del centro de su fila\n",
+            $pagina,
+            $ancho,
+            (float) $torcido > 0 ? '+' . $torcido . ' (abajo)' : $torcido . ' (arriba)'
+        );
+        echo "            Mira si algo le puso `display: flex` al <td> de acciones:\n";
+        echo "            eso le quita el `vertical-align: middle` y los descuelga.\n";
+    }
 }
 
 echo str_repeat('-', 70) . "\n";
 
-if ($fallos === 0) {
-    echo "Ninguna pantalla desborda. Recuerda: esto mide el ancho, no el diseño.\n";
+if ($fallos === 0 && $torcidas === 0) {
+    echo "Ninguna pantalla desborda y los botones van al alto de su fila.\n";
+    echo "Recuerda: esto mide el ancho y la alineación, no el diseño.\n";
     exit(0);
 }
 
-echo "{$fallos} combinaciones desbordan el ancho de la ventana.\n";
+if ($fallos > 0) {
+    echo "{$fallos} combinaciones desbordan el ancho de la ventana.\n";
+}
+
+if ($torcidas > 0) {
+    echo "{$torcidas} combinaciones con los botones de acción fuera del alto de su fila.\n";
+}
+
 exit(1);

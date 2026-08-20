@@ -82,5 +82,37 @@
         });
     });
 
+    /*
+     * La fila a la que apunta `#ins-N`, por debajo del aviso.
+     *
+     * Desde D-48 las acciones de un solo registro vuelven al listado completo
+     * anclado en su fila, en vez de filtrar la pantalla a esa sola fila. Pero
+     * vuelven SIEMPRE con un aviso, y el aviso es pegajoso desde D-30: el
+     * navegador deja la fila arriba del todo y el aviso se le pone encima.
+     *
+     * Medido en el navegador: de una fila de 93 px quedaban 71 debajo del aviso.
+     * El sistema te mandaba a mirar algo que no se veía, que es peor que no
+     * mandarte a ningún sitio.
+     *
+     * El alto se mide en vez de fijarse en el CSS porque no es constante: un
+     * cobro con carnés fallidos deja DOS avisos, y un `scroll-margin-top` a ojo
+     * se queda corto justo en el caso en que más falta hace leer la fila.
+     */
+    const anclada = /^#ins-\d+$/.test(location.hash)
+        ? document.getElementById(location.hash.slice(1))
+        : null;
+
+    if (anclada) {
+        const avisos = document.querySelector('.avisos');
+        const estorbo = avisos ? avisos.getBoundingClientRect().height : 0;
+
+        anclada.style.scrollMarginTop = (estorbo + 12) + 'px';
+
+        // Se vuelve a desplazar a mano: el navegador ya había saltado al ancla
+        // antes de que este script existiera, y `scroll-margin-top` no mueve
+        // por sí solo lo que ya está colocado.
+        anclada.scrollIntoView();
+    }
+
     actualizar();
 })();

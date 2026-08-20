@@ -106,5 +106,15 @@ $flash = Sesion::tomarFlash();
 
 <script src="<?= View::e(View::url('build/js/avisos.js')) ?>" defer></script>
 
+<?php
+/*
+ * Sprite de íconos (D-48). Va aquí, al final del layout y no dentro de cada
+ * vista, por dos razones: se imprime una sola vez por página aunque la tabla
+ * tenga 300 filas, y queda disponible para cualquier otra pantalla que después
+ * quiera los mismos íconos sin volver a pegarlos.
+ */
+?>
+<?= View::parcial('iconos') ?>
+
 </body>
 </html>

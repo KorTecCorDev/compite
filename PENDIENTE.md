@@ -83,8 +83,8 @@ tecleado, y el correlativo va impreso en grande en el carné.
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 152 comprobaciones, base real, no dejan nada
-php scripts/medir_responsive.php       # 6 pantallas × 8 anchos, necesita Chrome
+php scripts/pruebas/todas.php          # 171 comprobaciones, base real, no dejan nada
+php scripts/medir_responsive.php       # 6 pantallas × 8 anchos: desborde y alineación
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```
 

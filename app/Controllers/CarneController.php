@@ -142,6 +142,13 @@ final class CarneController extends Controller
          * dos mil confirmadas, y un PDF de ese tamaño tampoco terminaría de
          * generarse en un hosting compartido.
          */
+        /*
+         * Los dos redirects de abajo conservan `institucion_id`, y eso NO
+         * contradice a D-48: el botón que trae aquí solo existe cuando el
+         * listado ya estaba filtrado por esa delegación, así que volver con el
+         * filtro es devolver al usuario donde estaba, no imponerle un recorte
+         * que no eligió.
+         */
         $cuantas = Inscripcion::contarFiltradas($concursoId, $filtros);
 
         if ($cuantas > Inscripcion::TOPE_LISTADO) {

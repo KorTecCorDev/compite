@@ -33,6 +33,17 @@ final class PagoController extends Controller
 
         $ids = is_array($_POST['ids'] ?? null) ? $_POST['ids'] : [];
 
+        /*
+         * A dónde volver si el cobro no sale (D-48): al listado con los filtros
+         * que el usuario tenía puestos, o al listado entero si no tenía ninguno.
+         *
+         * `parse_str` sobre un campo del formulario es entrada del cliente, así
+         * que la URL la arma `Inscripcion::urlListado()`, que descarta cualquier
+         * clave que no sea uno de los seis filtros del listado.
+         */
+        parse_str((string) ($_POST['volver'] ?? ''), $filtrosPrevios);
+        $volver = Inscripcion::urlListado(is_array($filtrosPrevios) ? $filtrosPrevios : []);
+
         $v = new Validador($_POST);
         $v->requerido('medio_pago', 'El medio de pago')
           ->enLista('medio_pago', ['yape', 'transferencia', 'efectivo'], 'El medio de pago');
@@ -67,14 +78,14 @@ final class PagoController extends Controller
             foreach ($v->mensajes() as $mensaje) {
                 Sesion::flash('error', $mensaje);
             }
-            $this->redirigir('/inscripciones?estado=pendiente');
+            $this->redirigir($volver);
         }
 
         $pendientes = Inscripcion::pendientesPorIds($ids, $concursoId);
 
         if ($pendientes === []) {
             Sesion::flash('error', 'Ninguna de las inscripciones seleccionadas sigue pendiente.');
-            $this->redirigir('/inscripciones?estado=pendiente');
+            $this->redirigir($volver);
         }
 
         // Solo Yape trae código; en transferencia y efectivo la columna queda NULL.
@@ -141,7 +152,20 @@ final class PagoController extends Controller
             );
         }
 
-        $this->redirigir('/inscripciones?estado=confirmada');
+        /*
+         * De vuelta al listado SIN filtrar (D-48).
+         *
+         * Aquí había `?estado=confirmada`, y no era solo una molestia: tras
+         * cobrar, las pendientes que NO se cobraron desaparecían de la pantalla,
+         * y con ellas la casilla de «seleccionar todas las pendientes», que solo
+         * se dibuja si queda alguna a la vista. El listado afirmaba que el
+         * trabajo estaba terminado justo cuando no lo estaba.
+         *
+         * Tampoco se restauran aquí los filtros previos: el cobro salió bien y
+         * lo que toca es ver el estado real de la caja, no volver al recorte con
+         * el que se estaba trabajando. El recuento y el importe van en el aviso.
+         */
+        $this->redirigir('/inscripciones');
     }
 
     /**
@@ -171,7 +195,7 @@ final class PagoController extends Controller
             Sesion::flash('error', 'No se pudo emitir el carné.');
         }
 
-        $this->redirigir('/inscripciones?q=' . urlencode((string) $inscripcion['codigo_correlativo']));
+        $this->redirigir('/inscripciones#ins-' . (int) $id);
     }
 
     /**

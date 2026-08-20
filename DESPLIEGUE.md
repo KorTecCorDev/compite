@@ -164,10 +164,11 @@ Y si quieres ir más allá de la configuración, **las pruebas del sistema**:
 php scripts/pruebas/todas.php
 ```
 
-Trece pruebas, 137 comprobaciones, contra la base real y **sin dejar nada**: cada
+Quince pruebas, 171 comprobaciones, contra la base real y **sin dejar nada**: cada
 una abre su transacción y la revierte, incluso si se cae a mitad. Cubren la
 modalidad COCIAP, la reinscripción, las firmas de cobro y anulación, la frontera
-entre secretaria y administrador, el tope del listado y los rótulos responsive.
+entre secretaria y administrador, el tope del listado, los rótulos responsive y
+que ningún redirect vuelva al listado con un filtro impuesto (D-48).
 
 Y la medición responsive, que necesita Chrome instalado:
 
@@ -176,8 +177,9 @@ php scripts/medir_responsive.php
 ```
 
 Carga cada pantalla dentro de un `<iframe>` de ancho exacto —un iframe sí crea un
-viewport de verdad— y comprueba que ninguna desborda entre 320 y 1440 px,
-nombrando al elemento culpable si alguna lo hace.
+viewport de verdad— y comprueba dos cosas: que ninguna desborda entre 320 y
+1440 px, nombrando al elemento culpable, y que los botones de la columna de
+acciones van al alto de su fila y no descolgados arriba (D-48).
 
 Ninguna de las dos sustituye la comprobación en navegador: ven el HTML y el
 ancho, no el diseño. Para eso está `docs/protocolo-pruebas.html`.

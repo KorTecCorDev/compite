@@ -1930,6 +1930,188 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-48 — La columna de acciones pasa a íconos, y el listado deja de filtrarse solo
+
+**Fecha:** 2026-08-20 · **Estado:** aprobado por el propietario · **Afecta:** D-30, D-38, D-40, D-41
+
+Dos peticiones del propietario sobre `/inscripciones`, que resultaron ser la misma cosa vista de
+dos lados: **lo que la pantalla enseña de más** (seis rótulos de texto compitiendo con los datos en
+una tabla de nueve columnas) y **lo que la pantalla esconde de menos** (un filtro que se ponía solo
+después de cobrar).
+
+#### Los íconos: sin librería, sprite SVG en línea
+
+Se evaluaron cuatro caminos y tres se caen por razones de ESTE proyecto, no por gusto:
+
+| Camino | Por qué no |
+|---|---|
+| Font Awesome / icon font | 30–70 KB de fuentes que `gulpfile.js` no sabe copiar: el pipeline solo compila `scss` y `js`. Habría que añadir un paso o copiarlas a mano, y las copias a mano se pudren en el despliegue. Los lectores de pantalla, además, leen los glifos como caracteres sueltos. |
+| lucide / feather por npm | Reescriben el DOM al cargar: los íconos entrarían con un parpadeo. Y `node_modules/` nunca sube a Hostinger, así que exigiría un paso de build que los incruste. |
+| `<img src="…svg">` | Un `<img>` no hereda `currentColor`: el ícono de anular no podría ser rojo ni cambiar en `:hover`. Gulp tampoco copia `resources/`. |
+| **Sprite `<symbol>` en línea** ✅ | Un bloque impreso **una vez** por página desde el layout; cada uso cuesta ~55 bytes. Cero dependencias, cero peticiones, hereda `currentColor`, no toca el pipeline y no sube nada nuevo al servidor. |
+
+Vive en `app/Views/parciales/iconos.php`, lo imprime el layout con el nuevo `View::parcial()`, y
+los seis dibujos son: lápiz, círculo tachado, hoja con flecha, flecha circular, persona con un más
+y ojo.
+
+**El de anular es un círculo tachado y no un tacho de basura, a propósito.** Anular no borra nada:
+la fila anulada se queda en el listado con su motivo y su firma (D-38, D-39). Un tacho invitaría a
+leerlo como un borrado.
+
+#### Lo que se hizo para que quitar las letras no rompa nada
+
+Tres cosas se rompían si se quitaban los rótulos sin más, y las tres se atendieron:
+
+1. **El rótulo no desaparece del HTML.** Sigue en un `<span class="accion__texto">` que el CSS
+   recorta con `clip-path`. Con `display: none` habría salido del árbol de accesibilidad y un
+   lector de pantalla anunciaría «enlace» a secas seis veces por fila. El `title` da el globo del
+   ratón; el `<span>` da el nombre accesible.
+2. **El área táctil.** `_botones.scss` daba `min-height: 2.75rem` a estos enlaces pero **no
+   `min-width`**: mientras fueron texto, «Corregir categoría» medía sus 110 px y el alto era lo
+   único que faltaba. Con solo el ícono el blanco de toque se encogía a 18 px —una cuarta parte del
+   mínimo de las WCAG 2.5.5— justo al lado de una acción irreversible. Se añade el `min-width`.
+   Es la misma clase de fallo que costó D-41 y D-42.
+3. **Una leyenda al pie de la tabla.** En el escritorio los rótulos están recortados, así que la
+   leyenda es el ÚNICO sitio de la pantalla donde las palabras se leen. Sin ella, un ícono que no
+   se reconoce solo se averigua probándolo.
+
+**Y en el teléfono el texto vuelve** (decisión del propietario). Por debajo de tableta la fila es
+una ficha con ancho de sobra, y cuatro dibujos sueltos sin columnas vecinas se identifican peor
+que en el escritorio.
+
+#### El listado no se filtra solo
+
+**La vista ya listaba todo por defecto**: `index()` lee los seis filtros de `$_GET` y de ningún
+otro sitio, y `listar()` no añade ningún estado por su cuenta. El problema estaba entero en los
+**redirects**: ocho sitios volvían con un filtro ya puesto.
+
+El peor, y el que reportó el propietario, era `PagoController` → `?estado=confirmada` después de
+cobrar. No era solo molesto: **las pendientes que NO se cobraron desaparecían**, y con ellas la
+casilla de «seleccionar todas las pendientes», que solo se dibuja si queda alguna a la vista. El
+listado afirmaba que el trabajo estaba terminado justo cuando no lo estaba.
+
+El segundo, `?estado=pendiente` al fallar la validación del cobro, tenía un defecto extra:
+**tiraba el filtro que el usuario sí había elegido**. Se corregía el medio de pago y se volvía
+mirando un conjunto de filas distinto del que se estaba cobrando.
+
+**Por qué estaban ahí**, que no fue descuido: `listar()` ordena por apellido, no por fecha, así que
+la fila recién creada o tocada queda enterrada a media tabla. El `?q=CÓDIGO` era la salida barata
+para hacerla encontrable.
+
+**Lo que hay ahora:**
+
+- Las acciones de **un solo registro** (anular, corregir, reinscribir, regenerar, alta de libre)
+  vuelven a `/inscripciones#ins-N`: lista completa, el navegador baja hasta la fila y `:target` la
+  resalta. `corregir` y `reinscribir` devuelven desde su transacción el id de la inscripción
+  **nueva**, que es la vigente y la que se quería comprobar.
+- El **cobro** vuelve a `/inscripciones` a secas. El recuento y el importe van en el aviso, que es
+  pegajoso desde D-30 y no se desvanece.
+- El **error de validación del cobro** devuelve los filtros que el usuario tenía, que viajan en un
+  campo `volver` del formulario. Como es entrada del cliente, la URL la arma
+  `Inscripcion::urlListado()`, que solo deja pasar las seis claves de `Inscripcion::FILTROS`: sin
+  esa lista blanca, un `volver` fabricado quedaba a un paso de una redirección abierta. No se lee
+  `HTTP_REFERER` por lo mismo.
+
+**LA EXCEPCIÓN, y es una sola:** tras registrar una delegación se sigue volviendo con
+`?institucion_id=N`. Ese filtro no recorta la vista, **habilita el paso siguiente**: el botón
+«Imprimir carnés de esta delegación» solo se dibuja cuando hay una delegación elegida —la hoja
+necesita un destinatario; imprimir el concurso entero son cientos de páginas y un PDF que en
+hosting compartido se queda sin tiempo (D-40)—. Sin el filtro, el camino de «acabo de inscribir a
+30 chicos» a «imprimo sus carnés» se queda sin ningún letrero. Aprobado como excepción consciente.
+Los dos redirects de error de `CarneController` la acompañan, y por otra razón: allí el usuario
+**ya estaba** filtrado por esa delegación cuando pulsó el botón, así que conservar el filtro es
+devolverlo donde estaba.
+
+#### Corrección del mismo día: los botones se me quedaron pegados arriba
+
+Lo reportó el propietario al revisar la pantalla, y tenía razón. **Fallo mío, introducido en este
+mismo cambio.**
+
+Para separar los seis íconos le puse `display: flex` y `gap` al `<td>` de acciones. Un `<td>` con
+`display: flex` **deja de ser una celda de tabla**: pierde el `vertical-align: middle` del que
+dependía, el navegador lo envuelve en una celda anónima, y la caja flex —con alto de contenido, no
+de fila— se queda arriba del todo. En una fila alta, la columna entera queda descolgada.
+
+**Y no afectaba solo a Inscripciones.** La regla iba en `_tablas.scss`, así que alcanzaba a las
+cuatro tablas que usan `.tabla__acciones`. Medido con Chrome headless:
+
+| Pantalla | Alto de fila | Desvío |
+|---|---|---|
+| Inscripciones | 94 px | **−26.8 px** |
+| Apoderados | 70 px | **−12.6 px** |
+| Instituciones | 47 px | −0.6 px |
+| Usuarios | 47 px | −1.0 px |
+
+Las dos últimas no estaban bien: **estaban a salvo por casualidad**. Sus filas son de una sola
+línea, así que no había altura sobrante por la que descolgarse. En cuanto una fila crezca, se
+tuercen igual.
+
+**La corrección** es quitar esa regla y separar las acciones con un margen entre hermanas
+(`.accion + .accion`), dejando que la celda siga siendo una celda y que la tabla centre su
+contenido ella sola —que es el mecanismo correcto, no un apaño—. `vertical-align: middle` en
+`.accion` completa el arreglo: una caja `inline-flex` cuyo primer hijo es un `<svg>` no tiene línea
+base propia y, sin eso, los íconos se apoyan en la base del texto y quedan altos en su renglón.
+
+Medido de nuevo: Inscripciones pasa de −26.8 a **+1.8 px de media**; Apoderados, de −12.6 a −0.5.
+No es cero **y no debe serlo**: `vertical-align: middle` alinea con el medio de la equis minúscula,
+no con el centro geométrico del renglón. Dos píxeles sobre una fila de 92 no se ven; decir que
+quedó en cero sería falso.
+
+**La lección, que es la tercera vez que aparece:** esto lo vio el propietario mirando la pantalla,
+no yo razonando sobre el CSS. Igual que en D-42. Por eso el guardia no es una comprobación de HTML
+sino una medida real, y por eso vive en `medir_responsive.php` y no en el banco de PHP: **desde el
+HTML este fallo es invisible** —el marcado es idéntico antes y después—, solo existe una vez el
+navegador ha calculado el diseño.
+
+#### Segunda corrección, ya con la extensión de Chrome conectada
+
+Con el navegador disponible se revisó la pantalla de verdad. Lo primero, bien: los íconos se ven
+centrados en su fila, el ancla lleva a la fila correcta y la resalta, la leyenda se lee al pie, y
+en un viewport de 390 px las seis acciones vuelven a salir **con su texto**, envueltas en dos
+líneas. Lo segundo, no:
+
+**La fila anclada quedaba debajo del aviso.** Estas acciones vuelven SIEMPRE con un mensaje, y el
+bloque de avisos es pegajoso desde D-30 (`position: sticky; top: 0`). El navegador deja la fila
+del `#ins-N` pegada al borde superior, y el aviso se le pone encima: medido, **71 px de una fila
+de 93 quedaban tapados**. El sistema te mandaba a mirar algo que no se veía, que es peor que no
+mandarte a ningún sitio — y deja el `#ins-N` sin cumplir lo que vino a hacer.
+
+**Lo que se hizo:** `src/js/inscripciones.js` mide el alto real del bloque de avisos, se lo pone a
+la fila como `scroll-margin-top` y vuelve a desplazarse. Se **mide** en vez de fijar un valor en el
+CSS porque el alto no es constante: un cobro con carnés fallidos deja dos avisos, y un margen a ojo
+se quedaría corto justo en el caso en que más falta hace leer esa fila. Comprobado en el navegador:
+de 71 px tapados a **0**.
+
+**Esto no lo caza ninguna prueba automática**, ni las de PHP —el HTML es idéntico con aviso y sin
+él— ni `medir_responsive.php`, que carga las vistas sin mensaje flash. Queda como comprobación
+humana en **ICO-3** del protocolo, que ahora exige ver la fila entera y no solo resaltada.
+
+#### Lo que lo protege
+
+- `scripts/pruebas/iconos-y-listado-sin-filtrar.php` — 19 comprobaciones nuevas. Entre ellas, la
+  que de verdad guarda la decisión: **recorre los controladores buscando cualquier
+  `redirigir('/inscripciones?…')` y falla si el filtro no es `institucion_id`**. Se mira el código
+  y no el navegador porque un `header()` no deja rastro en ninguna vista. También comprueba que el
+  sprite se imprima una sola vez, que ningún `<use>` apunte a un símbolo inexistente, que los seis
+  rótulos sigan en el HTML y que la lista blanca de `urlListado()` descarte lo desconocido.
+- `docs/protocolo-pruebas.html` — bloque **ICO**, 7 pruebas, y las 9 instrucciones que mandaban
+  «pulsa Regenerar» reescritas para nombrar también la forma del ícono. Sin eso el protocolo
+  quedaba inseguible.
+- `scripts/medir_responsive.php` — segunda medida además del desborde: en cada pantalla de más de
+  768 px compara el centro de los botones de acción con el centro de su fila y falla si se separan
+  más de 6 px. La tolerancia no es cero a propósito (ver arriba). **Comprobado que el guardia
+  falla de verdad**: reintroducido el `display: flex` en el `<td>`, denuncia 6 combinaciones con
+  −26.1 y −12.6 px; quitado, vuelve a verde.
+
+**Lo que no cubre:** el ancla `#ins-N` falla si la fila queda más allá del tope de 2000 filas
+(D-40). Con el volumen esperado no ocurre, y el aviso —que nombra el código— sigue siendo la
+garantía; el ancla es la comodidad.
+
+**Verificado:** las 15 pruebas de `scripts/pruebas/todas.php` pasan. Sin comprobar en navegador:
+la extensión de Chrome no estaba conectada en esta sesión.
+
+---
+
 ### D-47 — `crear_usuario.php` fallaba en silencio en hosting compartido
 
 **Fecha:** 2026-08-19 · **Estado:** encontrado durante el despliegue real · **Afecta:** scripts
@@ -2205,7 +2387,7 @@ y se ejecutan todas con:
 php scripts/pruebas/todas.php
 ```
 
-Trece pruebas, 137 comprobaciones. Corren **contra la base real de trabajo** —no contra una
+Quince pruebas, 171 comprobaciones. Corren **contra la base real de trabajo** —no contra una
 maqueta— porque es lo que las hace valer: así detectan que MariaDB rellena un ENUM `NOT NULL` en
 vez de rechazar el INSERT, que la colación española ordena la Ñ donde debe y que el esquema tiene
 las columnas que el código espera. Cada una abre su transacción y la revierte, y `_comun.php` la

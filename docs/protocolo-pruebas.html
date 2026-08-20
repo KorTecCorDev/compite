@@ -512,8 +512,8 @@ code, .cod {
         <p class="entradilla">
             Dos partes. Primero la <strong>ruta feliz</strong>: los pasos exactos para meter una
             delegaci&oacute;n completa, con los valores ya escritos para que no tengas que
-            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 119 comprobaciones en
-            17 bloques, cada una con lo que debe pasar. Marca cada casilla conforme avances.
+            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 126 comprobaciones en
+            18 bloques, cada una con lo que debe pasar. Marca cada casilla conforme avances.
         </p>
 
         <div class="ficha">
@@ -575,8 +575,9 @@ code, .cod {
         </p>
         <p>
             Antes de tocar el navegador, dos comprobaciones que el c&oacute;digo hace solo:
-            <span class="cod">php scripts/pruebas/todas.php</span> (137 comprobaciones) y
-            <span class="cod">php scripts/medir_responsive.php</span> (48 medidas de ancho).
+            <span class="cod">php scripts/pruebas/todas.php</span> (171 comprobaciones) y
+            <span class="cod">php scripts/medir_responsive.php</span> (48 medidas de ancho y de
+            alineaci&oacute;n).
             Si alguna falla, arr&eacute;glala primero y no persigas fantasmas en pantalla.
         </p>
     </div>
@@ -793,8 +794,9 @@ code, .cod {
                 </p>
                 <p class="paso__cuerpo">
                     Las tres pasan a <strong>confirmada</strong>, el recaudado sube a S/ 30.00 y cada
-                    fila gana <strong>ver carn&eacute;</strong>, <strong>PDF</strong> y
-                    <strong>Regenerar</strong>.
+                    fila gana los &iacute;conos de <strong>ver carn&eacute;</strong> (ojo),
+                    <strong>PDF</strong> (hoja con flecha) y <strong>Regenerar</strong> (flecha circular).
+                    Los nombres est&aacute;n en la leyenda del pie de la tabla.
                 </p>
             </article>
 
@@ -1438,7 +1440,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag10"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-10</span>
-                    <p class="prueba__texto">Pulsa <strong>PDF</strong> en una fila confirmada y abre el archivo.</p>
+                    <p class="prueba__texto">Pulsa el &iacute;cono <strong>PDF</strong> &mdash;la hoja con flecha&mdash; en una fila confirmada y abre el archivo.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -1450,7 +1452,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="pag11"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">PAG-11</span>
-                    <p class="prueba__texto">Pulsa <strong>Regenerar</strong> en esa misma fila.</p>
+                    <p class="prueba__texto">Pulsa el &iacute;cono <strong>Regenerar</strong> &mdash;la flecha circular&mdash; en esa misma fila.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -1688,7 +1690,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-1</span>
-                    <p class="prueba__texto">En una inscripci&oacute;n <strong>ya pagada</strong>, pulsa <strong>Corregir categor&iacute;a</strong> y anota su c&oacute;digo antes de seguir.</p>
+                    <p class="prueba__texto">En una inscripci&oacute;n <strong>ya pagada</strong>, pulsa el &iacute;cono <strong>Corregir categor&iacute;a</strong> &mdash;el l&aacute;piz&mdash; y anota su c&oacute;digo antes de seguir.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -1725,7 +1727,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-4</span>
-                    <p class="prueba__texto">En otra inscripci&oacute;n pagada, pulsa <strong>Anular</strong> y lee el aviso antes de aceptar.</p>
+                    <p class="prueba__texto">En otra inscripci&oacute;n pagada, pulsa el &iacute;cono <strong>Anular</strong> &mdash;el c&iacute;rculo tachado, el &uacute;nico rojo de la fila&mdash; y lee el aviso antes de aceptar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -2046,7 +2048,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Su fila anulada debe ofrecer <strong>Reinscribir</strong>.</p>
+                    <p class="prueba__texto">Su fila anulada debe ofrecer el &iacute;cono <strong>Reinscribir</strong> (persona con un m&aacute;s).</p>
                     <p class="prueba__porque">Antes ese estudiante quedaba atrapado: su documento ya exist&iacute;a y «Corregir categor&iacute;a» rechaza lo anulado.</p>
                 </div>
             </div>
@@ -2059,7 +2061,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto"><strong>No</strong> debe ofrecer «Reinscribir».</p>
+                    <p class="prueba__texto"><strong>No</strong> debe ofrecer el &iacute;cono «Reinscribir».</p>
                     <p class="prueba__porque">Ah&iacute; reinscribir crear&iacute;a una segunda inscripci&oacute;n activa: dos carn&eacute;s y dos montos para la misma persona.</p>
                 </div>
             </div>
@@ -2068,7 +2070,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="rei3"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">REI-3</span>
-                    <p class="prueba__texto">Pulsa «Reinscribir» en la de REI-1 y lee la pantalla antes de confirmar.</p>
+                    <p class="prueba__texto">Pulsa el &iacute;cono «Reinscribir» en la de REI-1 y lee la pantalla antes de confirmar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -2093,7 +2095,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="rei5"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">REI-5</span>
-                    <p class="prueba__texto">Corrige la categor&iacute;a de una inscripci&oacute;n <strong>ya cobrada</strong> y, en la fila nueva, pulsa <strong>PDF</strong>.</p>
+                    <p class="prueba__texto">Corrige la categor&iacute;a de una inscripci&oacute;n <strong>ya cobrada</strong> y, en la fila nueva, pulsa el &iacute;cono <strong>PDF</strong>.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -2265,6 +2267,106 @@ code, .cod {
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
                     <p class="prueba__texto">Dejarla pasar. La necesita para inscribir estudiantes libres.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">ICO</span>
+                <h3 class="bloque__nombre">&Iacute;conos y un listado que no se filtra solo</h3>
+                <span class="bloque__pista">7 pruebas &middot; bloque nuevo (D-48)</span>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-1</span>
+                    <p class="prueba__texto">Entra a <span class="cod">/inscripciones</span> reci&eacute;n iniciada la sesi&oacute;n, sin tocar los filtros.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Salir <strong>todo</strong>: pendientes, confirmadas y anuladas mezcladas, y los seis desplegables en su opci&oacute;n «Todo…».</p>
+                    <p class="prueba__porque">Lo que se filtra solo se filtra a espaldas de quien mira, y aqu&iacute; lo que queda fuera de la vista son pagos por cobrar.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-2</span>
+                    <p class="prueba__texto">Con <strong>varias pendientes</strong> a la vista, cobra <strong>solo dos</strong> de ellas y mira la pantalla que queda.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Volver al listado <strong>completo</strong>: las pendientes que no cobraste siguen ah&iacute;, y la casilla de «seleccionar todas las pendientes» sigue en la cabecera.</p>
+                    <p class="prueba__porque">Este es el fallo que motiv&oacute; D-48. Antes se volv&iacute;a filtrado a «confirmada»: las que faltaban por cobrar desaparec&iacute;an y la pantalla daba el trabajo por terminado.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-3</span>
+                    <p class="prueba__texto">Anula una inscripci&oacute;n cualquiera y fíjate en <strong>d&oacute;nde queda la p&aacute;gina</strong> al volver.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Volver a la lista entera, ya desplazada hasta esa fila y con la fila <strong>resaltada</strong>. La URL termina en <span class="cod">#ins-</span> y un n&uacute;mero, nunca en <span class="cod">?q=</span>.</p>
+                    <p class="prueba__texto"><strong>Y la fila tiene que verse ENTERA</strong>, justo debajo del aviso verde, no por detr&aacute;s de &eacute;l.</p>
+                    <p class="prueba__porque">El listado se ordena por apellido, no por fecha: sin el resalte, volver a una tabla de cientos de filas no dice qu&eacute; acaba de pasar. Y el aviso es pegajoso (D-30): al llegar al ancla se le pon&iacute;a encima y tapaba 71 px de una fila de 93 &mdash;te mandaba a mirar algo que no se ve&iacute;a&mdash;.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-4</span>
+                    <p class="prueba__texto">Registra una <strong>delegaci&oacute;n nueva</strong> y mira los filtros al volver.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Esta &mdash;y solo esta&mdash; s&iacute; vuelve con la delegaci&oacute;n elegida en el desplegable, y con el bot&oacute;n <strong>Imprimir carn&eacute;s de esta delegaci&oacute;n</strong> a la vista.</p>
+                    <p class="prueba__porque">Es la excepci&oacute;n aprobada: ese filtro no recorta la vista, habilita el paso siguiente. La hoja de carn&eacute;s necesita un destinatario.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-5</span>
+                    <p class="prueba__texto">Pasa el rat&oacute;n por encima de cada &iacute;cono de la columna de acciones, sin pulsar.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Cada uno saca su globo con el nombre. El de <strong>Anular</strong> es el &uacute;nico rojo, y es un c&iacute;rculo tachado, no un tacho de basura.</p>
+                    <p class="prueba__porque">Anular es irreversible y mueve dinero al fondo de devoluciones, y queda pegada a «Corregir categor&iacute;a», que es inofensiva. Un tacho, adem&aacute;s, se leer&iacute;a como un borrado: la fila anulada se queda en el listado.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-6</span>
+                    <p class="prueba__texto">Baja hasta el pie de la tabla.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Haber una <strong>leyenda</strong> con los seis &iacute;conos y sus nombres.</p>
+                    <p class="prueba__porque">En el escritorio los r&oacute;tulos est&aacute;n recortados: la leyenda es el &uacute;nico sitio de la pantalla donde las palabras se leen. Sin ella, un &iacute;cono que no se reconoce solo se averigua prob&aacute;ndolo.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="ico7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ICO-7</span>
+                    <p class="prueba__texto">Abre el mismo listado en el <strong>m&oacute;vil</strong> y mira la l&iacute;nea «ACCIONES» de una ficha.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Ah&iacute; el texto <strong>vuelve</strong>: «Corregir categor&iacute;a», «Anular», «PDF»&hellip; al lado de su &iacute;cono.</p>
+                    <p class="prueba__porque">En la ficha hay ancho de sobra, y cuatro dibujos sueltos sin columnas vecinas se identifican peor que en el escritorio.</p>
                 </div>
             </div>
         </div>

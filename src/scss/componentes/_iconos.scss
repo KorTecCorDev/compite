@@ -1,0 +1,145 @@
+@use '../base/medios' as m;
+
+// ---------------------------------------------------------------------------
+// Íconos y acciones con ícono (D-48)
+// ---------------------------------------------------------------------------
+// Los dibujos viven en un sprite <symbol> impreso una vez por página desde el
+// layout (`app/Views/parciales/iconos.php`) y se usan con <use href="#i-...">.
+// El trazo se define AQUÍ y no en el sprite: así cada ícono hereda el color del
+// enlace que lo contiene —`currentColor`— y el de anular sale rojo sin
+// necesidad de un segundo sprite.
+
+// El contenedor del sprite se saca de la vista SIN `display: none`.
+//
+// Con `display: none` los <symbol> siguen resolviéndose en los navegadores de
+// hoy, pero es un terreno con historial: hay motores que dejan de resolver el
+// <use> cuando su árbol de origen no se dibuja, y el síntoma sería un hueco en
+// blanco donde va cada acción, sin ningún error en ningún sitio. Sacarlo del
+// flujo con `position: absolute` y tamaño cero evita la pregunta entera y cuesta
+// lo mismo.
+.sprite-iconos {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}
+
+.icono {
+    width: 1.15rem;
+    height: 1.15rem;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+// Un enlace o botón de la columna de acciones: ícono + rótulo.
+//
+// La separación entre acciones va en un margen y NO en un `gap` del `<td>`.
+//
+// Se probó lo otro y estaba mal: poner `display: flex` en la celda para usar
+// `gap` la deja de ser una celda de tabla, y con ello pierde el
+// `vertical-align: middle` del que dependía. El navegador envuelve la caja en
+// una celda anónima y el flex, con alto de contenido, se queda **arriba del
+// todo**. Medido con Chrome headless: en una fila de 94 px los botones
+// quedaban 26.8 px por encima del centro; en Apoderados, 12.6 px. En
+// Instituciones y Usuarios el desvío era ~0, pero no porque estuvieran bien:
+// sus filas son de una sola línea y no había margen donde descolgarse.
+//
+// Con la celda intacta, la tabla centra su contenido ella sola, que es el
+// mecanismo correcto y no un apaño.
+.accion {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+
+    // La caja `inline-flex` cuyo primer hijo es un <svg> no tiene línea base
+    // propia, así que el navegador usa su borde inferior: sin esto, los íconos
+    // se apoyarían en la base del texto y quedarían altos dentro de su renglón.
+    vertical-align: middle;
+
+    & + & {
+        margin-left: .55rem;
+    }
+}
+
+// El rótulo se recorta, NO se elimina.
+//
+// `display: none` lo sacaría del árbol de accesibilidad y dejaría el enlace sin
+// nombre: un lector de pantalla anunciaría «enlace» a secas seis veces por fila.
+// Con `clip-path` el texto sigue siendo el nombre accesible del control, y el
+// `title` del HTML se encarga del globo al pasar el ratón.
+.accion__texto {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+// Leyenda de la columna. Es el único sitio donde los nombres se leen en el
+// escritorio, así que sus rótulos van visibles siempre.
+.leyenda {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem 1.25rem;
+    margin: 1rem 0 .35rem;
+    padding: 0;
+    list-style: none;
+
+    &__item {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        font-size: .85rem;
+        color: var(--tinta-suave);
+    }
+
+    &__item--peligro {
+        color: var(--error);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// La fila recién tocada
+// ---------------------------------------------------------------------------
+// Las acciones de un solo registro vuelven a la lista COMPLETA con `#ins-N` en
+// vez de filtrarla a esa fila (D-48). El realce es lo que sustituye al filtro:
+// sin él, volver a una tabla de cientos de filas no dice qué acaba de pasar.
+//
+// El fondo es el mismo acento suave de los avisos, no un amarillo de resaltador:
+// tiene que verse al llegar y desaparecer de la vista en cuanto se lee otra fila.
+.tabla tbody tr:target {
+    background: var(--acento-suave);
+    box-shadow: inset 3px 0 0 var(--acento);
+}
+
+// Por debajo de tableta la fila es una ficha con su propio borde: el realce va
+// en el borde entero, porque el `inset` de la izquierda queda tapado por el
+// redondeo de la tarjeta.
+@include m.hasta-tableta {
+    // En la ficha, la celda SÍ es un contenedor flex —lo es cada `td` del
+    // diseño de tarjeta— y reparte con su propio `gap`. El margen de escritorio
+    // se sumaría a él, así que aquí sobra.
+    .accion + .accion {
+        margin-left: 0;
+    }
+
+    // El rótulo vuelve: en la ficha hay ancho de sobra, y cuatro íconos sueltos
+    // en una barra sin columnas vecinas se identifican peor que en escritorio.
+    .accion__texto {
+        position: static;
+        width: auto;
+        height: auto;
+        overflow: visible;
+        clip-path: none;
+    }
+
+    .tabla tbody tr:target {
+        border-color: var(--acento);
+        box-shadow: 0 0 0 2px var(--acento-suave);
+    }
+}

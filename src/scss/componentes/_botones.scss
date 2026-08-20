@@ -55,11 +55,22 @@
 
     // Los enlaces de la columna de acciones son texto suelto: se les da alto sin
     // convertirlos en botones, para que la fila no se llene de cajas.
+    //
+    // El `min-width` llegó con D-48 y no es simetría: mientras la columna fue
+    // texto, «Corregir categoría» medía sus buenos 110 px de ancho y el alto era
+    // lo único que faltaba. Con solo el ícono, el blanco de toque se encogía a
+    // los 18 px del dibujo —una cuarta parte del mínimo de las WCAG 2.5.5— y
+    // justo al lado de una acción irreversible.
+    //
+    // En la ficha de teléfono el rótulo vuelve a ser visible y el ancho ya sobra,
+    // así que ahí esta regla no cambia nada.
     .tabla__acciones a,
     .tabla__acciones button {
         min-height: 2.75rem;
+        min-width: 2.75rem;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
     }
 
     // Las casillas de cobro se marcan de a una, deprisa y sobre una fila entera.

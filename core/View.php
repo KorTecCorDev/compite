@@ -64,6 +64,20 @@ final class View
         return Url::a($ruta);
     }
 
+    /**
+     * Renderiza un trozo de vista suelto, sin layout y sin datos propios.
+     *
+     * Lo usa el layout para imprimir el sprite de íconos (D-48) una sola vez
+     * por página. Se separa de `renderizar()` porque un parcial no es una
+     * pantalla: no tiene título, no recibe el contenido y nunca se envuelve.
+     *
+     * @param array<string, mixed> $datos
+     */
+    public static function parcial(string $vista, array $datos = []): string
+    {
+        return self::capturar(self::archivo('parciales/' . $vista), $datos);
+    }
+
     private static function archivo(string $vista): string
     {
         $ruta = Config::ruta('app/Views/' . str_replace('.', '/', $vista) . '.php');

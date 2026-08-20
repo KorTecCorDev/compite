@@ -37,6 +37,10 @@
 @use 'componentes/filtros';
 @use 'componentes/enlaces';
 @use 'componentes/tablas';
+// `iconos` va DESPUÉS de `tablas`: el realce de la fila recién tocada
+// (`tr:target`) tiene que ganarle al `tbody tr:hover` de la tabla, y ambos
+// pesan lo mismo. Ver D-48.
+@use 'componentes/iconos';
 
 // --- Páginas: estilos propios de un flujo concreto -----------------------
 @use 'paginas/inscripciones';
