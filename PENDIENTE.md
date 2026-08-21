@@ -4,7 +4,7 @@ Este archivo vive en el repositorio a propósito: se lee desde cualquier máquin
 Lo que hay en él es **estado**, no decisiones — las decisiones están en la §11 de
 `PLAN_IMPLEMENTACION_COCIAP2026.md`.
 
-**Mañana viernes 21 entra el lote grande de inscripciones. El sábado 22 es el
+**Hoy viernes 21 entra el lote grande de inscripciones. Mañana sábado 22 es el
 concurso, con inscripción el mismo día.**
 
 ---
@@ -18,7 +18,7 @@ concurso, con inscripción el mismo día.**
 | Base local | **copia de producción** desde el 20-ago por la noche |
 | PHP servidor | 8.3.30 (consola) |
 | Guía | `DESPLIEGUE.md` · el push a `main` es el despliegue |
-| Banco de pruebas | `docs/protocolo-pruebas.html` — 135 pruebas manuales |
+| Banco de pruebas | `docs/protocolo-pruebas.html` — 137 pruebas manuales |
 
 **La cuenta de hosting está compartida** con `sigacociap.net`, que es el otro
 proyecto del propietario. No se toca ni se lee.
@@ -34,6 +34,10 @@ proyecto del propietario. No se toca ni se lee.
   cobrarían como pública y competirían en la bolsa equivocada, sin ningún aviso.
 - ✅ **43 instituciones cargadas** (22 públicas, 21 privadas); 29 todavía sin
   ningún estudiante, esperando el lote.
+- ✅ **D-51: anular es exclusivo del administrador** (21-ago). La secretaria
+  conserva todo lo demás —registrar, cobrar, corregir, reinscribir, carnés—;
+  solo pierde la anulación, que es la única acción irreversible y la única que
+  mueve dinero al fondo de devoluciones. **Pendiente de desplegar.**
 - ✅ **D-50 implementado, probado, desplegado y aprobado** por el propietario el
   21-ago. Las once pruebas del navegador pasaron en local, la migración se
   ejecutó en Hostinger y `verificar_despliegue.php` sale allá **sin un solo
@@ -89,7 +93,7 @@ hacerlo con el móvil en datos móviles y no en wifi, que es el escenario real.
 
 ---
 
-## Un caso real que hay que resolver a mano
+## Un caso real, ya resuelto (21-ago)
 
 **Los participantes 20 y 21 son el mismo estudiante.**
 
@@ -103,26 +107,25 @@ equivocada y, como entonces no se podía corregir, se volvió a registrar de cer
 en el reingreso el documento salió distinto. `uq_participante_documento` no lo
 detectó porque un dígito cambiado lo convierte en otro documento.
 
-**Con el DNI del chico delante, hay que decidir cuál es el bueno.** La 21 está
-viva y pendiente, así que **ese es el documento que va a ir impreso en su
-carné**.
+El bueno era el `…439`, el que estaba en el registro **anulado**. Y ahí apareció
+el límite: `Participante::porDocumento()` busca en `participantes` **sin mirar el
+estado de la inscripción**, así que el participante 20 seguía ocupando ese
+documento aunque estuviera anulado, y la pantalla rechazaba el cambio
+nombrándolo. Está bien que lo hiciera —dos participantes no pueden compartir
+documento— pero significaba que **desde la interfaz no se podía**.
 
-**Ojo: si el bueno resulta ser el `…439`, D-50 no lo arregla solo.**
-`Participante::porDocumento()` busca en `participantes` sin mirar el estado de
-la inscripción, así que **el participante 20 sigue ocupando ese documento aunque
-esté anulado**, y el sistema rechazará el cambio nombrándolo. Está bien que lo
-haga —dos participantes no pueden compartir documento— pero significa que hay
-que liberarlo primero:
+**Resuelto por consola el 21-ago intercambiando los dos documentos**, dentro de
+una transacción y con respaldo previo: el 21 se quedó con el `…439` y el
+registro fantasma con el `…438`, que es donde debe estar archivado el error. No
+se inventó ningún número ni se borró ninguna fila. El cambio se firmó a mano en
+`correcciones` para que no quedara sin rastro.
 
-- **Sin tocar la base:** «Reinscribir» la 20 → corregirle a ella el documento →
-  volver a anularla → y entonces corregir la 21. Todo desde la pantalla y con
-  firma en cada paso.
-- **A mano:** un `UPDATE` sobre el participante 20, con respaldo antes. Más
-  rápido, pero sin rastro en `correcciones`.
-- **O dejarlo.** En la puerta se busca por código, no por documento, así que un
-  dígito mal no deja a nadie fuera.
+**La lección, por si vuelve a pasar:** un `UPDATE` directo salta la firma que
+D-50 construyó. Si hay que repetirlo, el `INSERT` en `correcciones` va en la
+misma sesión. Y ojo con la transacción: la primera vez no se aplicó nada porque
+faltó el `COMMIT` — al cerrar el cliente, MariaDB revierte.
 
-D-50 **no fusiona** registros: decidir cuál se queda es trabajo humano.
+D-50 **no fusiona** registros: decidir cuál se queda sigue siendo trabajo humano.
 
 ---
 
@@ -197,7 +200,7 @@ sale del sistema, así que es requisito del sábado.**
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 16 suites · 217 comprobaciones, base real
+php scripts/pruebas/todas.php          # 16 suites · 235 comprobaciones, base real
 php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```

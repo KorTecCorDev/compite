@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Concurso;
+use Core\Auth;
 use Core\Sesion;
 use Core\View;
 
@@ -294,15 +295,25 @@ foreach ($inscripciones as $ins) {
                                 <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
                                 <span class="accion__texto">Corregir</span>
                             </a>
-                            <button type="button" class="accion enlace-peligro boton-anular"
-                                    title="Anular definitivamente"
-                                    data-id="<?= (int) $ins['id'] ?>"
-                                    data-nombre="<?= View::e($ins['ap_paterno'] . ' ' . $ins['nombres']) ?>"
-                                    data-pagada="<?= $ins['estado'] === 'confirmada' ? '1' : '0' ?>"
-                                    data-monto="<?= number_format((float) $ins['monto'], 2) ?>">
-                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
-                                <span class="accion__texto">Anular</span>
-                            </button>
+                            <?php
+                            /* Anular es exclusivo del administrador (D-51): es la
+                               única acción irreversible de la fila y la única que
+                               mueve dinero al fondo de devoluciones. La secretaria
+                               no ve el botón, y el controlador además rechaza el
+                               POST — que no se dibuje no es la protección, es la
+                               cortesía de no ofrecer lo que no se puede hacer. */
+                            ?>
+                            <?php if (Auth::esAdministrador()): ?>
+                                <button type="button" class="accion enlace-peligro boton-anular"
+                                        title="Anular definitivamente"
+                                        data-id="<?= (int) $ins['id'] ?>"
+                                        data-nombre="<?= View::e($ins['ap_paterno'] . ' ' . $ins['nombres']) ?>"
+                                        data-pagada="<?= $ins['estado'] === 'confirmada' ? '1' : '0' ?>"
+                                        data-monto="<?= number_format((float) $ins['monto'], 2) ?>">
+                                    <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+                                    <span class="accion__texto">Anular</span>
+                                </button>
+                            <?php endif; ?>
                         <?php endif; ?>
 
                         <?php
@@ -410,12 +421,17 @@ foreach ($inscripciones as $ins) {
     <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
 </form>
 
-<!-- Anulación definitiva: formulario aparte, para que no viaje con el cobro. -->
-<form method="post" id="form-anular" class="oculto"
-      data-url-base="<?= View::e(View::url('/inscripciones/')) ?>">
-    <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
-    <input type="hidden" name="motivo" id="motivo-anulacion">
-</form>
+<!-- Anulación definitiva: formulario aparte, para que no viaje con el cobro.
+     Solo se pinta para el administrador (D-51): sin botones que lo disparen no
+     haría nada, pero dejarlo en el HTML de una secretaria sería ofrecerle el
+     mecanismo de una acción que el servidor le va a rechazar. -->
+<?php if (Auth::esAdministrador()): ?>
+    <form method="post" id="form-anular" class="oculto"
+          data-url-base="<?= View::e(View::url('/inscripciones/')) ?>">
+        <input type="hidden" name="_csrf" value="<?= View::e(Sesion::tokenCsrf()) ?>">
+        <input type="hidden" name="motivo" id="motivo-anulacion">
+    </form>
+<?php endif; ?>
 
 <?php
 /*
@@ -439,10 +455,15 @@ foreach ($inscripciones as $ins) {
         <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
         Corregir
     </li>
-    <li class="leyenda__item leyenda__item--peligro">
-        <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
-        Anular
-    </li>
+    <?php /* La leyenda solo nombra lo que esa persona puede hacer: anunciarle a
+             la secretaria un ícono que no va a encontrar en ninguna fila es
+             mandarla a buscar algo que no existe (D-51). */ ?>
+    <?php if (Auth::esAdministrador()): ?>
+        <li class="leyenda__item leyenda__item--peligro">
+            <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
+            Anular
+        </li>
+    <?php endif; ?>
     <li class="leyenda__item">
         <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-descargar"></use></svg>
         Descargar PDF

@@ -1930,6 +1930,60 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-51 — Anular pasa a ser exclusivo del administrador
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-15, D-39, D-40
+
+Decisión del propietario, la víspera del lote grande: **una secretaria ya no puede anular una
+inscripción**. Conserva todo lo demás — registrar, cobrar, corregir, reinscribir, emitir carnés—;
+lo único que se le quita es la anulación.
+
+**Por qué solo esa acción.** Es la única irreversible de la fila. Saca a un estudiante del concurso
+y, si había pago confirmado, manda su monto al fondo de devoluciones. Y no se deshace: «Reinscribir»
+(D-38) **crea una inscripción nueva**, no revive la anulada, así que una anulación indebida deja
+rastro para siempre y descuadra el fondo mientras nadie la repare. Con dos secretarias trabajando a
+la vez sobre la misma pantalla y con prisa, el coste de un clic equivocado no es simétrico con el
+de las demás acciones.
+
+**Tres piezas, no una:**
+
+1. `AnulacionController::anular()` comprueba el rol **antes de tocar la inscripción** y responde
+   **403**.
+2. El **botón** desaparece de las filas para la secretaria.
+3. El **formulario oculto** `#form-anular` deja de pintarse, y con él su token CSRF y la URL de
+   destino. Esconder solo el botón habría dejado el mecanismo servido en el HTML.
+
+La leyenda de acciones tampoco nombra ya «Anular» para quien no puede hacerlo: anunciarle un ícono
+que no va a encontrar en ninguna fila es mandarla a buscar algo que no existe.
+
+**Por qué no `Auth::exigirAdministrador()`.** Ese método responde «esa sección es exclusiva del
+administrador» y devuelve al panel, que es lo correcto en `/usuarios` o `/instituciones` —secciones
+enteras que la secretaria no pisa (D-40)—. Pero **`/inscripciones` sí es suya**: la usa todo el día.
+Sacarla de ahí diciéndole que no es su sección sería desconcertante y la dejaría lejos de la fila en
+la que estaba. Así que el rechazo es propio: mensaje que nombra la acción, sugerencia de usar
+«Corregir» si solo hay un dato mal escrito, y vuelta **a su fila** con `#ins-{id}`.
+
+**Se rechaza en voz alta, no en silencio.** Es la misma regla que D-50 aplicó a la procedencia: un
+POST ignorado devolvería la pantalla sin decir nada y ella creería que la inscripción quedó anulada
+cuando sigue viva.
+
+**Cómo se prueba lo que no se puede invocar.** El rechazo termina en `redirigir()`, que hace `exit`,
+así que una prueba de consola moriría a mitad. La guarda se comprueba **sobre el código** —que
+exista, que esté antes de cargar la inscripción, que responda 403 y que el mensaje diga que no se
+anuló nada—, con el mismo recurso que `iconos-y-listado-sin-filtrar` usa para vigilar los redirects
+con filtro impuesto. Ocultar el botón es cortesía; la guarda es la protección.
+
+La suite verifica además **lo que NO cambia**: que la secretaria sigue viendo «Corregir», el enlace
+del carné en PDF y la barra de cobro, que «Reinscribir» sigue sin exigir administrador y que
+«Corregir» sigue abierto a los dos roles. Sin esas cuatro, un cambio de permisos podría llevarse por
+delante media pantalla sin que nadie lo notara hasta tener treinta tutores en la puerta.
+
+**Estado:** `frontera-de-roles.php` pasa a **29 comprobaciones**. Se verificó que detectan de verdad
+el fallo saboteando la guarda a propósito: dos comprobaciones se pusieron en rojo, y volvieron a
+verde al restaurarla.
+
+---
+
 ### D-50 — Corregir el registro de participación · sustituye a «Corregir categoría»
 
 **Fecha:** 2026-08-20 / 21 · **Estado:** en producción, **aprobado por el propietario** (21-ago) · **Afecta:** D-01, D-31, D-37, D-38, D-39, D-48

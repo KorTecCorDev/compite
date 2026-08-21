@@ -512,7 +512,7 @@ code, .cod {
         <p class="entradilla">
             Dos partes. Primero la <strong>ruta feliz</strong>: los pasos exactos para meter una
             delegaci&oacute;n completa, con los valores ya escritos para que no tengas que
-            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 135 comprobaciones en
+            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 137 comprobaciones en
             18 bloques, cada una con lo que debe pasar. Marca cada casilla conforme avances.
         </p>
 
@@ -575,7 +575,7 @@ code, .cod {
         </p>
         <p>
             Antes de tocar el navegador, dos comprobaciones que el c&oacute;digo hace solo:
-            <span class="cod">php scripts/pruebas/todas.php</span> (217 comprobaciones) y
+            <span class="cod">php scripts/pruebas/todas.php</span> (235 comprobaciones) y
             <span class="cod">php scripts/medir_responsive.php</span> (48 medidas de ancho y de
             alineaci&oacute;n).
             Si alguna falla, arr&eacute;glala primero y no persigas fantasmas en pantalla.
@@ -1727,7 +1727,7 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu4"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-4</span>
-                    <p class="prueba__texto">En otra inscripci&oacute;n pagada, pulsa el &iacute;cono <strong>Anular</strong> &mdash;el c&iacute;rculo tachado, el &uacute;nico rojo de la fila&mdash; y lee el aviso antes de aceptar.</p>
+                    <p class="prueba__texto"><strong>Como administrador</strong> —desde D-51 la secretaria ya no lo ve—, en otra inscripci&oacute;n pagada pulsa el &iacute;cono <strong>Anular</strong> &mdash;el c&iacute;rculo tachado, el &uacute;nico rojo de la fila&mdash; y lee el aviso antes de aceptar.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
@@ -2206,7 +2206,7 @@ code, .cod {
             <div class="bloque__cabecera">
                 <span class="bloque__clave">ROL</span>
                 <h3 class="bloque__nombre">Lo que la secretaria no debe poder hacer</h3>
-                <span class="bloque__pista">5 pruebas &middot; todas cr&iacute;ticas</span>
+                <span class="bloque__pista">7 pruebas &middot; todas cr&iacute;ticas &middot; 2 nuevas (D-51)</span>
             </div>
 
             <div class="prueba" data-critico="1">
@@ -2267,6 +2267,46 @@ code, .cod {
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
                     <p class="prueba__texto">Dejarla pasar. La necesita para inscribir estudiantes libres.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="rol6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ROL-6</span>
+                    <p class="prueba__texto">Con la sesi&oacute;n de secretaria, abre <span class="cod">/inscripciones</span> y mira la columna de acciones y la leyenda del pie.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">
+                        <strong>No</strong> debe aparecer el &iacute;cono de <strong>Anular</strong> &mdash;el c&iacute;rculo
+                        tachado, el rojo&mdash; en ninguna fila, ni la palabra «Anular» en la leyenda.
+                        Y <strong>s&iacute;</strong> deben seguir ah&iacute;: <strong>Corregir</strong>, el
+                        <strong>PDF</strong> del carn&eacute; y la <strong>barra de cobro</strong>.
+                    </p>
+                    <p class="prueba__porque">D-51 le quita una acci&oacute;n, no la pantalla: es la suya y la usa todo el d&iacute;a. Si desapareciera algo m&aacute;s, el registro se queda sin quien lo haga.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="rol7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">ROL-7</span>
+                    <p class="prueba__texto">
+                        La puerta, no el cartel. Con esa misma sesi&oacute;n, anota el estado de una
+                        inscripci&oacute;n viva y abre la consola del navegador (F12) sobre
+                        <span class="cod">/inscripciones</span>:
+                    </p>
+                    <p class="prueba__texto"><span class="cod">const t = document.querySelector('#form-cobro input[name=_csrf]').value;<br>
+                    fetch('/inscripciones/<strong>ID</strong>/anular', {method:'POST', body:new URLSearchParams({_csrf:t, motivo:'prueba de puerta'})});</span></p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">
+                        Al recargar, esa inscripci&oacute;n debe seguir <strong>viva y con su mismo estado</strong>,
+                        y salir el aviso rojo de que anular es exclusivo del administrador.
+                    </p>
+                    <p class="prueba__porque">Esconder el bot&oacute;n es cortes&iacute;a; esto es la protecci&oacute;n. Y el aviso importa tanto como el bloqueo: si el sistema callara, ella creer&iacute;a que la inscripci&oacute;n qued&oacute; anulada cuando sigue viva.</p>
                 </div>
             </div>
         </div>

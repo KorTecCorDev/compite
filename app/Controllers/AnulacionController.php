@@ -44,6 +44,12 @@ final class AnulacionController extends Controller
 {
     /**
      * Anulación definitiva, sin reinscripción.
+     *
+     * **Exclusiva del administrador** (D-51). Es la acción irreversible del
+     * sistema: saca a un estudiante del concurso y, si había pago confirmado,
+     * manda su monto al fondo de devoluciones. Con varias secretarias
+     * registrando a la vez, una anulación indebida no se deshace — «Reinscribir»
+     * crea una inscripción nueva, no revive la anulada.
      */
     public function anular(string $id): void
     {
@@ -51,6 +57,37 @@ final class AnulacionController extends Controller
         $this->exigirCsrf();
 
         $inscripcionId = (int) $id;
+
+        /*
+         * Se comprueba aquí en vez de con `Auth::exigirAdministrador()` por una
+         * razón de trato: ese método responde «esa sección es exclusiva del
+         * administrador» y devuelve al panel, que es lo correcto para
+         * /usuarios o /instituciones —secciones enteras que la secretaria no
+         * pisa—. Pero /inscripciones **sí es suya**, la usa todo el día. Sacarla
+         * de ella diciéndole que no es su sección sería desconcertante y la
+         * dejaría lejos de la fila en la que estaba trabajando.
+         *
+         * Se rechaza en voz alta y no en silencio: si el POST se ignorara, la
+         * pantalla volvería sin decir nada y ella creería que la inscripción
+         * quedó anulada cuando sigue viva.
+         */
+        if (!Auth::esAdministrador()) {
+            /*
+             * Sin `http_response_code(403)`: no serviría de nada y mentiría al
+             * leerlo. Comprobado sobre PHP 8.2 con el servidor embebido — un
+             * `Location:` posterior **degrada la respuesta a 302** salvo que el
+             * código ya fijado sea 3xx o 201, así que el 403 nunca sale por el
+             * cable. La protección de verdad es que la anulación no se ejecuta
+             * y que se dice por qué.
+             */
+            Sesion::flash(
+                'error',
+                'Anular una inscripción es exclusivo del administrador. No se anuló nada: '
+                . 'pídeselo a él. Si solo hay un dato mal escrito, usa «Corregir».'
+            );
+            $this->redirigir('/inscripciones#ins-' . $inscripcionId);
+        }
+
         $inscripcion   = $this->inscripcionVigenteOFallar($inscripcionId);
 
         $motivo = trim((string) ($_POST['motivo'] ?? ''));
