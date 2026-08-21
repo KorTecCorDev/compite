@@ -15,166 +15,33 @@ use Core\Validador;
 use Throwable;
 
 /**
- * Anulación de inscripciones, en sus dos formas.
+ * Anulación de inscripciones, y la vuelta atrás.
  *
- * Decisión del propietario (2026-08-16): son **dos acciones distintas**, con
- * dos botones distintos, para que la intención quede explícita:
+ * Quedan aquí dos acciones:
  *
- *   1. «Corregir categoría»       → anula y reinscribe en un solo paso.
- *                                    No genera devolución: el dinero se queda.
- *   2. «Anular definitivamente»   → pide motivo y, si había pago confirmado,
- *                                    marca el monto para el fondo de devoluciones.
- *   3. «Reinscribir»              → deshace la anterior. Solo aparece cuando el
- *                                    participante se quedó SIN ninguna inscripción
- *                                    viva, que es cuando queda fuera del concurso.
+ *   1. «Anular definitivamente»  → pide motivo y, si había pago confirmado,
+ *                                   marca el monto para el fondo de devoluciones.
+ *   2. «Reinscribir»             → deshace la anterior. Solo aparece cuando el
+ *                                   participante se quedó SIN ninguna inscripción
+ *                                   viva, que es cuando queda fuera del concurso.
  *
- * Con una sola acción y una casilla «va a reinscribirse», olvidarse de marcarla
- * contaminaría el fondo de devoluciones con montos que nunca se van a devolver.
+ * Son dos botones distintos y no uno con una casilla «va a reinscribirse»
+ * (decisión del propietario, 2026-08-16): olvidarse de marcarla contaminaría el
+ * fondo de devoluciones con montos que nunca se van a devolver.
  *
- * La tercera existe desde el 2026-08-19 (D-38) porque las dos primeras dejaban
- * un callejón sin salida: con el documento único de D-31, un participante cuya
+ * «Reinscribir» existe desde el 2026-08-19 (D-38) porque la anulación dejaba un
+ * callejón sin salida: con el documento único de D-31, un participante cuya
  * única inscripción se anulaba no podía volver a darse de alta —su DNI ya estaba
- * tomado— ni corregirse —«Corregir categoría» rechaza lo anulado—. La única
- * salida era SQL a mano, y eso durante dos días de registro con el tutor delante.
+ * tomado—. La única salida era SQL a mano, y eso durante dos días de registro
+ * con el tutor delante.
+ *
+ * **«Corregir» ya no vive aquí** (D-50, 2026-08-20). Vivía porque anulaba la
+ * inscripción y creaba otra con el grado bueno; ahora corrige en su sitio, con
+ * firma y motivo, y se mudó a `CorreccionController`. Un grado mal apuntado no
+ * es un cambio de historia: es un dato que estaba mal escrito.
  */
 final class AnulacionController extends Controller
 {
-    /**
-     * Formulario de corrección de categoría.
-     */
-    public function formularioCorregir(string $id): void
-    {
-        Auth::exigirSesion();
-
-        $inscripcion = $this->inscripcionVigenteOFallar((int) $id);
-        $concurso    = Concurso::vigente();
-
-        $this->ver('inscripciones.corregir', [
-            'titulo'      => 'Corregir categoría',
-            'inscripcion' => $inscripcion,
-            'categorias'  => Concurso::categorias((int) $concurso['id']),
-            'errores'     => [],
-        ]);
-    }
-
-    /**
-     * Anula la inscripción actual y crea una nueva con la categoría corregida.
-     *
-     * El participante conserva su código correlativo: la corrección vive en la
-     * inscripción, no en el participante (decisión D-01). La inscripción
-     * anulada conserva la categoría errónea, que es justo el rastro que el
-     * futuro módulo de calificación necesitará.
-     */
-    public function corregir(string $id): void
-    {
-        Auth::exigirSesion();
-        $this->exigirCsrf();
-
-        $inscripcionId = (int) $id;
-        $inscripcion   = $this->inscripcionVigenteOFallar($inscripcionId);
-        $concurso      = Concurso::vigente();
-        $concursoId    = (int) $concurso['id'];
-
-        $v = new Validador($_POST);
-        $v->requerido('categoria_id', 'La nueva categoría');
-
-        $categoriaId = (int) $v->limpio('categoria_id');
-
-        if ($categoriaId > 0 && !Concurso::categoriaPertenece($categoriaId, $concursoId)) {
-            $v->fallar('categoria_id', 'La categoría no pertenece a este concurso.');
-        }
-
-        if ($categoriaId === (int) $inscripcion['categoria_id']) {
-            $v->fallar('categoria_id', 'Esa ya es la categoría actual: no hay nada que corregir.');
-        }
-
-        if ($v->tieneErrores()) {
-            $this->ver('inscripciones.corregir', [
-                'titulo'      => 'Corregir categoría',
-                'inscripcion' => $inscripcion,
-                'categorias'  => Concurso::categorias($concursoId),
-                'errores'     => $v->errores(),
-            ]);
-
-            return;
-        }
-
-        $motivo  = trim((string) ($_POST['motivo'] ?? '')) ?: 'Corrección de categoría';
-        $usuario = (int) Auth::id();
-
-        /*
-         * La transacción DEVUELVE el id de la inscripción nueva (D-48). Antes no
-         * devolvía nada porque nadie lo necesitaba: se volvía al listado con
-         * `?q=CÓDIGO` y el filtro se encargaba de enseñar la fila. Ahora se
-         * vuelve a la lista completa y hace falta el id para anclarla.
-         */
-        try {
-            $nuevaId = Database::transaccion(
-                static function () use ($inscripcion, $inscripcionId, $categoriaId, $motivo, $usuario): int {
-                    // esDefinitiva = false: no hay devolución, el dinero se traslada.
-                    Inscripcion::anular($inscripcionId, $motivo, false, $usuario);
-
-                    $nuevaId = Inscripcion::crear([
-                        'participante_id' => (int) $inscripcion['participante_id'],
-                        'categoria_id'    => $categoriaId,
-                        'usuario_id'      => $usuario,
-                        // Se conserva el estado, la modalidad y el monto: si ya
-                        // estaba pagada, la nueva nace pagada. El estudiante no
-                        // paga dos veces por un error de categoría, y corregir
-                        // el grado no puede cambiarle la bolsa en la que compite
-                        // ni la modalidad con la que se le cobró (D-37).
-                        //
-                        // Y con ellos el medio de pago: la nueva nacía pagada
-                        // pero sin decir CÓMO, así que cuadrar la caja al final
-                        // del día dejaba de salir y el código de Yape —la prueba
-                        // de esa transacción— se perdía.
-                        'estado'                => $inscripcion['estado'],
-                        'tipo_origen'           => $inscripcion['tipo_origen'],
-                        'monto'                 => (float) $inscripcion['monto'],
-                        'medio_pago'            => $inscripcion['medio_pago'],
-                        'yape_codigo_seguridad' => $inscripcion['yape_codigo_seguridad'],
-                        'fecha_pago'            => $inscripcion['fecha_pago'],
-                    ]);
-
-                    /*
-                     * El carné se emite para la inscripción NUEVA. El carné
-                     * pertenece a una inscripción concreta, así que la corregida
-                     * nacía confirmada y sin carné: el enlace «PDF» del listado
-                     * respondía «todavía no tiene carné emitido» a un estudiante
-                     * que ya había pagado, y había que acordarse de pulsar
-                     * «Regenerar» a mano.
-                     */
-                    if ($inscripcion['estado'] === 'confirmada') {
-                        Carne::registrar($nuevaId, (string) $inscripcion['codigo_correlativo']);
-                    }
-
-                    return $nuevaId;
-                }
-            );
-        } catch (Throwable $e) {
-            error_log((string) $e);
-            Sesion::flash('error', 'No se pudo corregir la categoría. No se cambió nada.');
-            $this->redirigir('/inscripciones');
-        }
-
-        Sesion::flash(
-            'exito',
-            'Categoría corregida. El participante conserva su código '
-            . $inscripcion['codigo_correlativo'] . '.'
-        );
-
-        /*
-         * Al listado COMPLETO, anclado en la fila corregida (D-48). El `?q=` que
-         * había aquí dejaba la pantalla con dos filas —la anulada y la nueva— y
-         * el resto del concurso escondido detrás de un filtro que nadie eligió.
-         *
-         * Se ancla en la NUEVA, que es la que está vigente y la que se quería
-         * comprobar. El listado ordena por apellido, no por fecha, así que sin
-         * ancla la fila queda enterrada a media tabla.
-         */
-        $this->redirigir('/inscripciones#ins-' . (int) $nuevaId);
-    }
-
     /**
      * Anulación definitiva, sin reinscripción.
      */
@@ -210,9 +77,6 @@ final class AnulacionController extends Controller
     }
 
     /**
-     * @return array<string, mixed>
-     */
-    /**
      * Formulario de reinscripción de un participante que quedó fuera.
      */
     public function formularioReinscribir(string $id): void
@@ -234,8 +98,8 @@ final class AnulacionController extends Controller
      * Devuelve al concurso a un participante cuya única inscripción se anuló.
      *
      * No revive la inscripción anulada: crea una nueva, igual que hace
-     * «Corregir categoría». La anulada se queda donde está, con su motivo, que
-     * es el rastro de lo que pasó.
+     * «Corregir categoría» antes de D-50. La anulada se queda donde está, con
+     * su motivo, que es el rastro de lo que pasó.
      *
      * Si el estudiante **ya había pagado**, la nueva nace confirmada con su
      * mismo medio de pago y con su carné emitido, y el monto sale del fondo de
@@ -282,8 +146,8 @@ final class AnulacionController extends Controller
         $motivo      = trim((string) ($_POST['motivo'] ?? ''));
         $usuario     = (int) Auth::id();
 
-        // Igual que en «Corregir categoría»: la transacción devuelve el id de la
-        // inscripción nueva para poder anclar el listado en ella (D-48).
+        // La transacción devuelve el id de la inscripción nueva para poder
+        // anclar el listado en ella (D-48).
         try {
             $nuevaId = Database::transaccion(
                 static function () use ($inscripcion, $inscripcionId, $categoriaId, $habiaPagado, $motivo, $usuario): int {
@@ -363,7 +227,8 @@ final class AnulacionController extends Controller
             Sesion::flash(
                 'error',
                 'Ese participante ya tiene una inscripción vigente: no hay nada que reinscribir. '
-                . 'Si lo que quieres es cambiarle el grado, usa «Corregir categoría» sobre la vigente.'
+                . 'Si lo que quieres es arreglarle un dato —el grado, el documento, un apellido—, '
+                . 'usa «Corregir» sobre la vigente.'
             );
             $this->redirigir('/inscripciones#ins-' . (int) $activa['id']);
         }

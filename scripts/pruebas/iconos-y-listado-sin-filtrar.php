@@ -85,7 +85,7 @@ $comprobar($rotos === [], 'ningún <use> apunta a un símbolo inexistente');
  * vuelve a verse en la ficha de teléfono. Quitarlo dejaría seis enlaces que un
  * lector de pantalla anuncia como «enlace» a secas.
  */
-foreach (['Corregir categoría', 'Anular', 'PDF', 'Regenerar', 'Reinscribir', 'Ver carné'] as $rotulo) {
+foreach (['Corregir', 'Anular', 'PDF', 'Regenerar', 'Reinscribir', 'Ver carné'] as $rotulo) {
     $comprobar(
         str_contains($html, '<span class="accion__texto">' . $rotulo . '</span>'),
         "«{$rotulo}» sigue en el HTML como rótulo recortado"

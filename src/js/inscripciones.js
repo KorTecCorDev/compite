@@ -69,8 +69,8 @@
                          ' se sumará al fondo de devoluciones.';
             }
 
-            aviso += '\n\nSi solo quieres cambiar la categoría, cancela y usa ' +
-                     '«Corregir categoría»: así conserva su pago y su código.' +
+            aviso += '\n\nSi solo hay un dato mal escrito —el grado, el documento, un apellido—, ' +
+                     'cancela y usa «Corregir»: lo arregla sin anular y sin mover el pago.' +
                      '\n\nMotivo de la anulación:';
 
             const motivo = window.prompt(aviso, '');

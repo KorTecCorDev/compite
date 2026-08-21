@@ -336,3 +336,46 @@ CREATE TABLE carnes (
     CONSTRAINT fk_carne_inscripcion
         FOREIGN KEY (inscripcion_id) REFERENCES inscripciones(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ---------------------------------------------------------------------
+-- Registro de correcciones del participante y su inscripción (D-50).
+--
+-- Existe porque `participantes` era la única mutación del sistema sin firma:
+-- el modelo solo sabía `crear()`, así que un DNI mal tecleado no se podía
+-- arreglar y la salida era anular y volver a registrar. Eso duplica personas
+-- —pasó de verdad el 20-ago— y no deja constancia de quién cambió qué.
+--
+-- campo: con espacio de nombres (`participante.dni`, `inscripcion.categoria_id`),
+--   para que una sola tabla cubra las dos entidades sin renunciar a la FK real
+--   sobre el participante.
+-- anterior / nuevo: el texto LEGIBLE, no el id. Un registro de auditoría tiene
+--   que poder leerse sin unirlo a tablas que pueden haber cambiado después.
+-- lote: agrupa todos los campos corregidos en un mismo envío del formulario.
+-- inscripcion_id: nulable a propósito. Los datos del estudiante son del
+--   participante, no de una inscripción concreta.
+--
+-- Nada se borra aquí: las inscripciones se anulan y los usuarios se desactivan,
+-- justamente para que estas referencias sigan resolviendo dentro de un año.
+-- ---------------------------------------------------------------------
+CREATE TABLE correcciones (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    participante_id INT UNSIGNED NOT NULL,
+    inscripcion_id INT UNSIGNED NULL,
+    lote CHAR(32) NOT NULL,
+    campo VARCHAR(40) NOT NULL,
+    anterior VARCHAR(255) NULL,
+    nuevo VARCHAR(255) NULL,
+    motivo VARCHAR(250) NOT NULL,
+    usuario_id INT UNSIGNED NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_correccion_participante
+        FOREIGN KEY (participante_id) REFERENCES participantes(id),
+    CONSTRAINT fk_correccion_inscripcion
+        FOREIGN KEY (inscripcion_id) REFERENCES inscripciones(id),
+    CONSTRAINT fk_correccion_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id),
+    INDEX idx_correccion_inscripcion (inscripcion_id),
+    INDEX idx_correccion_participante (participante_id),
+    INDEX idx_correccion_lote (lote)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

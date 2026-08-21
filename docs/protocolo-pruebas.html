@@ -512,7 +512,7 @@ code, .cod {
         <p class="entradilla">
             Dos partes. Primero la <strong>ruta feliz</strong>: los pasos exactos para meter una
             delegaci&oacute;n completa, con los valores ya escritos para que no tengas que
-            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 126 comprobaciones en
+            inventarlos. Despu&eacute;s el <strong>banco de pruebas</strong>: 135 comprobaciones en
             18 bloques, cada una con lo que debe pasar. Marca cada casilla conforme avances.
         </p>
 
@@ -575,7 +575,7 @@ code, .cod {
         </p>
         <p>
             Antes de tocar el navegador, dos comprobaciones que el c&oacute;digo hace solo:
-            <span class="cod">php scripts/pruebas/todas.php</span> (171 comprobaciones) y
+            <span class="cod">php scripts/pruebas/todas.php</span> (217 comprobaciones) y
             <span class="cod">php scripts/medir_responsive.php</span> (48 medidas de ancho y de
             alineaci&oacute;n).
             Si alguna falla, arr&eacute;glala primero y no persigas fantasmas en pantalla.
@@ -1690,11 +1690,11 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu1"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-1</span>
-                    <p class="prueba__texto">En una inscripci&oacute;n <strong>ya pagada</strong>, pulsa el &iacute;cono <strong>Corregir categor&iacute;a</strong> &mdash;el l&aacute;piz&mdash; y anota su c&oacute;digo antes de seguir.</p>
+                    <p class="prueba__texto">En una inscripci&oacute;n <strong>ya pagada</strong>, pulsa el l&aacute;piz &mdash;<strong>Corregir</strong>&mdash;. Anota su c&oacute;digo <strong>y el recaudado</strong> que muestra la barra de arriba antes de seguir.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">La pantalla debe explicarte por adelantado qu&eacute; va a pasar, incluido que la nueva nace <strong>pagada</strong>.</p>
+                    <p class="prueba__texto">La pantalla debe explicarte por adelantado qu&eacute; va a pasar: que se corrige <strong>en la misma inscripci&oacute;n</strong>, que conserva su estado y su carn&eacute;, y que ya <strong>no</strong> se anula ni se reinscribe.</p>
                 </div>
             </div>
 
@@ -1702,12 +1702,12 @@ code, .cod {
                 <div class="prueba__marca"><input type="checkbox" data-id="anu2"></div>
                 <div class="prueba__accion">
                     <span class="prueba__id">ANU-2</span>
-                    <p class="prueba__texto">Cambia la categor&iacute;a a otra y confirma.</p>
+                    <p class="prueba__texto">Cambia la categor&iacute;a a otra, escribe el motivo y guarda.</p>
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">El participante conserva <strong>el mismo c&oacute;digo</strong>, la nueva inscripci&oacute;n sale confirmada y <strong>el recaudado no cambia</strong>.</p>
-                    <p class="prueba__porque">Nadie paga dos veces porque el colegio inform&oacute; mal el grado.</p>
+                    <p class="prueba__texto">El participante conserva <strong>el mismo c&oacute;digo</strong>, la inscripci&oacute;n sigue confirmada, <strong>no aparece ninguna fila anulada nueva</strong> y <strong>el recaudado no cambia</strong>.</p>
+                    <p class="prueba__porque">Nadie paga dos veces porque el colegio inform&oacute; mal el grado. Y hasta D-50 esto dejaba una anulada de propina en cada correcci&oacute;n: si ves una, algo volvi&oacute; al flujo viejo.</p>
                 </div>
             </div>
 
@@ -1731,7 +1731,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Advertirte del monto que ir&aacute; al fondo de devoluciones y recordarte que existe &laquo;Corregir categor&iacute;a&raquo;.</p>
+                    <p class="prueba__texto">Advertirte del monto que ir&aacute; al fondo de devoluciones y recordarte que, si solo hay un dato mal escrito, existe &laquo;Corregir&raquo;.</p>
                 </div>
             </div>
 
@@ -2049,7 +2049,7 @@ code, .cod {
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
                     <p class="prueba__texto">Su fila anulada debe ofrecer el &iacute;cono <strong>Reinscribir</strong> (persona con un m&aacute;s).</p>
-                    <p class="prueba__porque">Antes ese estudiante quedaba atrapado: su documento ya exist&iacute;a y «Corregir categor&iacute;a» rechaza lo anulado.</p>
+                    <p class="prueba__porque">Antes ese estudiante quedaba atrapado: su documento ya exist&iacute;a y corregir rechaza lo anulado &mdash;sigue rechaz&aacute;ndolo con D-50, y por eso «Reinscribir» es el primer paso&mdash;.</p>
                 </div>
             </div>
 
@@ -2340,7 +2340,7 @@ code, .cod {
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
                     <p class="prueba__texto">Cada uno saca su globo con el nombre. El de <strong>Anular</strong> es el &uacute;nico rojo, y es un c&iacute;rculo tachado, no un tacho de basura.</p>
-                    <p class="prueba__porque">Anular es irreversible y mueve dinero al fondo de devoluciones, y queda pegada a «Corregir categor&iacute;a», que es inofensiva. Un tacho, adem&aacute;s, se leer&iacute;a como un borrado: la fila anulada se queda en el listado.</p>
+                    <p class="prueba__porque">Anular es irreversible y mueve dinero al fondo de devoluciones, y queda pegada a «Corregir», que es inofensiva. Un tacho, adem&aacute;s, se leer&iacute;a como un borrado: la fila anulada se queda en el listado.</p>
                 </div>
             </div>
 
@@ -2365,7 +2365,7 @@ code, .cod {
                 </div>
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
-                    <p class="prueba__texto">Ah&iacute; el texto <strong>vuelve</strong>: «Corregir categor&iacute;a», «Anular», «PDF»&hellip; al lado de su &iacute;cono.</p>
+                    <p class="prueba__texto">Ah&iacute; el texto <strong>vuelve</strong>: «Corregir», «Anular», «PDF»&hellip; al lado de su &iacute;cono.</p>
                     <p class="prueba__porque">En la ficha hay ancho de sobra, y cuatro dibujos sueltos sin columnas vecinas se identifican peor que en el escritorio.</p>
                 </div>
             </div>
@@ -2460,6 +2460,116 @@ code, .cod {
                 <div class="prueba__espera">
                     <span class="prueba__rotulo">Debe</span>
                     <p class="prueba__texto">La tabla debe entrar <strong>completa</strong>, sin arrastrarla, y la barra superior debe llegar de lado a lado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bloque">
+            <div class="bloque__cabecera">
+                <span class="bloque__clave">COR</span>
+                <h3 class="bloque__nombre">Corregir el registro de un participante</h3>
+                <span class="bloque__pista">8 pruebas &middot; bloque nuevo (D-50)</span>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor1"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-1</span>
+                    <p class="prueba__texto">En una inscripci&oacute;n <strong>pendiente</strong>, pulsa el l&aacute;piz. Cambia un d&iacute;gito del documento, escribe un motivo y guarda.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Volver al listado con el aviso de corregido, y la fila debe mostrar el documento nuevo <strong>conservando su mismo c&oacute;digo</strong>. <strong>No</strong> debe aparecer ninguna fila anulada.</p>
+                    <p class="prueba__porque">Antes de D-50 esto era imposible: hab&iacute;a que anular y volver a registrar, y as&iacute; naci&oacute; un estudiante duplicado con dos documentos distintos.</p>
+                </div>
+            </div>
+
+            <div class="prueba">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor2"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-2</span>
+                    <p class="prueba__texto">Vuelve a entrar a corregir esa misma inscripci&oacute;n y mira el pie de la pantalla.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Aparecer <strong>Correcciones anteriores</strong> con el documento viejo, el nuevo, el motivo, la fecha y <strong>tu nombre</strong>.</p>
+                    <p class="prueba__porque">Con varias secretarias a la vez, es lo que evita que la segunda corrija encima de una correcci&oacute;n buena.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor3"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-3</span>
+                    <p class="prueba__texto">Intenta guardar una correcci&oacute;n <strong>dejando el motivo vac&iacute;o</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo y no cambiar nada.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor4"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-4</span>
+                    <p class="prueba__texto">Corrige el documento de un estudiante pon&iacute;endole <strong>el documento de otro que ya est&aacute; inscrito</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Rechazarlo diciendo <strong>de qui&eacute;n es</strong> ese documento y su c&oacute;digo, para que puedas ir a verlo.</p>
+                    <p class="prueba__porque">El caso real no es un tecleo cualquiera: suele ser la <strong>misma persona registrada dos veces</strong>. El sistema no las fusiona; te dice cu&aacute;l es la otra para que decidas t&uacute;.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor5"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-5</span>
+                    <p class="prueba__texto">Corrige el <strong>grado</strong> de una inscripci&oacute;n <strong>ya pagada, con carn&eacute; emitido</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Seguir pagada, con el <strong>mismo carn&eacute;</strong> y el mismo c&oacute;digo. El aviso debe recordarte que <strong>el carn&eacute; impreso qued&oacute; viejo</strong> y hay que reimprimirlo. Desc&aacute;rgalo: el PDF debe salir ya con el grado nuevo, sin pulsar «Regenerar».</p>
+                    <p class="prueba__porque">El PDF se genera al vuelo (D-24), as&iacute; que el papel es lo &uacute;nico que queda desactualizado.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor6"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-6</span>
+                    <p class="prueba__texto">Como <strong>administrador</strong>, en una inscripci&oacute;n <strong>pendiente</strong> de un colegio p&uacute;blico, c&aacute;mbiale la instituci&oacute;n a un colegio <strong>privado</strong>.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Cambiar la modalidad <strong>y el monto por cobrar</strong>, de S/&nbsp;10.00 a S/&nbsp;15.00.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor7"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-7</span>
+                    <p class="prueba__texto">Intenta lo mismo en una <strong>ya pagada</strong>: de un colegio privado (S/&nbsp;15) a uno p&uacute;blico (S/&nbsp;10).</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto"><strong>Bloquearlo</strong>, diciendo los dos importes y que hay que anular y volver a registrar. Prueba ahora de privado a <strong>libre</strong>: eso <strong>s&iacute;</strong> debe pasar, porque cuestan lo mismo, y el monto cobrado no debe moverse.</p>
+                    <p class="prueba__porque">La regla compara importes, no nombres de modalidad: el d&iacute;a que una tarifa cambie, se ajusta sola.</p>
+                </div>
+            </div>
+
+            <div class="prueba" data-critico="1">
+                <div class="prueba__marca"><input type="checkbox" data-id="cor8"></div>
+                <div class="prueba__accion">
+                    <span class="prueba__id">COR-8</span>
+                    <p class="prueba__texto">Entra con una cuenta de <strong>secretaria</strong> y abre la misma pantalla de corregir.</p>
+                </div>
+                <div class="prueba__espera">
+                    <span class="prueba__rotulo">Debe</span>
+                    <p class="prueba__texto">Ver los datos del estudiante y el grado, y <strong>no ver el bloque de Procedencia</strong>. Comprueba tambi&eacute;n que <strong>s&iacute;</strong> puede corregir un documento: eso es de los dos roles.</p>
+                    <p class="prueba__porque">La procedencia decide la tarifa y la bolsa en la que se compite. Corregir un documento mal tecleado, en cambio, tiene que poder hacerlo quien lo est&aacute; tecleando.</p>
                 </div>
             </div>
         </div>

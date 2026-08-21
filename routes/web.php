@@ -16,6 +16,7 @@ use App\Controllers\ApoderadoController;
 use App\Controllers\AuthController;
 use App\Controllers\CarneController;
 use App\Controllers\ControlController;
+use App\Controllers\CorreccionController;
 use App\Controllers\InscripcionController;
 use App\Controllers\InstitucionController;
 use App\Controllers\PagoController;
@@ -82,8 +83,12 @@ $router->get('/api/participantes/verificar', [InscripcionController::class, 'ver
 $router->post('/pagos/confirmar', [PagoController::class, 'confirmar']);
 $router->post('/inscripciones/{id}/carne/regenerar', [PagoController::class, 'regenerarCarne']);
 
-$router->get('/inscripciones/{id}/corregir', [AnulacionController::class, 'formularioCorregir']);
-$router->post('/inscripciones/{id}/corregir', [AnulacionController::class, 'corregir']);
+// Corregir el registro de participación (D-50). La ruta es la misma de
+// siempre, pero ya NO vive en AnulacionController: la acción dejó de anular
+// nada, ahora es un UPDATE firmado en `correcciones`.
+$router->get('/inscripciones/{id}/corregir', [CorreccionController::class, 'formulario']);
+$router->post('/inscripciones/{id}/corregir', [CorreccionController::class, 'guardar']);
+
 $router->post('/inscripciones/{id}/anular', [AnulacionController::class, 'anular']);
 
 // Reinscribir: solo desde una anulada cuyo participante se quedó sin ninguna

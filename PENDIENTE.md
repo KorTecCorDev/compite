@@ -1,12 +1,11 @@
-# Punto de retomada — 20 de agosto de 2026, tarde
+# Punto de retomada — 21 de agosto de 2026, madrugada
 
 Este archivo vive en el repositorio a propósito: se lee desde cualquier máquina.
 Lo que hay en él es **estado**, no decisiones — las decisiones están en la §11 de
 `PLAN_IMPLEMENTACION_COCIAP2026.md`.
 
-**El sistema está desplegado y `php scripts/verificar_despliegue.php` sale con
-cero fallos.** Falta lo que solo se puede hacer desde el navegador y una decisión
-sobre el dominio.
+**Mañana viernes 21 entra el lote grande de inscripciones. El sábado 22 es el
+concurso, con inscripción el mismo día.**
 
 ---
 
@@ -15,105 +14,104 @@ sobre el dominio.
 | | |
 |---|---|
 | Producción | `~/domains/palegoldenrod-gorilla-440933.hostingersite.com/public_html` |
-| Base | `u761410128_compite` · MariaDB 11.8.8 · creada con `schema.sql` + `seed.sql` |
+| Base | `u761410128_compite` · MariaDB 11.8.8 |
+| Base local | **copia de producción** desde el 20-ago por la noche |
 | PHP servidor | 8.3.30 (consola) |
-| Último commit desplegado | mirar con `git log --oneline -1` dentro de esa carpeta |
-| Guía | `DESPLIEGUE.md` |
-| Banco de pruebas | `docs/protocolo-pruebas.html`, publicado como Artifact privado |
+| Guía | `DESPLIEGUE.md` · el push a `main` es el despliegue |
+| Banco de pruebas | `docs/protocolo-pruebas.html` — 135 pruebas manuales |
 
 **La cuenta de hosting está compartida** con `sigacociap.net`, que es el otro
 proyecto del propietario. No se toca ni se lee.
 
 ---
 
+## Ya no son pendientes (verificado el 20-ago en los datos reales)
+
+- ✅ **Contraseñas correctas**, confirmado por el propietario.
+- ✅ **Las dos secretarias existen**: Tatiana Villar y Maritza Jara.
+- ✅ **I.E. anfitriona de alta y enlazada**: `IE COCIAP` (id 1), con
+  `organizaciones.institucion_id = 1`. Sin ese enlace sus estudiantes se
+  cobrarían como pública y competirían en la bolsa equivocada, sin ningún aviso.
+- ✅ **43 instituciones cargadas** (22 públicas, 21 privadas); 29 todavía sin
+  ningún estudiante, esperando el lote.
+- ✅ **D-50 implementado y probado** — ver abajo.
+
+---
+
 ## Lo que falta, en orden
 
-1. **Cambiar la contraseña del administrador.** Se creó con una contraseña que
-   quedó visible en la consola. `/usuarios` → tu fila → *Editar / contraseña*.
-2. **Crear las secretarias** en `/usuarios`.
-3. **Dar de alta la I.E. anfitriona** en `/instituciones` y marcarla con papel
-   **«Anfitriona»**. Sin esa marca, sus estudiantes se cobran como pública y
-   compiten en la bolsa equivocada, **sin ningún aviso**.
-4. **Correr `DEP-1` a `DEP-6`** del banco de pruebas, sobre el servidor.
-5. **Entonces** abrir el registro.
+1. **Desplegar D-50** y correr `php scripts/verificar_despliegue.php` en el
+   servidor. La tabla `correcciones` es nueva: **la migración hay que ejecutarla
+   allá a mano**, `database/migraciones/2026-08-20-correcciones.sql`. Estar
+   versionada no la ejecuta en ningún lado.
+2. **Correr `COR-1` a `COR-8`** del banco de pruebas sobre el servidor, que es
+   el bloque nuevo de D-50.
+3. **Correr `DEP-1` a `DEP-6`**, incluido el respaldo.
+4. **`DEP-4` decide el dominio.** El subdominio provisional tiene 46 caracteres
+   y empuja el QR a **0.415 mm por módulo**, por debajo del mínimo de 0.50 que
+   el sistema exige. Imprime un carné y escanéalo: si engancha rápido, se sigue
+   así; si cuesta, hace falta un dominio corto **antes de imprimir en serie**. La
+   puerta no depende del QR —`/control` busca por código tecleado—, pero el
+   margen se pierde justo donde no sobra.
+5. **Respaldo antes de abrir el registro.** Ya no protege datos de prueba: hay
+   cobros reales dentro y el `mysqldump` es manual.
 
 ---
 
-## Una decisión abierta, ya medida
+## Un caso real que hay que resolver a mano
 
-El subdominio provisional tiene 46 caracteres, y eso entra dentro del QR:
+**Los participantes 20 y 21 son el mismo estudiante.**
 
-| Dominio | Módulos | Por módulo | |
-|---|---|---|---|
-| `palegoldenrod-gorilla-440933.hostingersite.com` | 41 × 41 | **0.415 mm** | por debajo del mínimo |
-| Uno propio corto | 33 × 33 | 0.500 mm | correcto |
+| id | Documento | Estado |
+|---|---|---|
+| 20 | `61880439` | anulada, libre |
+| 21 | `61880438` | **pendiente de cobro**, delegación (I.E. 34) |
 
-El sistema fija **0.50 mm por módulo** como densidad mínima y deja un aviso en el
-log por cada carné que baje de ahí. El carné se genera igual y un QR apretado se
-lee en muchos teléfonos, pero con menos margen justo donde no sobra: en la
-puerta, con prisa y con la luz que haya.
+Mismo nombre completo, un dígito de diferencia. El 20 se anuló por institución
+equivocada y, como entonces no se podía corregir, se volvió a registrar de cero;
+en el reingreso el documento salió distinto. `uq_participante_documento` no lo
+detectó porque un dígito cambiado lo convierte en otro documento.
 
-**`DEP-4` decide**: imprimir un carné y escanear su QR con el móvil. Si engancha
-rápido, se sigue así. Si cuesta, hace falta un dominio corto antes de imprimir en
-serie.
+**Con el DNI del chico delante, hay que decidir cuál es el bueno.** La 21 está
+viva y pendiente, así que **ese es el documento que va a ir impreso en su
+carné**: si el correcto es el `…439`, hay que corregirlo antes de imprimir.
+Ahora ya se puede, sin anular nada.
 
-Pase lo que pase, **la puerta no depende del QR**: `/control` busca por código
-tecleado, y el correlativo va impreso en grande en el carné.
-
----
-
-## LO INMEDIATO: D-50 — corregir el registro de participación
-
-**Es lo siguiente que se implementa, antes de los reportes Excel.** El plan
-detallado lo guardó el propietario aparte; aquí queda lo que no puede perderse.
-
-**El agujero.** `Participante` solo tiene `crear()`: no existe ninguna forma de
-corregir el DNI, los apellidos, los nombres ni la institución de un estudiante
-mal registrado. Hoy solo se puede cambiar el grado, y por un camino que anula y
-reinscribe. Salió al intentar arreglar un DNI mal tecleado.
-
-**Cuatro decisiones ya tomadas por el propietario (20 ago):**
-
-1. **Un solo formulario** con datos del estudiante + grado + procedencia + motivo
-   obligatorio, en `/inscripciones/{id}/corregir`.
-2. **Tabla `correcciones`** con valor anterior legible, motivo, firma y lote —
-   `participantes` es hoy la única mutación del sistema sin firma, contra D-39.
-3. **La corrección de grado deja de anular y reinscribir**: pasa a ser un
-   `UPDATE` registrado. La inscripción conserva su id y su carné, y el listado
-   deja de mostrar dos filas por corrección.
-4. **Cambiar procedencia:** permitido si está pendiente; si está pagada, **solo
-   si la tarifa nueva es igual a la actual**, comparando valores en tiempo de
-   ejecución y no grupos escritos a mano (D-37 avisó de que la tarifa COCIAP
-   puede cambiar). Con las tarifas de hoy: `publica ↔ organizadora` y
-   `privada ↔ libre` pasan aun pagadas; cualquier cruce se bloquea.
-   Convertir libre ↔ delegación entra, en ambos sentidos.
-5. **Permisos:** datos y grado, ambos roles. **Procedencia, solo administrador**,
-   rechazando el POST y no ignorándolo en silencio.
-
-**Cinco preguntas que quedaron SIN responder** y que hay que resolver antes de
-escribir código:
-
-1. ¿Convertir libre ↔ delegación es también solo-administrador?
-2. ¿Las 2 anuladas de correcciones previas que hay en la base se quedan como
-   historia mixta?
-3. ¿Hace falta una pantalla para **ver** el historial de correcciones, o basta
-   con guardarlo? Cambia el tamaño del trabajo de forma notable.
-4. ¿«Corregir» aparece también en filas anuladas? Hoy no, y entonces un DNI mal
-   escrito en alguien anulado **no se puede arreglar** y viaja con él al
-   reinscribirlo.
-5. Al pasar de delegación a libre, ¿se reutiliza el buscador de apoderado por
-   DNI de la pantalla de estudiante libre?
-
-**Lo que arrastra:** `AnulacionController::corregir()` deja de tener sentido ahí
-—la acción ya no anula— y pasa a un `CorreccionController`. El redirect vuelve a
-`#ins-{$id}`, porque la inscripción conserva su id. Y hay que corregir el
-comentario del listado que dice que cada corrección deja una anulada detrás.
+D-50 **no fusiona** los dos registros: si intentas ponerle a uno el documento
+del otro, te lo rechaza nombrándolo con su código. Decidir cuál se queda es
+trabajo humano.
 
 ---
 
-## Después de D-50: los reportes Excel (Fase 5)
+## D-50 — hecho el 20/21 de agosto
 
-Analizado el 20 ago, **sin empezar**. Lo que no se puede perder de ese análisis:
+`/inscripciones/{id}/corregir` corrige **en su sitio**, sin anular ni
+reinscribir, y firma qué cambió, quién y por qué en la tabla `correcciones`.
+
+- **Datos del estudiante y grado:** ambos roles.
+- **Procedencia** (delegación ↔ libre, institución, apoderado): **solo
+  administrador**, y el POST se rechaza si llega de una secretaria en vez de
+  ignorarse en silencio.
+- **Pagada:** la procedencia solo cambia si la tarifa nueva **cuesta lo mismo**.
+  Compara importes en ejecución, no nombres de modalidad, así que el día que una
+  tarifa se mueva la regla se ajusta sola.
+- **El historial se ve en la propia pantalla** de corrección, sin pantalla de
+  auditoría aparte.
+- **En anuladas no se corrige:** se usa «Reinscribir» y se corrige después sobre
+  la fila viva, que trabaja sobre el mismo participante.
+- **El carné no hay que regenerarlo** —el PDF se genera al vuelo—, pero el papel
+  ya impreso queda viejo y el aviso de éxito lo dice.
+
+Detalle a vigilar, sin urgencia: `IE COCIAP` figura con `tipo = 'privada'`. Hoy
+es inocuo, porque como anfitriona resuelve a `organizadora` y cobra S/ 10.00.
+Si alguna vez se desenlazara, pasaría a cobrar S/ 15.00.
+
+---
+
+## LO SIGUIENTE: los reportes Excel (Fase 5)
+
+**Ya no es deuda aplazada: el propietario confirmó que el acta de los jurados
+sale del sistema, así que es requisito del sábado.**
 
 - **La bolsa de competencia NO es la modalidad.** D-37 fija tres bolsas por
   nivel+grado: `privada + libre` juntos, `publica`, `organizadora`. Agrupar por
@@ -129,6 +127,8 @@ Analizado el 20 ago, **sin empezar**. Lo que no se puede perder de ese análisis
   descubrirlo en la premiación es mucho peor.
 - `vendor/` no viaja con el autodeploy. **Verificar que PhpSpreadsheet esté
   instalado en el servidor** antes, no después: allí los errores no se ven.
+- La **pantalla del fondo de devoluciones** sigue sin existir. El cálculo ya
+  está en `Inscripcion::fondoDevoluciones()`; le faltan la vista y la ruta.
 
 ---
 
@@ -136,25 +136,26 @@ Analizado el 20 ago, **sin empezar**. Lo que no se puede perder de ese análisis
 
 - **Sin respaldo automático.** El `mysqldump` está documentado en
   `DESPLIEGUE.md` y es manual. Es la única red sobre el dinero cobrado.
-- **Sin reportes (Fase 5).** `Inscripcion::fondoDevoluciones()` existe en el
-  modelo, pero no hay pantalla ni exportación a Excel. No bloquea el registro;
-  sí bloqueará el descargo cuando dirección lo pida. Ya analizado — ver arriba.
-- **Sin bitácora general.** Se firma quién registra, quién cobra y quién anula
-  una inscripción, pero no quién crea o edita instituciones y apoderados.
+- **Sin bitácora general.** Se firma quién registra, quién cobra, quién anula y
+  —desde D-50— quién corrige. No, en cambio, quién crea o edita instituciones y
+  apoderados.
 - **Sin `/perfil`.** Las contraseñas solo las cambia el administrador desde
   `/usuarios`.
 - **Un solo inquilino.** Dar de alta una segunda organización mezcla apoderados
   y colegios. Antes hay que resolver P-05 y P-07, en ese orden.
 - **Sin tabla de migraciones aplicadas.** `verificar_despliegue.php` lo sustituye
-  comprobando el esquema columna por columna, que resuelve el síntoma.
+  comprobando el esquema columna por columna.
+- **Dos suites frágiles.** `firmas-y-usuarios` y `reinscribir` buscan «la
+  primera inscripción pendiente». Hoy pasan porque quedan dos por cobrar;
+  **volverán a fallar solas cuando se cobren**, sin que nadie toque el código.
 
 ---
 
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 171 comprobaciones, base real, no dejan nada
-php scripts/medir_responsive.php       # 6 pantallas × 8 anchos: desborde y alineación
+php scripts/pruebas/todas.php          # 16 suites · 217 comprobaciones, base real
+php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```
 

@@ -16,8 +16,9 @@ use RuntimeException;
  * es obligatorio en la ficha oficial, pero no identifica el registro.
  *
  * `categoria_id` NO vive aquí: se movió a `inscripciones` (decisión D-01),
- * para que "anular y reinscribir" pueda corregir la categoría conservando el
- * código del estudiante.
+ * para que corregir la categoría no obligue a tocar al participante ni a su
+ * código. Desde D-50 esa corrección es además un UPDATE en su sitio, y no un
+ * anular y reinscribir.
  */
 final class Participante
 {
@@ -93,6 +94,62 @@ final class Participante
         );
 
         return $id;
+    }
+
+    /**
+     * Columnas que una corrección puede tocar (D-50).
+     *
+     * Es una lista blanca, no una comodidad: `codigo_correlativo` y
+     * `concurso_id` quedan FUERA a propósito. El código va impreso en carnés
+     * que ya están en manos de los estudiantes y es lo que la mesa de la puerta
+     * teclea; cambiarlo invalidaría papel ya entregado. El concurso no se
+     * corrige, se inscribe en otro.
+     */
+    public const CORREGIBLES = [
+        'dni', 'ap_paterno', 'ap_materno', 'nombres',
+        'institucion_id', 'apoderado_id', 'tipo_participante',
+    ];
+
+    /**
+     * Actualiza los campos indicados y solo esos.
+     *
+     * El modelo no tenía ninguna escritura salvo `crear()`: ese era el hueco de
+     * fondo de D-50. Un DNI mal tecleado obligaba a anular y volver a
+     * registrar, y en el reingreso a mano el documento podía salir distinto
+     * otra vez — que es exactamente lo que ocurrió con el participante 20 y el
+     * 21 de la base real.
+     *
+     * Se actualiza SOLO lo que viene en `$datos`. Una clave ausente deja su
+     * columna intacta, así que corregir el DNI no puede borrar la institución
+     * por el camino. Es la misma regla que `Apoderado::actualizar()` aplica al
+     * correo, por la misma razón.
+     *
+     * @param array<string, mixed> $datos
+     */
+    public static function actualizar(int $id, array $datos): void
+    {
+        $desconocidas = array_diff(array_keys($datos), self::CORREGIBLES);
+
+        if ($desconocidas !== []) {
+            throw new RuntimeException(
+                'Campos no corregibles en un participante: ' . implode(', ', $desconocidas) . '.'
+            );
+        }
+
+        if ($datos === []) {
+            return;
+        }
+
+        $asignaciones = [];
+
+        foreach (array_keys($datos) as $columna) {
+            $asignaciones[] = "{$columna} = :{$columna}";
+        }
+
+        Database::ejecutar(
+            'UPDATE participantes SET ' . implode(', ', $asignaciones) . ' WHERE id = :id',
+            $datos + ['id' => $id]
+        );
     }
 
     /**

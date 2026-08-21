@@ -1930,6 +1930,128 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-50 — Corregir el registro de participación · sustituye a «Corregir categoría»
+
+**Fecha:** 2026-08-20 / 21 · **Estado:** implementado y probado · **Afecta:** D-01, D-31, D-37, D-38, D-39, D-48
+
+**El agujero.** `Participante` solo tenía `crear()`. No existía ninguna forma de corregir el
+documento, los apellidos, los nombres ni la institución de un estudiante mal registrado: lo único
+corregible era el grado, y por un camino que **anulaba y reinscribía**. Además, `participantes` era
+la **única mutación del sistema sin firma**, contra D-39.
+
+Salió al intentar arreglar un DNI mal tecleado, y el daño ya estaba en la base cuando se buscó:
+
+> Los participantes **20 y 21 son el mismo estudiante**. Mismo nombre completo, documentos
+> `61880439` y `61880438` —un dígito de diferencia—. El 20 se anuló por institución equivocada
+> («debe participar en el SAM Yungar») y, como no se podía corregir, se volvió a registrar de cero.
+> En el reingreso a mano el documento salió distinto, y `uq_participante_documento` no lo detectó
+> porque un dígito cambiado lo convierte, técnicamente, en otro documento.
+
+Ese es el coste real de no poder corregir: no es incomodidad, es **una persona duplicada con dos
+identidades**, un correlativo consumido y una anulada de adorno en el listado.
+
+#### Qué se puede corregir, y quién
+
+| Bloque | Campos | Quién |
+|---|---|---|
+| Datos del estudiante | documento, ap. paterno, ap. materno, nombres | ambos roles |
+| Grado | categoría | ambos roles |
+| Procedencia | delegación ↔ libre, institución, apoderado si pasa a libre | **solo administrador** |
+| Motivo | texto **obligatorio** | siempre |
+
+Queda **fuera** a propósito: `codigo_correlativo` —va impreso en carnés que ya están en la mochila
+de un niño y es lo que se teclea en la puerta—, el flujo de caja —estado, medio, fecha, código de
+Yape: eso se cobra o se anula, no se corrige— y `tipo_origen`/`monto` a mano, que se derivan de la
+procedencia. Poder escribirlos sueltos es justo lo que permitía que el carné dijera «privada»
+mientras la caja decía S/ 10.00.
+
+#### La regla del cambio de procedencia
+
+Vive en `Inscripcion::cambioDeProcedenciaPermitido()` y **no en el controlador**, para poder
+comprobarla de frente:
+
+| Estado | Regla |
+|---|---|
+| Pendiente | Siempre. Se recalculan `tipo_origen` y `monto`. |
+| Confirmada, misma tarifa | Permitido. Se corrige la modalidad y **el monto no se toca**. |
+| Confirmada, tarifa distinta | Bloqueado, diciendo los dos importes y que hay que anular y reinscribir. |
+| Anulada | La acción no aparece. |
+
+Compara **contra el monto cobrado**, no contra la tarifa vigente de la modalidad vieja. Casi siempre
+son el mismo número, pero si una tarifa se moviera después de cobrar, comparar tarifas dejaría pasar
+un cambio que descuadra la caja. Y los grupos **no están escritos a mano** (D-37 avisó de que la
+tarifa COCIAP puede cambiar): hoy salen `publica ↔ organizadora` y `privada ↔ libre` porque hoy
+cuestan igual; el día que una se mueva, la regla se ajusta sola.
+
+#### La tabla `correcciones`
+
+Una fila **por campo cambiado**, agrupadas por `lote`. Cuatro decisiones:
+
+1. **FK real** sobre `participante_id`, no una tabla polimórfica: una FK polimórfica no la valida
+   ninguna base, y un registro de auditoría que puede apuntar a filas inexistentes no es auditoría.
+2. **`campo` con espacio de nombres** (`participante.dni`, `inscripcion.categoria_id`): una sola
+   tabla cubre las dos entidades sin renunciar a esa FK.
+3. **Una fila por campo**, no un JSON con el diff: «¿cuál era el DNI antes?» se responde con un
+   `WHERE`.
+4. **`anterior`/`nuevo` guardan el texto legible**, no el id: tiene que poder leerse dentro de un
+   año sin unirlo a tablas que pueden haber cambiado. El precio es no poder agrupar por id; se
+   asume, porque un texto que no se guardó no se recupera.
+
+#### Lo que arrastra
+
+- **`AnulacionController::corregir()` desaparece.** La acción ya no anula: pasa a
+  `CorreccionController`, con la **misma ruta** `/inscripciones/{id}/corregir`, así que ningún
+  enlace se rompe.
+- **La inscripción conserva su id**, de modo que el redirect vuelve a `#ins-{$id}` y el `$nuevaId`
+  que D-48 tuvo que introducir deja de hacer falta.
+- **Corregir el grado ya no deja una anulada detrás.** El comentario del listado que lo daba por
+  hecho se corrigió: a partir de ahora, una anulada sin inscripción viva es lo que parece —alguien
+  que se quedó fuera— y «Reinscribir» deja de convivir con filas que no eran bajas de nadie.
+- El rótulo de la acción pasa de «Corregir categoría» a **«Corregir»**, porque ya no es solo el
+  grado.
+- El carné **no hay que regenerarlo**: el PDF se genera al vuelo y no se guarda (D-24), y el QR
+  sigue valiendo porque el correlativo no se toca. Lo único que queda viejo es el **papel ya
+  impreso**, y por eso el aviso de éxito lo dice cuando el dato corregido va impreso.
+
+#### Decisiones del propietario (2026-08-20)
+
+- **Historial:** se guarda **y se muestra**, pero en la propia pantalla de corrección, sin pantalla
+  de auditoría aparte. Con varias secretarias a la vez, quien va a corregir necesita ver si alguien
+  ya tocó ese dato; la pantalla general se puede añadir después sobre la tabla ya poblada.
+- **En anuladas no se corrige.** Un anulado con el documento mal se arregla en dos pasos:
+  «Reinscribir» y luego «Corregir» sobre la fila viva, porque la reinscripción trabaja sobre el
+  **mismo participante** (D-38). El error no queda atrapado y se evita un modo especial del
+  formulario.
+- **Convertir libre ↔ delegación es solo del administrador**, igual que cambiar de colegio: mueve
+  la modalidad, y con ella la tarifa **y la bolsa de competencia** (D-37).
+- **El buscador de apoderado se reutiliza** (`apoderado-reutilizable.js`), el mismo de la
+  inscripción libre y de la ficha de institución. Capturarlo en limpio sería la tercera copia del
+  mismo comportamiento y, peor, `apoderados.dni` es UNIQUE global: un alta con un documento ya
+  registrado reventaría con un `1062` en la cara de quien corrige.
+- **Las dos anuladas que hay en la base se quedan como están.** Se comprobó que **no** son
+  correcciones de categoría antiguas, como se creyó al planificar: son anulaciones por institución
+  equivocada. No hay historia mixta que preservar.
+
+#### Permisos, con defensa en profundidad
+
+El bloque de procedencia **no se dibuja** para una secretaria, y además el controlador **rechaza el
+POST** si llega con esos campos, en vez de ignorarlos. Ignorar es peor: la pantalla diría
+«corregido» y ella se quedaría creyendo que el colegio cambió. Un fallo silencioso en el dato que
+decide la tarifa y la bolsa se descubre el día de la premiación.
+
+#### Límite conocido
+
+Corregir **no fusiona** dos registros que son la misma persona. Si el documento nuevo choca con otro
+participante, se rechaza nombrándolo con su código —que es lo correcto—, pero decidir cuál de los
+dos se queda es un trabajo aparte. El caso de los participantes 20 y 21 se resuelve a mano.
+
+**Estado:** `scripts/pruebas/correcciones.php` — **43 comprobaciones**, todas sobre datos
+desechables que la propia prueba crea. Las 16 suites del banco pasan, y la medición responsive pasa
+a **7 pantallas × 8 anchos** con la de corrección incluida, medida con el historial lleno y como
+administrador, que es su versión más ancha.
+
+---
+
 ### D-49 — Los íconos salieron a 300 px en producción · corrige D-48
 
 **Fecha:** 2026-08-20 · **Estado:** encontrado por el propietario en producción · **Afecta:** D-48

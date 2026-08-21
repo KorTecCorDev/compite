@@ -403,6 +403,93 @@ final class Inscripcion
     }
 
     /**
+     * Corrige la categoría, sin anular ni reinscribir (D-50).
+     *
+     * Hasta hoy «Corregir categoría» anulaba la inscripción y creaba otra. Eso
+     * funcionaba, pero cobraba un precio en cada corrección: dejaba una fila
+     * anulada de adorno en el listado, cambiaba el id de la inscripción, movía
+     * el carné a la fila nueva y hacía que «Reinscribir» tuviera que
+     * distinguir las anuladas de verdad de las anuladas por corrección.
+     *
+     * Un grado mal apuntado no es un cambio de historia: es un dato que estaba
+     * mal escrito. Se escribe bien y se firma en `correcciones`.
+     *
+     * La inscripción CONSERVA su id, su estado, su monto y su carné. Cambiar de
+     * categoría cambia la bolsa en la que se compite, no lo que se cobró.
+     */
+    public static function cambiarCategoria(int $id, int $categoriaId): void
+    {
+        Database::ejecutar(
+            'UPDATE inscripciones SET categoria_id = :categoria WHERE id = :id',
+            ['categoria' => $categoriaId, 'id' => $id]
+        );
+    }
+
+    /**
+     * ¿Se puede cambiar la procedencia de esta inscripción? (D-50)
+     *
+     * Pendiente: siempre. No hay dinero de por medio; el monto se recalcula con
+     * la tarifa nueva.
+     *
+     * Confirmada: solo si la tarifa nueva cuesta lo mismo que se cobró. Con las
+     * tarifas de hoy eso deja pasar `publica ↔ organizadora` (S/ 10.00) y
+     * `privada ↔ libre` (S/ 15.00), y bloquea cualquier cruce entre esos
+     * grupos. **Los grupos NO están escritos a mano a propósito**: D-37 avisó de
+     * que la tarifa COCIAP puede cambiar, y el día que se mueva esta regla se
+     * ajusta sola porque compara números, no nombres.
+     *
+     * Se compara contra `$montoCobrado` —lo que de verdad entró en caja— y no
+     * contra la tarifa vigente de la modalidad vieja. Casi siempre son el mismo
+     * número, pero no tienen por qué serlo: si una tarifa se moviera después de
+     * cobrar, comparar tarifas dejaría pasar un cambio que descuadra la caja.
+     *
+     * La tolerancia de medio céntimo es porque los dos lados vienen de
+     * DECIMAL(6,2) convertido a float, y comparar floats con `===` es una
+     * lotería que se pierde de vez en cuando.
+     */
+    public static function cambioDeProcedenciaPermitido(
+        string $estado,
+        float $montoCobrado,
+        float $tarifaNueva
+    ): bool {
+        if ($estado !== 'confirmada') {
+            return true;
+        }
+
+        return abs($tarifaNueva - $montoCobrado) < 0.005;
+    }
+
+    /**
+     * Corrige la modalidad y el monto, que solo se mueven juntos (D-50).
+     *
+     * Los dos en un único UPDATE y en un único método porque son un solo hecho:
+     * `tipo_origen` es la modalidad que ELIGIÓ ese monto y se congela con él
+     * (D-37). Poder escribir uno sin el otro es justamente lo que permitía que
+     * un carné dijera «privada» mientras la caja decía S/ 10.00.
+     *
+     * Quien llama decide el monto: si la inscripción ya está pagada, pasa el
+     * que ya tenía —la regla de D-50 solo deja cambiar de procedencia cuando la
+     * tarifa nueva coincide, así que el número no se mueve—; si está pendiente,
+     * pasa la tarifa nueva.
+     */
+    public static function cambiarProcedencia(int $id, string $tipoOrigen, float $monto): void
+    {
+        $modalidades = ['publica', 'privada', 'libre', 'organizadora'];
+
+        if (!in_array($tipoOrigen, $modalidades, true)) {
+            throw new InvalidArgumentException(
+                'Modalidad no válida (' . implode(', ', $modalidades) . '); se recibió '
+                . var_export($tipoOrigen, true) . '.'
+            );
+        }
+
+        Database::ejecutar(
+            'UPDATE inscripciones SET tipo_origen = :tipo, monto = :monto WHERE id = :id',
+            ['tipo' => $tipoOrigen, 'monto' => $monto, 'id' => $id]
+        );
+    }
+
+    /**
      * Marca una inscripción como pagada.
      *
      * El plan es explícito: el pago se considera cobrado en el momento en que

@@ -194,6 +194,13 @@ $esperado = [
         'requiere_devolucion',
     ],
     'carnes'                  => ['id', 'inscripcion_id', 'codigo_qr'],
+    // D-50: sin esta tabla, corregir un dato del estudiante falla al
+    // registrar la firma, y falla DENTRO de la transacción: no se
+    // corrompe nada, pero la secretaria no puede corregir.
+    'correcciones'            => [
+        'id', 'participante_id', 'inscripcion_id', 'lote', 'campo',
+        'anterior', 'nuevo', 'motivo', 'usuario_id',
+    ],
 ];
 
 foreach ($esperado as $tabla => $columnas) {

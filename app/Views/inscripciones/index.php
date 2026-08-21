@@ -289,10 +289,10 @@ foreach ($inscripciones as $ins) {
                     ?>
                     <td class="tabla__acciones" data-etiqueta="Acciones">
                         <?php if ($ins['estado'] !== 'anulada'): ?>
-                            <a class="accion enlace-tenue" title="Corregir categoría"
+                            <a class="accion enlace-tenue" title="Corregir la inscripción"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">
                                 <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
-                                <span class="accion__texto">Corregir categoría</span>
+                                <span class="accion__texto">Corregir</span>
                             </a>
                             <button type="button" class="accion enlace-peligro boton-anular"
                                     title="Anular definitivamente"
@@ -308,10 +308,17 @@ foreach ($inscripciones as $ins) {
                         <?php
                         /* Reinscribir solo cuando el participante se quedó SIN
                            ninguna inscripción viva, que es cuando de verdad está
-                           fuera del concurso. Cada corrección de categoría deja
-                           una anulada detrás, y ofrecer el enlace también en esas
-                           —que son la mayoría— lo volvería ruido y llevaría a
-                           duplicar la inscripción de alguien que ya está dentro. */
+                           fuera del concurso. Ofrecerlo en cualquier anulada
+                           llevaría a duplicar la inscripción de alguien que ya
+                           está dentro.
+
+                           Hasta D-50 esa condición hacía además otro trabajo:
+                           cada corrección de categoría dejaba una anulada
+                           detrás, y sin el filtro el listado ofrecía reinscribir
+                           en filas que no eran bajas de nadie. Ya no las deja
+                           —corregir es un UPDATE en su sitio—, así que a partir
+                           de ahora una anulada sin inscripción viva es lo que
+                           parece: alguien que se quedó fuera. */
                         ?>
                         <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo'])): ?>
                             <a class="accion enlace-tenue" title="Reinscribir"
@@ -430,7 +437,7 @@ foreach ($inscripciones as $ins) {
     </li>
     <li class="leyenda__item">
         <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
-        Corregir categoría
+        Corregir
     </li>
     <li class="leyenda__item leyenda__item--peligro">
         <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-prohibido"></use></svg>
@@ -452,7 +459,7 @@ foreach ($inscripciones as $ins) {
 
 <p class="nota">
     Mostrando <?= count($inscripciones) ?> inscripción(es).
-    «Corregir categoría» anula y reinscribe conservando el pago y el código.
+    «Corregir» arregla los datos en la misma inscripción, sin anular nada, y deja constancia de quién cambió qué.
     «Anular» es definitiva y, si ya estaba pagada, suma el monto al fondo de devoluciones.
 </p>
 

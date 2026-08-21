@@ -125,6 +125,31 @@ $pantallas = [
     'apoderados' => ['apoderados.index', [
         'titulo' => 'Apoderados', 'apoderados' => Apoderado::listar(''), 'busqueda' => '', 'total' => 3,
     ], 'principal'],
+    /*
+     * Corregir (D-50). Se mide con el historial LLENO y como administrador, que
+     * es su versión más ancha: seis columnas de tabla más el bloque de
+     * procedencia. Vacío y como secretaria cabe en cualquier sitio, así que
+     * medir eso no probaría nada.
+     *
+     * El historial es inventado a propósito —no se lee de la base— para que la
+     * medición no dependa de que exista una corrección real: el día que la
+     * tabla esté vacía, esta pantalla dejaría de medirse sin que nadie lo note.
+     */
+    'corregir' => ['inscripciones.corregir', [
+        'titulo' => 'Corregir inscripción',
+        'inscripcion' => Inscripcion::listar($con)[0] + ['institucion' => 'I.E. de ejemplo'],
+        'categorias' => Concurso::categorias($con),
+        'instituciones' => InstitucionEducativa::listar('', null, 50),
+        'historial' => [[
+            'created_at' => '2026-08-21 09:15:00',
+            'campo'      => 'participante.dni',
+            'anterior'   => '61880439',
+            'nuevo'      => '61880438',
+            'motivo'     => 'El documento se digitó con un dígito cambiado; verificado con el DNI físico',
+            'corregido_por' => 'Secretaria de ejemplo',
+        ]],
+        'esAdmin' => true, 'valores' => [], 'errores' => [],
+    ], 'principal'],
 ];
 
 /**

@@ -34,7 +34,7 @@ declare(strict_types=1);
  */
 ?>
 <svg xmlns="http://www.w3.org/2000/svg" class="sprite-iconos" width="0" height="0" aria-hidden="true" focusable="false">
-    <!-- Corregir categoría: lápiz. -->
+    <!-- Corregir la inscripción: lápiz. -->
     <symbol id="i-lapiz" viewBox="0 0 24 24">
         <path d="M12 20h9"/>
         <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
