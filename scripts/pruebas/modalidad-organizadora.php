@@ -41,14 +41,33 @@ try {
 
     // --- 1. La derivación de la modalidad -------------------------------
     echo "1) Concurso::modalidad()\n";
+    // La I.E. anfitriona se descarta al elegir los casos. Si le toca, el
+    // sistema responde 'organizadora' —que es lo correcto por D-37— y esta
+    // prueba lo leería como un fallo suyo. Pasó de verdad el 20-ago, al
+    // traer los datos reales: la primera privada por id ES el anfitrión.
+    $anfitriona = $concurso['organizacion_institucion_id'] !== null
+        ? (int) $concurso['organizacion_institucion_id']
+        : 0;
+
     $ies = Database::todos('SELECT id, nombre, tipo FROM instituciones_educativas ORDER BY id');
-    $publica = null;
-    foreach ($ies as $ie) {
-        if ($ie['tipo'] === 'publica') { $publica = $ie; break; }
-    }
-    $privada = null;
-    foreach ($ies as $ie) {
-        if ($ie['tipo'] === 'privada') { $privada = $ie; break; }
+    $elegir = static function (string $tipo) use ($ies, $anfitriona): ?array {
+        foreach ($ies as $ie) {
+            if ($ie['tipo'] === $tipo && (int) $ie['id'] !== $anfitriona) {
+                return $ie;
+            }
+        }
+        return null;
+    };
+    $publica = $elegir('publica');
+    $privada = $elegir('privada');
+
+    // Sin caso no hay prueba: más vale decirlo que reventar más abajo con un
+    // 'array offset on null' que no explica nada.
+    if ($publica === null || $privada === null) {
+        throw new RuntimeException(
+            'El catalogo necesita al menos una I.E. publica y una privada'
+            . ' que no sean la anfitriona.'
+        );
     }
 
     $comprobar('libre (sin colegio)', 'libre', Concurso::modalidad($concurso, null));
@@ -65,7 +84,7 @@ try {
 
     $comprobar('el anfitrion pasa a organizadora', 'organizadora',
         Concurso::modalidad($concursoAnfitrion, $publica));
-    $comprobar('otro colegio publico sigue publica', 'privada',
+    $comprobar('el colegio privado sigue privada', 'privada',
         Concurso::modalidad($concursoAnfitrion, $privada));
 
     // --- 2. La tarifa propia --------------------------------------------
