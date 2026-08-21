@@ -40,20 +40,20 @@ proyecto del propietario. No se toca ni se lee.
   camino se pierde: la barra ya llevaba Instituciones y Apoderados. Se retiró
   también su SCSS y se recompiló; verificado regla a regla que el `app.css` solo
   pierde `.lista-modulos`. De paso se corrigió **«faltan 1 día»**, que salía hoy
-  mismo en pantalla. **Pendiente de desplegar.**
+  mismo en pantalla. **Desplegado el 21-ago.**
 - ✅ **D-52: cada quien opera sus propios registros** (21-ago). «Corregir» y
   «Reinscribir» solo salen en las filas que uno registró; el administrador puede
   con todas, y lo que él registró **no** lo toca una secretaria. **Cobrar,
   descargar carnés, la hoja A4 de delegación y `/control` quedan EXENTOS** —esa
   exención es lo que sostiene el sábado: una delegación mixta paga con un solo
   Yape y la mesa de la puerta tiene que encontrar a cualquiera—. Cero
-  migraciones: `inscripciones.usuario_id` ya existía. **Pendiente de desplegar.**
+  migraciones: `inscripciones.usuario_id` ya existía. **Desplegado el 21-ago.**
   · Fuera de alcance a propósito: la propiedad de **apoderados**, que necesita un
   `ALTER TABLE` y se deja para después del concurso.
 - ✅ **D-51: anular es exclusivo del administrador** (21-ago). La secretaria
   conserva todo lo demás —registrar, cobrar, corregir, reinscribir, carnés—;
   solo pierde la anulación, que es la única acción irreversible y la única que
-  mueve dinero al fondo de devoluciones. **Pendiente de desplegar.**
+  mueve dinero al fondo de devoluciones. **Desplegado el 21-ago.**
 - ✅ **D-50 implementado, probado, desplegado y aprobado** por el propietario el
   21-ago. Las once pruebas del navegador pasaron en local, la migración se
   ejecutó en Hostinger y `verificar_despliegue.php` sale allá **sin un solo
