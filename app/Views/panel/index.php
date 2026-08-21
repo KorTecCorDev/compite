@@ -2,13 +2,32 @@
 
 declare(strict_types=1);
 
-use Core\Auth;
 use Core\View;
 
 /** @var array<string, mixed>|null $concurso */
 /** @var array<string, mixed> $resumen */
 
 $hoy = new DateTimeImmutable('today');
+
+/**
+ * La cuenta atrás, concordada.
+ *
+ * Antes se armaba a mano en cada `<dd>` con `'faltan ' . $n . ' día' . ($n === 1
+ * ? '' : 's')`, que singulariza el sustantivo y se olvida del verbo: la víspera
+ * del concurso la pantalla decía **«faltan 1 día»**. Vive aquí para que las dos
+ * fechas digan lo mismo y para que ese acuerdo no dependa de acordarse.
+ */
+$cuentaAtras = static function (int $dias, string $vencido): string {
+    if ($dias === 0) {
+        return 'es hoy';
+    }
+
+    if ($dias < 0) {
+        return $vencido;
+    }
+
+    return $dias === 1 ? 'falta 1 día' : "faltan {$dias} días";
+};
 ?>
 <h1 class="titulo">Panel</h1>
 
@@ -43,9 +62,7 @@ $hoy = new DateTimeImmutable('today');
                 <dd>
                     <?= View::e($evento->format('d/m/Y')) ?>
                     <span class="etiqueta<?= $diasEvento <= 3 ? ' etiqueta--alerta' : '' ?>">
-                        <?= $diasEvento > 0
-                            ? 'faltan ' . $diasEvento . ' día' . ($diasEvento === 1 ? '' : 's')
-                            : ($diasEvento === 0 ? 'es hoy' : 'ya pasó') ?>
+                        <?= View::e($cuentaAtras($diasEvento, 'ya pasó')) ?>
                     </span>
                 </dd>
             </div>
@@ -54,18 +71,11 @@ $hoy = new DateTimeImmutable('today');
                 <dd>
                     <?= View::e($finInsc->format('d/m/Y')) ?>
                     <span class="etiqueta<?= $diasInsc <= 3 ? ' etiqueta--alerta' : '' ?>">
-                        <?= $diasInsc > 0
-                            ? 'faltan ' . $diasInsc . ' día' . ($diasInsc === 1 ? '' : 's')
-                            : ($diasInsc === 0 ? 'es hoy' : 'vencido') ?>
+                        <?= View::e($cuentaAtras($diasInsc, 'vencido')) ?>
                     </span>
                 </dd>
             </div>
         </dl>
-
-        <p class="nota">
-            El sistema no bloquea el registro por fecha: se puede inscribir
-            incluso el día del evento. El cierre lo decide la secretaría.
-        </p>
     </section>
 
     <section class="metricas">
@@ -88,36 +98,3 @@ $hoy = new DateTimeImmutable('today');
     </section>
 
 <?php endif; ?>
-
-<section class="tarjeta tarjeta--ancha">
-    <h2 class="tarjeta__titulo">Módulos</h2>
-    <ul class="lista-modulos">
-        <li class="lista-modulos__item lista-modulos__item--listo">
-            Acceso y sesiones <span class="etiqueta">Fase 1 · listo</span>
-        </li>
-        <li class="lista-modulos__item lista-modulos__item--listo">
-            <?php /* El catálogo de colegios es administrativo (D-40); Apoderados no. */ ?>
-            <?php if (Auth::esAdministrador()): ?>
-                <a href="<?= View::e(View::url('/instituciones')) ?>">Instituciones Educativas</a> y
-            <?php endif; ?>
-            <a href="<?= View::e(View::url('/apoderados')) ?>">Apoderados</a>
-            <span class="etiqueta">Fase 2 · listo</span>
-        </li>
-        <li class="lista-modulos__item lista-modulos__item--listo">
-            <a href="<?= View::e(View::url('/inscripciones')) ?>">Inscripciones</a>
-            <span class="etiqueta">Fase 3 · listo</span>
-        </li>
-        <li class="lista-modulos__item">
-            Pagos, anulación y carné <span class="etiqueta">Fase 4</span>
-        </li>
-        <li class="lista-modulos__item">
-            Reportes <span class="etiqueta">Fase 5</span>
-        </li>
-        <?php if (Auth::esAdministrador()): ?>
-            <li class="lista-modulos__item">
-                Administración: concurso, categorías, tarifas, usuarios
-                <span class="etiqueta">solo administrador</span>
-            </li>
-        <?php endif; ?>
-    </ul>
-</section>

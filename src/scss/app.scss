@@ -10,7 +10,6 @@
 // estas líneas cambia cómo se ve el sistema. Los casos concretos están
 // comentados en cada parcial:
 //
-//   · componentes/etiquetas antes de componentes/listas
 //   · componentes/formularios antes de paginas/inscripciones
 //   · utilidades al final, para que `.oculto` gane sin !important
 
@@ -30,7 +29,6 @@
 @use 'componentes/datos';
 @use 'componentes/metricas';
 @use 'componentes/etiquetas';
-@use 'componentes/listas';
 @use 'componentes/formularios';
 @use 'componentes/botones';
 @use 'componentes/avisos';

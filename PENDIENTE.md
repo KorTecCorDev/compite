@@ -34,6 +34,13 @@ proyecto del propietario. No se toca ni se lee.
   cobrarían como pública y competirían en la bolsa equivocada, sin ningún aviso.
 - ✅ **43 instituciones cargadas** (22 públicas, 21 privadas); 29 todavía sin
   ningún estudiante, esperando el lote.
+- ✅ **D-53: el panel deja de contar por dentro cómo está hecho el sistema**
+  (21-ago). Fuera la sección «Módulos» —era el avance del proyecto, «Fase 3 ·
+  listo», delante de la secretaría— y la nota interna bajo las fechas. Ningún
+  camino se pierde: la barra ya llevaba Instituciones y Apoderados. Se retiró
+  también su SCSS y se recompiló; verificado regla a regla que el `app.css` solo
+  pierde `.lista-modulos`. De paso se corrigió **«faltan 1 día»**, que salía hoy
+  mismo en pantalla. **Pendiente de desplegar.**
 - ✅ **D-52: cada quien opera sus propios registros** (21-ago). «Corregir» y
   «Reinscribir» solo salen en las filas que uno registró; el administrador puede
   con todas, y lo que él registró **no** lo toca una secretaria. **Cobrar,

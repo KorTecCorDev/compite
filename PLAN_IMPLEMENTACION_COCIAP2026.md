@@ -1930,6 +1930,45 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-53 — El panel deja de contar por dentro cómo está hecho el sistema
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-40
+
+Decisión del propietario: el panel debe **mantener el funcionamiento del sistema lo más discreto
+posible**. Se retiran dos cosas que eran informativas para el desarrollo, no para quien trabaja:
+
+1. **La sección «Módulos».** Era un mapa de avance del proyecto puesto delante de la secretaría:
+   «Fase 1 · listo», «Fase 3 · listo», y dos módulos anunciados como pendientes —«Pagos, anulación y
+   carné · Fase 4», «Reportes · Fase 5»— que a esa altura o ya funcionan o no existen. Nada de eso
+   es asunto de quien viene a inscribir estudiantes, y lo de «Fase 5» invitaba a buscar una pantalla
+   que no está construida.
+2. **La nota bajo las fechas**, que explicaba que el sistema no bloquea el registro por fecha y que
+   el cierre lo decide la secretaría. Es una regla interna de diseño, no una instrucción de uso.
+
+**Ningún camino se pierde.** Era la única duda que valía la pena comprobar antes de quitarla: la
+sección contenía los únicos enlaces del panel a Instituciones y Apoderados. La **barra** ya los lleva
+—Panel, Inscripciones, Apoderados, Control de ingreso, y para el administrador Instituciones y
+Usuarios—, así que se retiró un atajo duplicado, no un acceso. La frontera de roles se sigue
+comprobando, pero ahora donde de verdad vive: en la barra.
+
+**El CSS se retiró también.** `componentes/_listas.scss` solo servía a esa sección, así que se
+eliminó el parcial y su `@use`. Se verificó al byte: el build es reproducible —compilar sin tocar
+nada devuelve un `app.css` idéntico—, y comparando regla a regla el antes y el después, las únicas
+cuatro que desaparecen son `.lista-modulos` y sus tres variantes. Ninguna apareció ni cambió.
+
+**Un fallo encontrado por el camino: «faltan 1 día».** Al mirar el panel ya limpio saltó la
+concordancia de la cuenta atrás. La versión anterior armaba el texto a mano en cada `<dd>` con
+`'faltan ' . $n . ' día' . ($n === 1 ? '' : 's')`: singularizaba el sustantivo y se olvidaba del
+verbo. Estuvo bien 364 días al año y mal justamente **la víspera del concurso**, que es el único día
+en que alguien mira esa cifra. Ahora la arma un solo `$cuentaAtras()` compartido por las dos fechas,
+para que el acuerdo no dependa de acordarse, y la suite comprueba que «faltan 1 día» no vuelva.
+
+**Estado:** `frontera-de-roles.php` pasa a **35 comprobaciones**, tres de ellas escritas en negativo
+—que el panel no enseñe el avance del desarrollo, que no explique por dentro cómo trata las fechas,
+y que la cuenta atrás concuerde—, para que ninguna de las dos secciones vuelva por descuido.
+
+---
+
 ### D-52 — Cada quien opera sus propios registros
 
 **Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-38, D-39, D-50, D-51

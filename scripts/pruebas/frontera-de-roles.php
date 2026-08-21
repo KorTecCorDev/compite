@@ -80,9 +80,32 @@ foreach (['secretaria' => false, 'administrador' => true] as $rol => $debeVer) {
 
     try {
         $p = View::renderizar('panel.index', $panel, 'principal');
-        $c(($debeVer ? 've' : 'NO ve') . ' el módulo Instituciones en el panel',
-            str_contains($p, '>Instituciones Educativas</a>') === $debeVer);
-        $c('ambos siguen viendo Apoderados en el panel', str_contains($p, '>Apoderados</a>'));
+        /*
+         * El panel ya NO lista los módulos (21-ago): esa sección era un mapa de
+         * avance del desarrollo —«Fase 3 · listo», módulos sin construir— puesto
+         * delante de quien solo viene a trabajar. Así que la frontera de roles se
+         * comprueba donde de verdad vive ahora, que es la barra, y esta pantalla
+         * la lleva igual.
+         */
+        $c(($debeVer ? 've' : 'NO ve') . ' Instituciones desde el panel',
+            str_contains($p, '>Instituciones</a>') === $debeVer);
+        $c('ambos siguen llegando a Apoderados desde el panel',
+            str_contains($p, '>Apoderados</a>'));
+
+        // Que la sección no vuelva por descuido.
+        $c('el panel no enseña el estado de avance del desarrollo',
+            !str_contains($p, 'lista-modulos'));
+        $c('ni explica por dentro cómo trata las fechas',
+            !str_contains($p, 'El cierre lo decide la secretaría'));
+
+        /*
+         * Concordancia de la cuenta atrás. Se comprueba porque el fallo que
+         * corrige —«faltan 1 día»— salió justo la víspera del concurso: la
+         * versión anterior singularizaba el sustantivo y se olvidaba del verbo,
+         * así que estuvo bien 364 días al año y mal el único que se mira.
+         */
+        $c('la cuenta atrás concuerda en singular',
+            !str_contains($p, 'faltan 1 día'));
     } catch (Throwable $e) {
         echo "  (panel no renderizado: " . $e->getMessage() . ")\n";
     }
