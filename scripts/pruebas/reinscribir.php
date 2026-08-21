@@ -19,15 +19,17 @@ try {
     $con = (int) Concurso::vigente()['id'];
 
     // --- Caso 1: pendiente anulada definitivamente ----------------------
-    $p = Database::uno("SELECT i.id FROM inscripciones i WHERE i.estado = 'pendiente' LIMIT 1");
-    $ins = Inscripcion::porId((int) $p['id']);
-    Inscripcion::anular((int) $p['id'], 'Prueba', true, (int) $ins['usuario_id']);
+    // Se CREA la pendiente en vez de buscar una real: al cobrarse el lote del
+    // 21-ago no quedó ninguna y esta prueba se puso roja sola (ver `_comun.php`).
+    $pendienteId = inscripcionPendienteDePrueba(idAdministrador());
+    $ins = Inscripcion::porId($pendienteId);
+    Inscripcion::anular($pendienteId, 'Prueba', true, (int) $ins['usuario_id']);
 
     $c('queda fuera: sin inscripción viva', null,
         Inscripcion::activaDe((int) $ins['participante_id']));
 
     $fila = null;
-    foreach (Inscripcion::listar($con) as $f) { if ((int) $f['id'] === (int) $p['id']) { $fila = $f; } }
+    foreach (Inscripcion::listar($con) as $f) { if ((int) $f['id'] === $pendienteId) { $fila = $f; } }
     $c('el listado lo marca como reinscribible', 0, (int) $fila['participante_activo']);
 
     $nueva = Inscripcion::crear([
@@ -38,7 +40,7 @@ try {
     $c('reinscrito: vuelve a tener inscripción viva', $nueva,
         (int) Inscripcion::activaDe((int) $ins['participante_id'])['id']);
 
-    foreach (Inscripcion::listar($con) as $f) { if ((int) $f['id'] === (int) $p['id']) { $fila = $f; } }
+    foreach (Inscripcion::listar($con) as $f) { if ((int) $f['id'] === $pendienteId) { $fila = $f; } }
     $c('ya no se ofrece reinscribir sobre la anulada', 1, (int) $fila['participante_activo']);
 
     // --- Caso 2: confirmada anulada definitivamente ---------------------

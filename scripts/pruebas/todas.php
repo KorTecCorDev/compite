@@ -48,12 +48,33 @@ foreach ($archivos as $archivo) {
 
     echo "\n" . str_repeat('=', 70) . "\n{$nombre}\n" . str_repeat('=', 70) . "\n";
 
-    $salida = null;
+    /*
+     * La salida se captura en vez de dejarla pasar directa, porque el código de
+     * salida NO basta para saber si una prueba falló.
+     *
+     * Cuatro de esta carpeta —las cuatro `vistas-*`— imprimían `OK`/`FALLA` sin
+     * llevar contador ni terminar con `exit()`, así que salían con 0 pasara lo
+     * que pasara: **no podían fallar nunca**. Una de ellas estuvo fallando de
+     * verdad y el resumen siguió diciendo «Todas pasan».
+     *
+     * Arreglarlo aquí y no en cada archivo cubre además a la próxima prueba que
+     * nazca con el mismo olvido. `2>&1` va incluido para no perder los fatales,
+     * que es justo cuando una prueba deja de imprimir su propio resumen.
+     */
+    $lineas = [];
     $codigo = 0;
-    passthru(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($archivo), $codigo);
+    exec(escapeshellarg(PHP_BINARY) . ' ' . escapeshellarg($archivo) . ' 2>&1', $lineas, $codigo);
 
-    if ($codigo !== 0) {
-        $fallidas[] = $nombre;
+    $salida = implode("\n", $lineas);
+    echo $salida . "\n";
+
+    // `FALLA` al principio de línea, con o sin sangría: es como lo imprimen
+    // todas. Buscarlo en cualquier posición marcaría un texto que solo lo
+    // mencione.
+    $imprimioFallo = preg_match('/^\s*FALLA\b/m', $salida) === 1;
+
+    if ($codigo !== 0 || $imprimioFallo) {
+        $fallidas[] = $nombre . ($codigo === 0 ? ' (salió con 0 pese a imprimir FALLA)' : '');
     }
 }
 

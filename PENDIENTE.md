@@ -229,16 +229,22 @@ sale del sistema, así que es requisito del sábado.**
   y colegios. Antes hay que resolver P-05 y P-07, en ese orden.
 - **Sin tabla de migraciones aplicadas.** `verificar_despliegue.php` lo sustituye
   comprobando el esquema columna por columna.
-- **Dos suites frágiles.** `firmas-y-usuarios` y `reinscribir` buscan «la
-  primera inscripción pendiente». Hoy pasan porque quedan dos por cobrar;
-  **volverán a fallar solas cuando se cobren**, sin que nadie toque el código.
+- ~~**Dos suites frágiles.**~~ → **Ocurrió y está resuelto (D-55, 21-ago).** Al
+  cobrarse el lote no quedó ninguna pendiente y las dos reventaron solas, tal
+  como estaba previsto aquí. Ahora **crean** su caso en vez de buscarlo. De paso
+  salió un agujero peor: **cuatro pruebas `vistas-*` no podían fallar nunca**
+  —imprimían `FALLA` y salían con 0—, así que `todas.php` las daba por buenas.
+  El corredor ya no se fía solo del código de salida.
+  · Queda una de la misma familia, anotada a propósito: el caso 2 de
+  `reinscribir` toma una confirmada real con `LIMIT 1`. Hoy hay 113, así que no
+  puede quedarse sin material.
 
 ---
 
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 16 suites · 235 comprobaciones, base real
+php scripts/pruebas/todas.php          # 17 suites · 282 comprobaciones, base real
 php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```

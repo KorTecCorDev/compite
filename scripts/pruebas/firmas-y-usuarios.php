@@ -23,15 +23,17 @@ try {
     $beto = Usuario::crear('Beto Secretario', 'beto.prueba@cociap.pe', 'clave1234', 'secretaria');
 
     // --- Firma del cobro ------------------------------------------------
-    $pend = Database::uno("SELECT id FROM inscripciones WHERE estado='pendiente' LIMIT 1");
-    Inscripcion::confirmarPago((int) $pend['id'], 'yape', '123', $ana);
-    $tras = Inscripcion::porId((int) $pend['id']);
+    // La pendiente se CREA, no se busca: buscarla ataba la prueba a que la
+    // secretaría hubiera dejado algo sin cobrar (ver `_comun.php`).
+    $pendienteId = inscripcionPendienteDePrueba($ana);
+    Inscripcion::confirmarPago($pendienteId, 'yape', '123', $ana);
+    $tras = Inscripcion::porId($pendienteId);
     $c('el cobro queda firmado', $ana, (int) $tras['confirmado_por']);
     $c('y sigue guardando el medio', 'yape', $tras['medio_pago']);
 
     // --- Firma de la anulación, por OTRA persona ------------------------
-    Inscripcion::anular((int) $pend['id'], 'Prueba de firma', true, $beto);
-    $tras2 = Inscripcion::porId((int) $pend['id']);
+    Inscripcion::anular($pendienteId, 'Prueba de firma', true, $beto);
+    $tras2 = Inscripcion::porId($pendienteId);
     $c('la anulación queda firmada por quien la hizo', $beto, (int) $tras2['anulado_por']);
     $c('y no borra quién había cobrado', $ana, (int) $tras2['confirmado_por']);
     $c('las dos firmas son personas distintas', true,

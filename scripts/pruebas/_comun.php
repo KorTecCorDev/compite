@@ -63,6 +63,69 @@ function idConcurso(): int
 }
 
 /**
+ * Una inscripción PENDIENTE recién creada, con participante propio.
+ *
+ * Existe porque dos pruebas —`firmas-y-usuarios` y `reinscribir`— buscaban una
+ * con `SELECT ... WHERE estado='pendiente' LIMIT 1`, es decir, secuestraban una
+ * fila real de trabajo. Eso las ataba al estado de los datos, que es
+ * exactamente lo que el resto de la carpeta evita: **el 21-ago se cobró todo el
+ * lote, no quedó ni una pendiente y las dos suites se pusieron rojas solas, sin
+ * que nadie tocara una línea de código**. Estaba anotado como deuda en
+ * `PENDIENTE.md` y ocurrió tal cual.
+ *
+ * Creando el caso, la prueba comprueba lo que dice comprobar y no depende de
+ * que la secretaría haya dejado algo sin cobrar. Todo se revierte con la
+ * transacción de la prueba que lo llama.
+ *
+ * La modalidad y el monto NO se escriben a mano: se derivan con
+ * `Concurso::modalidad()` y `Concurso::tarifa()`, así que siguen siendo
+ * coherentes aunque a la I.E. elegida le toque ser la anfitriona.
+ */
+function inscripcionPendienteDePrueba(int $usuarioId): int
+{
+    $concurso = Concurso::vigente();
+    $con      = idConcurso();
+
+    $ie = Database::uno('SELECT id, tipo FROM instituciones_educativas ORDER BY id LIMIT 1');
+
+    if ($ie === null) {
+        exit("No hay ninguna I.E. en el catálogo: no se puede crear la inscripción de prueba.\n");
+    }
+
+    $categorias = Concurso::categorias($con);
+
+    if ($categorias === []) {
+        exit("El concurso no tiene categorías: no se puede crear la inscripción de prueba.\n");
+    }
+
+    $modalidad = Concurso::modalidad($concurso, $ie);
+
+    // DNI aleatorio: `uq_participante_documento` no admite repetidos, y un
+    // número fijo chocaría con el de una corrida anterior o con una persona real.
+    $dni = (string) random_int(90000000, 99999999);
+
+    $participante = \App\Models\Participante::crear([
+        'concurso_id'       => $con,
+        'tipo_participante' => 'delegacion',
+        'dni'               => $dni,
+        'ap_paterno'        => 'Desechable',
+        'ap_materno'        => 'Prueba',
+        'nombres'           => 'Estudiante Pendiente',
+        'institucion_id'    => (int) $ie['id'],
+        'apoderado_id'      => null,
+    ], \App\Models\Participante::prefijoConcurso($con));
+
+    return \App\Models\Inscripcion::crear([
+        'participante_id' => $participante,
+        'categoria_id'    => (int) $categorias[0]['id'],
+        'usuario_id'      => $usuarioId,
+        'estado'          => 'pendiente',
+        'tipo_origen'     => $modalidad,
+        'monto'           => Concurso::tarifa($con, $modalidad),
+    ]);
+}
+
+/**
  * Simula una sesión iniciada.
  *
  * Las claves son planas (`usuario_id`, `usuario_rol`), como las escribe

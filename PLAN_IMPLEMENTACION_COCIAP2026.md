@@ -1930,6 +1930,52 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-55 — La suite deja de poder mentir
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** `scripts/pruebas/`
+
+Salió al revisar los pendientes, y son **dos agujeros independientes** en la red de seguridad,
+descubiertos el día antes del concurso.
+
+**1. Cuatro pruebas no podían fallar nunca.** `vistas-formularios-usuario`, `vistas-instituciones`,
+`vistas-reinscribir` y `vistas-usuarios` imprimían `OK`/`FALLA` pero no llevaban contador ni
+terminaban con `exit()`: salían con código 0 pasara lo que pasara. Como `todas.php` decidía
+mirando solo el código de salida, su resultado era **invisible para el corredor**. Una de ellas
+estuvo fallando de verdad mientras el resumen decía «Todas pasan» — y se dio por bueno.
+
+**Se arregla en el corredor, no en los cuatro archivos.** `todas.php` captura ahora la salida de
+cada prueba (con `2>&1`, para no perder los fatales, que es justo cuando una prueba deja de
+imprimir su propio resumen) y marca fallida toda la que imprima `FALLA` al principio de una
+línea, aunque haya salido con 0. El motivo de hacerlo aquí es que cubre además **a la próxima
+prueba que nazca con el mismo olvido**, que es lo que va a volver a pasar. El resumen lo dice con
+todas las letras: `vistas-usuarios (salió con 0 pese a imprimir FALLA)`. Verificado rompiendo una
+comprobación a propósito: antes pasaba en verde, ahora el corredor la caza.
+
+**2. Dos pruebas se pusieron rojas solas, sin que nadie tocara el código.**
+`firmas-y-usuarios` y `reinscribir` obtenían su caso con
+`SELECT id FROM inscripciones WHERE estado='pendiente' LIMIT 1`: **secuestraban una fila real de
+trabajo**. Estaba anotado como deuda consciente en `PENDIENTE.md` —«volverán a fallar solas cuando
+se cobren»— y ocurrió tal cual: al cobrarse el lote del 21-ago no quedó **ninguna** pendiente y
+las dos suites reventaron con `esperaba 4, obtuvo 0`.
+
+**Ahora crean su caso en vez de buscarlo**, con `inscripcionPendienteDePrueba()` en `_comun.php`.
+La modalidad y el monto no se escriben a mano: se derivan con `Concurso::modalidad()` y
+`Concurso::tarifa()`, así que siguen siendo coherentes aunque a la I.E. elegida le toque ser la
+anfitriona. Todo se revierte con la transacción de la prueba que lo llama, como el resto de la
+carpeta.
+
+Es el mismo principio que ya regía aquí y que estas dos incumplían: **nada atado al estado del
+entorno**. Una prueba que depende de que la secretaría haya dejado algo sin cobrar no comprueba
+lo que dice comprobar.
+
+**Estado:** 17 pruebas, **282 comprobaciones**, exit 0, sin una sola línea `FALLA`.
+
+**Queda una de la misma familia, sin arreglar y a propósito:** el caso 2 de `reinscribir` toma una
+confirmada real con `LIMIT 1`. Hoy hay 113, así que no puede fallar por falta de material, y
+ampliar el cambio la víspera del concurso tenía peor relación riesgo/beneficio que anotarlo.
+
+---
+
 ### D-54 — La bolsa de competencia sube al dominio, y por fin se comprueba
 
 **Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-37, Fase 5 (§8)
