@@ -170,6 +170,28 @@ Si alguna vez se desenlazara, pasaría a cobrar S/ 15.00.
 
 ---
 
+## La bolsa de competencia ya está en el dominio (D-54, 21-ago)
+
+`Concurso::bolsa()`, `etiquetaBolsa()` y `bolsas()`. **El acta ya no tiene que
+reimplementar el agrupamiento**: era el requisito previo de la Fase 5 y está
+cumplido. La regla vivía solo en un `CASE` dentro de un `printf` de
+`modalidad-organizadora.php`, sin ninguna aserción encima; ahora tiene 12.
+
+**El reparto real, ya con el lote dentro (114 vivas, 22 bolsas ocupadas):**
+
+| | |
+|---|---|
+| Bolsas con **un solo participante** | **4** — primaria 1° COCIAP, primaria 3° Pública, secundaria 1° Pública, secundaria 2° Pública |
+| La más grande | primaria 3° COCIAP, con **39** |
+| Categorías sin las tres bolsas | varias: primaria 4° y 6° solo tienen Privada + Libre; secundaria 4° solo Pública |
+
+Esos cuatro compiten solos en su bolsa y **ganan por defecto**. No es un fallo
+del sistema —es cómo quedaron las inscripciones—, pero el acta tiene que
+enseñarlo antes de la premiación, no durante. Por eso `bolsas()` devuelve
+siempre las tres.
+
+---
+
 ## LO SIGUIENTE: los reportes Excel (Fase 5)
 
 **Ya no es deuda aplazada: el propietario confirmó que el acta de los jurados

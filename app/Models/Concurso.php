@@ -13,6 +13,22 @@ use RuntimeException;
 final class Concurso
 {
     /**
+     * Las tres bolsas de competencia de D-37, en el orden en que las numera el
+     * plan. Son identificadores propios, no modalidades: `BOLSA_PUBLICA` y
+     * `BOLSA_ORGANIZADORA` valen lo mismo que su `tipo_origen` porque esas dos
+     * bolsas SON una sola modalidad cada una, y forzar un nombre distinto solo
+     * para que no coincidieran habría sido artificial.
+     *
+     * Cuidado con esa coincidencia en un sitio concreto: pasar una bolsa a
+     * `tarifa()` es un error. Con `BOLSA_PRIVADA_LIBRE` revienta —no hay tal
+     * tarifa—, pero con las otras dos devolvería un número correcto por
+     * casualidad. La bolsa no elige precio; lo elige la modalidad.
+     */
+    public const BOLSA_PRIVADA_LIBRE = 'privada_libre';
+    public const BOLSA_PUBLICA       = 'publica';
+    public const BOLSA_ORGANIZADORA  = 'organizadora';
+
+    /**
      * El concurso sobre el que se trabaja.
      *
      * En este MVP hay uno solo; se toma el de fecha de evento más reciente
@@ -81,6 +97,80 @@ final class Concurso
             'organizadora' => 'COCIAP',
             default        => '—',
         };
+    }
+
+    /**
+     * Bolsa de competencia: contra quién compite de verdad un participante,
+     * dentro de su nivel y su grado.
+     *
+     * **La bolsa NO es la modalidad**, y confundirlas es el fallo más caro que
+     * puede cometer un reporte: `privada` y `libre` compiten JUNTAS (D-37,
+     * confirmado por el propietario). Agrupar el acta por las cuatro
+     * modalidades daría **dos ganadores donde las bases dicen uno**, y nadie lo
+     * notaría hasta la premiación.
+     *
+     * Hasta D-54 esta regla no vivía en el dominio: existía solo como un `CASE`
+     * dentro de un `printf` en `scripts/pruebas/modalidad-organizadora.php`,
+     * sin ninguna aserción encima. Este es ahora su único sitio.
+     *
+     * Nivel y grado no entran aquí: ya los lleva `categorias`. Una bolsa
+     * completa es la tupla (categoría, bolsa).
+     *
+     * Lanza ante una modalidad desconocida en vez de devolver un valor de
+     * relleno. Es deliberadamente más estricto que `etiquetaModalidad()`: allí
+     * lo peor que ocurre es un guion en pantalla; aquí un valor inventado mete
+     * a alguien en una bolsa fantasma y le quita el premio sin avisar.
+     */
+    public static function bolsa(string $tipoOrigen): string
+    {
+        return match ($tipoOrigen) {
+            'privada', 'libre' => self::BOLSA_PRIVADA_LIBRE,
+            'publica'          => self::BOLSA_PUBLICA,
+            'organizadora'     => self::BOLSA_ORGANIZADORA,
+            default            => throw new RuntimeException(
+                "Modalidad desconocida '{$tipoOrigen}': no se puede decidir en qué bolsa compite."
+            ),
+        };
+    }
+
+    /**
+     * Rótulo de la bolsa, tal como lo leen los jurados en el acta.
+     *
+     * «Privada + Libre» dice explícitamente que son dos modalidades en una sola
+     * bolsa: quien lee el acta tiene que poder ver por qué ahí hay un solo
+     * ganador. Un término único —«Particular»— habría sido más corto y habría
+     * escondido justo eso.
+     */
+    public static function etiquetaBolsa(string $bolsa): string
+    {
+        return match ($bolsa) {
+            self::BOLSA_PRIVADA_LIBRE => 'Privada + Libre',
+            self::BOLSA_PUBLICA       => 'Pública',
+            self::BOLSA_ORGANIZADORA  => 'COCIAP',
+            default                   => throw new RuntimeException(
+                "Bolsa desconocida '{$bolsa}'."
+            ),
+        };
+    }
+
+    /**
+     * Las tres bolsas con su rótulo, en el orden de D-37.
+     *
+     * Existe para que el acta pueda recorrer SIEMPRE las tres por cada
+     * categoría, también las que quedaron vacías o con un solo inscrito. Si el
+     * reporte se limitara a agrupar lo que hay, una bolsa de un participante
+     * pasaría por normal — y eso se descubre en la premiación, que es el peor
+     * momento posible.
+     *
+     * @return array<string, string> bolsa => rótulo
+     */
+    public static function bolsas(): array
+    {
+        return [
+            self::BOLSA_PRIVADA_LIBRE => self::etiquetaBolsa(self::BOLSA_PRIVADA_LIBRE),
+            self::BOLSA_PUBLICA       => self::etiquetaBolsa(self::BOLSA_PUBLICA),
+            self::BOLSA_ORGANIZADORA  => self::etiquetaBolsa(self::BOLSA_ORGANIZADORA),
+        ];
     }
 
     /**

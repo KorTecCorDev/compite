@@ -1930,6 +1930,77 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-54 — La bolsa de competencia sube al dominio, y por fin se comprueba
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-37, Fase 5 (§8)
+
+**El problema.** D-37 dejó escrita la regla que decide **contra quién compite cada participante**
+—privada **+** libre juntos, pública, organizadora, por cada nivel y grado—, y advirtió que «de
+esta regla depende entera la Fase 5». Pero la regla nunca llegó al código de la aplicación: su
+única encarnación era un `CASE` de SQL dentro de `scripts/pruebas/modalidad-organizadora.php`.
+
+Y ese `CASE` estaba **dentro de un `printf`**. Imprimía un resumen y no lo comprobaba nadie: en un
+archivo llamado «pruebas» había cero aserciones sobre la regla más cara del sistema. Escribir el
+acta partiendo de ahí habría significado copiarla a un segundo sitio —esta vez en producción— sin
+que ninguna de las dos copias estuviera verificada.
+
+**Por qué importa tanto.** El modo de fallo no es un error en pantalla: es **dos ganadores donde
+las bases dicen uno**, o un premio entregado a quien compitió contra la bolsa equivocada. No
+revienta, no deja traza en ningún log y se descubre en la premiación.
+
+**Lo que se hizo.**
+
+1. `Concurso::bolsa(string $tipoOrigen): string` — la regla, en el mismo modelo donde ya viven
+   `modalidad()` y `tarifa()`. Único sitio donde se decide.
+2. `Concurso::etiquetaBolsa()` — el rótulo, separado del valor igual que en D-37. El propietario
+   eligió **«Privada + Libre»**: dice explícitamente que son dos modalidades en una sola bolsa,
+   que es justo lo que el jurado necesita entender para aceptar un solo ganador. Un término único
+   («Particular») era más corto y escondía eso.
+3. `Concurso::bolsas()` — las tres, en el orden que las numera D-37. Existe para que el acta pueda
+   recorrer **siempre las tres** por categoría, también las vacías: una bolsa con un solo
+   participante tiene que verse en el papel y no descubrirse en la premiación.
+
+**Tres decisiones de diseño, y su motivo.**
+
+- **Nivel y grado no entran en `bolsa()`.** Ya los lleva `categorias`; una bolsa completa es la
+  tupla (categoría, bolsa). Meterlos habría duplicado un eje que el esquema ya modela.
+- **`bolsa()` lanza ante una modalidad desconocida**, en vez de devolver un valor de relleno como
+  hace `etiquetaModalidad()`. La asimetría es deliberada: en el rótulo lo peor que pasa es un
+  guion en pantalla; en la bolsa, un valor inventado mete a alguien en una bolsa fantasma y le
+  quita el premio en silencio.
+- **La agrupación se hace en PHP, no en SQL.** Así hay UNA copia de la regla. El coste es
+  agrupar en memoria unas centenas de filas, que es gratis; el beneficio es que el `GROUP BY` no
+  puede divergir del dominio, que es exactamente el fallo que esta decisión viene a cerrar.
+  Los identificadores `BOLSA_PUBLICA` y `BOLSA_ORGANIZADORA` coinciden a propósito con su
+  `tipo_origen` —esas bolsas SON una sola modalidad cada una—, con una advertencia anotada en el
+  código: pasar una bolsa a `tarifa()` es un error, y con esas dos devolvería un número correcto
+  por casualidad.
+
+**Alcance deliberadamente corto.** La bolsa **no** se añade al filtro del listado ni a la píldora
+de cada fila (decisión del propietario, 21-ago). Filtrar por bolsa obligaría a una segunda forma
+de la regla dentro del `WHERE`, y la secretaría no la necesita para inscribir ni para cobrar.
+
+**Comprobado.** El bloque 5 de `modalidad-organizadora.php` pasa de imprimir a **comprobar**: que
+privada y libre comparten bolsa, que las otras dos no comparten con nadie, que las bolsas
+distintas son exactamente tres, y que el reparto de los inscritos vivos no pierde ni duplica a
+nadie. Se añade además una comprobación que **lee el `ENUM` real de `inscripciones.tipo_origen`**
+y exige que el dominio sepa responder a cada uno de sus valores: si algún día se añade una
+modalidad y se olvida `bolsa()`, el fallo salta aquí y no en producción, donde los errores no se
+ven. La suite de modalidad pasa de 13 a **24 comprobaciones**.
+
+**Hallazgo colateral, sin acción por ahora.** Con los datos de hoy —antes del lote— **11 de las 14
+bolsas vivas tienen un solo participante**. Es información del propietario, no un fallo del
+sistema, pero confirma que el aviso de «bolsa de uno» en el acta no es un adorno.
+
+**Lo que esta decisión NO resuelve, y conviene tener presente.** D-50 permite cambiar la
+procedencia de una inscripción ya pagada cuando la tarifa nueva cuesta lo mismo. Hoy `publica` y
+`organizadora` valen ambas S/ 10.00, así que ese cambio está permitido — y **mueve al participante
+de bolsa de competencia**, que es lo correcto si estaba mal clasificado, pero el aviso que ve
+quien corrige habla solo de dinero y no menciona que cambia contra quién compite. Queda anotado
+para después del concurso.
+
+---
+
 ### D-53 — El panel deja de contar por dentro cómo está hecho el sistema
 
 **Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-40
