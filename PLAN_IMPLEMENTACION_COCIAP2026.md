@@ -1932,7 +1932,7 @@ sin comprobarse en un teléfono físico.
 
 ### D-50 — Corregir el registro de participación · sustituye a «Corregir categoría»
 
-**Fecha:** 2026-08-20 / 21 · **Estado:** implementado y probado · **Afecta:** D-01, D-31, D-37, D-38, D-39, D-48
+**Fecha:** 2026-08-20 / 21 · **Estado:** en producción, **aprobado por el propietario** (21-ago) · **Afecta:** D-01, D-31, D-37, D-38, D-39, D-48
 
 **El agujero.** `Participante` solo tenía `crear()`. No existía ninguna forma de corregir el
 documento, los apellidos, los nombres ni la institución de un estudiante mal registrado: lo único

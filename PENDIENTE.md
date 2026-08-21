@@ -34,27 +34,58 @@ proyecto del propietario. No se toca ni se lee.
   cobrarían como pública y competirían en la bolsa equivocada, sin ningún aviso.
 - ✅ **43 instituciones cargadas** (22 públicas, 21 privadas); 29 todavía sin
   ningún estudiante, esperando el lote.
-- ✅ **D-50 implementado y probado** — ver abajo.
+- ✅ **D-50 implementado, probado, desplegado y aprobado** por el propietario el
+  21-ago. Las once pruebas del navegador pasaron en local, la migración se
+  ejecutó en Hostinger y `verificar_despliegue.php` sale allá **sin un solo
+  fallo**, con `tabla correcciones completa`, `entorno = produccion`,
+  `depurar = false` y los assets minificados.
 
 ---
 
 ## Lo que falta, en orden
 
-1. **Desplegar D-50** y correr `php scripts/verificar_despliegue.php` en el
-   servidor. La tabla `correcciones` es nueva: **la migración hay que ejecutarla
-   allá a mano**, `database/migraciones/2026-08-20-correcciones.sql`. Estar
-   versionada no la ejecuta en ningún lado.
-2. **Correr `COR-1` a `COR-8`** del banco de pruebas sobre el servidor, que es
-   el bloque nuevo de D-50.
-3. **Correr `DEP-1` a `DEP-6`**, incluido el respaldo.
-4. **`DEP-4` decide el dominio.** El subdominio provisional tiene 46 caracteres
+1. **Correr `DEP-1` a `DEP-6`**, incluido el respaldo.
+2. **`DEP-4` decide el dominio.** El subdominio provisional tiene 46 caracteres
    y empuja el QR a **0.415 mm por módulo**, por debajo del mínimo de 0.50 que
    el sistema exige. Imprime un carné y escanéalo: si engancha rápido, se sigue
    así; si cuesta, hace falta un dominio corto **antes de imprimir en serie**. La
    puerta no depende del QR —`/control` busca por código tecleado—, pero el
    margen se pierde justo donde no sobra.
-5. **Respaldo antes de abrir el registro.** Ya no protege datos de prueba: hay
-   cobros reales dentro y el `mysqldump` es manual.
+3. **Respaldo antes de abrir el registro.** Ya no protege datos de prueba: hay
+   cobros reales dentro y el `mysqldump` es manual. **Descárgalo fuera del
+   servidor**: un respaldo que vive en la misma máquina que la base no es un
+   respaldo.
+
+---
+
+## Dos cosas medidas el 21-ago que conviene no perder
+
+**1. Imprimir carnés es el punto de no retorno del dominio.**
+`url_base` está vacío a propósito (D-43): cada carné lleva en su QR el dominio
+por el que se generó. Eso hace el sistema portátil, pero **un QR en papel no se
+corrige**. Los carnés impresos entrando por el subdominio provisional apuntarán
+a él para siempre; si algún día se apaga, quedan muertos. Si va a haber dominio
+propio, que exista **antes de la primera hoja de carnés**.
+
+**2. El TLS del subdominio provisional falla por IPv6.**
+Medido con 20 peticiones en 8 minutos: **50 % de error**. Al probar dirección
+por dirección, la causa quedó clara:
+
+| Dirección | Handshake TLS |
+|---|---|
+| `185.249.224.202` (IPv4) | 3/3 |
+| `77.37.85.78` (IPv4) | 3/3 |
+| `2a02:4780:71:…` (IPv6) | **0/3** |
+| `2a02:4780:72:…` (IPv6) | **1/3** |
+
+**No es Compite:** es la capa de red del CDN de Hostinger (`Server: hcdn`), por
+debajo de la aplicación. El impacto real es menor que ese 50 %, porque los
+navegadores hacen *Happy Eyeballs* y caen a IPv4 solos — por eso desde Chrome no
+se nota. Pero el sábado los apoderados escanearán el QR **desde datos móviles**,
+donde IPv6 es habitual en Perú. Dos salidas: reportarlo a Hostinger con estos
+datos, y —la definitiva— publicar el dominio propio **solo con registros `A`**,
+sin `AAAA`, con lo que el problema desaparece de raíz. Al probar `DEP-4`,
+hacerlo con el móvil en datos móviles y no en wifi, que es el escenario real.
 
 ---
 
