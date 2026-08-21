@@ -95,6 +95,32 @@ final class Auth
     }
 
     /**
+     * ¿Puede el usuario de la sesión ACTUAR sobre un registro ajeno? (D-52)
+     *
+     * La regla es de escritura, no de lectura: todo el mundo sigue viendo el
+     * concurso entero —la mesa de la puerta necesita encontrar a cualquier
+     * estudiante, la hoja A4 de una delegación necesita a los treinta y el
+     * aviso de documento repetido necesita mirar la base completa—, pero
+     * corregir o reinscribir queda en manos de quien registró la fila.
+     *
+     * El administrador queda por encima: es quien tiene que poder desatascar
+     * cualquier registro cuando la secretaria que lo hizo no está delante.
+     * A la inversa NO: lo que registró el administrador es suyo, y una
+     * secretaria no lo toca (decisión del propietario, 2026-08-21).
+     *
+     * `null` responde `false` para todo el que no sea administrador: un
+     * registro sin dueño conocido no es de nadie en particular.
+     */
+    public static function puedeOperar(?int $duenoId): bool
+    {
+        if (self::esAdministrador()) {
+            return true;
+        }
+
+        return $duenoId !== null && $duenoId === self::id();
+    }
+
+    /**
      * Exige sesión activa. Si no la hay, manda al login y corta la ejecución.
      */
     public static function exigirSesion(): void

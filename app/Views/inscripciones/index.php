@@ -199,6 +199,19 @@ foreach ($inscripciones as $ins) {
                 <?php $esPendiente = $ins['estado'] === 'pendiente'; ?>
                 <?php
                 /*
+                 * ¿Es MÍA esta fila? (D-52) Corregir y reinscribir son de quien
+                 * registró la inscripción; el administrador puede con todas.
+                 *
+                 * Cobrar NO pasa por aquí a propósito: una delegación de treinta
+                 * puede haberla registrado entre dos secretarias y paga con un
+                 * solo Yape, así que partir el cobro en dos por quién tecleó cada
+                 * nombre inventaría un descuadre de caja que la realidad no tiene.
+                 * Quién cobró queda firmado igual, en `confirmado_por`.
+                 */
+                $puedeOperar = Auth::puedeOperar(isset($ins['usuario_id']) ? (int) $ins['usuario_id'] : null);
+                ?>
+                <?php
+                /*
                  * Ancla por inscripción (D-48). Sustituye a los redirects que
                  * volvían con `?q=CÓDIGO` puesto: aquellos mostraban el listado
                  * FILTRADO a una sola fila, escondiendo todo lo demás. Ahora la
@@ -290,11 +303,23 @@ foreach ($inscripciones as $ins) {
                     ?>
                     <td class="tabla__acciones" data-etiqueta="Acciones">
                         <?php if ($ins['estado'] !== 'anulada'): ?>
-                            <a class="accion enlace-tenue" title="Corregir la inscripción"
-                               href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">
-                                <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
-                                <span class="accion__texto">Corregir</span>
-                            </a>
+                            <?php
+                            /* Corregir es de quien registró la fila (D-52). La
+                               condición va aquí y no en el `if` de arriba a
+                               propósito: «Anular» cuelga del mismo bloque y
+                               tiene SU propia regla —solo el administrador—.
+                               Compartir una condición entre dos acciones con
+                               permisos distintos funciona solo mientras un rol
+                               cumpla las dos, y ese es el tipo de dependencia
+                               que se rompe en silencio. */
+                            ?>
+                            <?php if ($puedeOperar): ?>
+                                <a class="accion enlace-tenue" title="Corregir la inscripción"
+                                   href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/corregir')) ?>">
+                                    <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-lapiz"></use></svg>
+                                    <span class="accion__texto">Corregir</span>
+                                </a>
+                            <?php endif; ?>
                             <?php
                             /* Anular es exclusivo del administrador (D-51): es la
                                única acción irreversible de la fila y la única que
@@ -331,7 +356,7 @@ foreach ($inscripciones as $ins) {
                            de ahora una anulada sin inscripción viva es lo que
                            parece: alguien que se quedó fuera. */
                         ?>
-                        <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo'])): ?>
+                        <?php if ($ins['estado'] === 'anulada' && empty($ins['participante_activo']) && $puedeOperar): ?>
                             <a class="accion enlace-tenue" title="Reinscribir"
                                href="<?= View::e(View::url('/inscripciones/' . $ins['id'] . '/reinscribir')) ?>">
                                 <svg class="icono" width="18" height="18" aria-hidden="true" focusable="false"><use href="#i-persona-mas"></use></svg>
@@ -482,6 +507,22 @@ foreach ($inscripciones as $ins) {
     Mostrando <?= count($inscripciones) ?> inscripción(es).
     «Corregir» arregla los datos en la misma inscripción, sin anular nada, y deja constancia de quién cambió qué.
     «Anular» es definitiva y, si ya estaba pagada, suma el monto al fondo de devoluciones.
+    <?php
+    /*
+     * La regla de D-52, dicha una vez al pie y no repetida en cada fila.
+     *
+     * Las acciones ajenas se ocultan, y un ícono que falta sin explicación se
+     * lee como un fallo del sistema. La columna «Responsable» dice de quién es
+     * cada fila; esta frase dice qué significa que lo sea. Solo se muestra a
+     * quien le afecta: al administrador no le falta ninguna acción en ninguna
+     * fila, así que para él sería ruido.
+     */
+    ?>
+    <?php if (!Auth::esAdministrador()): ?>
+        «Corregir» y «Reinscribir» aparecen únicamente en las inscripciones que registraste tú
+        —mira la columna «Responsable»—. Cobrar y descargar carnés funciona en todas,
+        porque una delegación puede haberse registrado entre varias personas y paga junta.
+    <?php endif; ?>
 </p>
 
 <script src="<?= View::e(View::asset('build/js/inscripciones.js')) ?>" defer></script>

@@ -34,6 +34,15 @@ proyecto del propietario. No se toca ni se lee.
   cobrarían como pública y competirían en la bolsa equivocada, sin ningún aviso.
 - ✅ **43 instituciones cargadas** (22 públicas, 21 privadas); 29 todavía sin
   ningún estudiante, esperando el lote.
+- ✅ **D-52: cada quien opera sus propios registros** (21-ago). «Corregir» y
+  «Reinscribir» solo salen en las filas que uno registró; el administrador puede
+  con todas, y lo que él registró **no** lo toca una secretaria. **Cobrar,
+  descargar carnés, la hoja A4 de delegación y `/control` quedan EXENTOS** —esa
+  exención es lo que sostiene el sábado: una delegación mixta paga con un solo
+  Yape y la mesa de la puerta tiene que encontrar a cualquiera—. Cero
+  migraciones: `inscripciones.usuario_id` ya existía. **Pendiente de desplegar.**
+  · Fuera de alcance a propósito: la propiedad de **apoderados**, que necesita un
+  `ALTER TABLE` y se deja para después del concurso.
 - ✅ **D-51: anular es exclusivo del administrador** (21-ago). La secretaria
   conserva todo lo demás —registrar, cobrar, corregir, reinscribir, carnés—;
   solo pierde la anulación, que es la única acción irreversible y la única que

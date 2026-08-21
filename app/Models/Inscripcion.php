@@ -169,6 +169,11 @@ final class Inscripcion
                        -- del propietario; los otros dos —quién cobró y quién anuló—
                        -- quedan guardados en `confirmado_por` y `anulado_por`.
                        u.nombres AS registrado_por,
+                       -- El DUEÑO de la fila (D-52). El nombre de arriba es para
+                       -- leerlo; este id es con lo que la vista decide si dibuja
+                       -- «Corregir» y «Reinscribir», y no se puede deducir del
+                       -- nombre sin volver a consultar la tabla de usuarios.
+                       i.usuario_id,
                        /*
                         * ¿Le queda al participante alguna inscripción viva?
                         *

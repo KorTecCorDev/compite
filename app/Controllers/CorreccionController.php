@@ -515,6 +515,29 @@ final class CorreccionController extends Controller
             $this->redirigir('/inscripciones#ins-' . $id);
         }
 
+        /*
+         * Cada quien corrige lo suyo (D-52).
+         *
+         * La vista ya no dibuja «Corregir» en las filas ajenas, así que llegar
+         * hasta aquí significa una URL tecleada a mano o un enlace guardado de
+         * antes. Se rechaza en voz alta y no en silencio: la corrección es un
+         * UPDATE sobre datos que ya están impresos en un carné, y creer que se
+         * aplicó cuando no se aplicó es peor que el propio bloqueo.
+         *
+         * Sin `http_response_code(403)`: un `Location:` posterior degrada la
+         * respuesta a 302 y el 403 nunca sale por el cable. El porqué completo
+         * está en AnulacionController::anular().
+         */
+        if (!Auth::puedeOperar((int) $inscripcion['usuario_id'])) {
+            Sesion::flash(
+                'error',
+                'Esa inscripción la registró ' . $inscripcion['registrado_por']
+                . ', y cada quien corrige solo lo suyo. No se cambió nada: '
+                . 'pídeselo a esa persona o al administrador.'
+            );
+            $this->redirigir('/inscripciones#ins-' . $id);
+        }
+
         return $inscripcion;
     }
 

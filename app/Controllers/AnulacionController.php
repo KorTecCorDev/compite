@@ -258,6 +258,27 @@ final class AnulacionController extends Controller
             $this->redirigir('/inscripciones');
         }
 
+        /*
+         * Cada quien reinscribe lo suyo (D-52).
+         *
+         * Se comprueba ANTES de mirar si el participante tiene otra viva: el
+         * mensaje de esa comprobación manda a la fila vigente, y a alguien que
+         * no puede tocar ninguna de las dos eso solo le da un paseo.
+         *
+         * El dueño que cuenta es el de la inscripción ANULADA, no el de quien
+         * la anuló —anular ya es exclusivo del administrador (D-51)—. Reinscribir
+         * es deshacer la baja del registro que uno hizo.
+         */
+        if (!Auth::puedeOperar((int) $inscripcion['usuario_id'])) {
+            Sesion::flash(
+                'error',
+                'Esa inscripción la registró ' . $inscripcion['registrado_por']
+                . ', y cada quien reinscribe solo lo suyo. No se cambió nada: '
+                . 'pídeselo a esa persona o al administrador.'
+            );
+            $this->redirigir('/inscripciones#ins-' . $id);
+        }
+
         $activa = Inscripcion::activaDe((int) $inscripcion['participante_id']);
 
         if ($activa !== null) {

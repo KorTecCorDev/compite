@@ -1930,6 +1930,100 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-52 — Cada quien opera sus propios registros
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-38, D-39, D-50, D-51
+
+Decisión del propietario, el mismo día del lote grande: **una secretaria solo puede actuar sobre las
+inscripciones que registró ella**. Lo de las demás lo ve, pero no lo toca.
+
+**La regla es de escritura, no de lectura.** Es la distinción de la que depende todo lo demás, y no
+es un matiz de diseño: aislar también la lectura rompe cuatro flujos que este concurso necesita
+funcionando el sábado.
+
+| Flujo | Qué pasaría si la lectura se aislara |
+|---|---|
+| `/control`, la mesa de la puerta | No encontraría a los estudiantes que registró la otra secretaria, con la fila delante |
+| Hoja A4 por delegación | Saldría incompleta **y sin avisar**: se descubre cuando faltan carnés en la puerta |
+| Cobro masivo | Una delegación de 30 registrada entre dos personas paga con **un solo Yape**; el cobro se partiría en dos |
+| Aviso de documento repetido | `UNIQUE (concurso_id, dni)` es de la base: filtrada la consulta, la secretaria recibiría un **error de constraint** en vez del aviso legible |
+
+Por eso el listado sigue mostrando el concurso entero, con su columna «Responsable» diciendo de
+quién es cada fila, y lo que se cierra son **las acciones que escriben sobre una inscripción ajena**.
+
+**Qué queda dentro de la regla y qué queda fuera:**
+
+| Acción | Regla | Por qué |
+|---|---|---|
+| Corregir | **dueño o admin** | Es un UPDATE sobre datos ya impresos en un carné entregado |
+| Reinscribir | **dueño o admin** | Crea una inscripción nueva y mueve el fondo de devoluciones |
+| Anular | solo admin (D-51) | Sin cambio |
+| **Cobrar** | exenta | Decisión del propietario: el Yape único de una delegación mixta. Quién cobró se sigue firmando en `confirmado_por` (D-39) |
+| Regenerar carné | exenta | Es la reparación de un cobro; separarla del cobro la dejaría inservible |
+| Descargar carné, hoja A4, `/control` | exentas | Lectura |
+
+**El administrador queda por encima; a la inversa no.** Él opera cualquier fila —es quien tiene que
+poder desatascar un registro cuando la persona que lo hizo no está delante—, pero **lo que él
+registró es suyo y una secretaria no lo toca**: la regla es pareja en esa dirección, por decisión
+expresa del propietario. Hoy son 20 inscripciones en esa situación.
+
+**Cero migraciones.** `inscripciones.usuario_id` existe desde el esquema inicial (D-39) y está
+escrito en las filas que ya hay, así que la regla se aplica sobre un dato que ya estaba. Lo que sí
+falta —y queda **fuera de alcance a propósito**, la víspera del concurso— es la propiedad de
+`apoderados` y `participantes`: ninguna de las dos tiene columna de dueño, y añadirla exige un
+`ALTER TABLE` en una base con cobros reales dentro. Ver «Lo que queda pendiente» abajo.
+
+**La acción ajena se oculta, y se dice por qué una vez.** Decisión del propietario frente a
+deshabilitarla. Pero un ícono que falta sin explicación se lee como un fallo del sistema, así que la
+nota al pie del listado —solo para quien no es administrador— dice que «Corregir» y «Reinscribir»
+salen únicamente en lo propio y que cobrar y los carnés funcionan en todas. La columna «Responsable»
+hace el resto: dice de quién es cada fila.
+
+**Ocultar el botón es cortesía; la guarda es la protección.** Las dos acciones se rechazan también en
+el servidor, dentro del mismo helper que ya cargaba y validaba la inscripción
+(`inscripcionCorregibleOFallar`, `inscripcionReinscribibleOFallar`), que es lo que garantiza que la
+guarda cubra **el formulario y el envío** sin tener que acordarse de ponerla dos veces. El rechazo
+nombra al responsable —«Esa inscripción la registró Maritza Jara»— para que la secretaria sepa a
+quién pedírselo, y no es silencioso, por la misma razón que en D-50 y D-51: un POST ignorado
+devolvería la pantalla sin decir nada y ella creería que el cambio se aplicó.
+
+Sin `http_response_code(403)`, por lo medido en D-51: un `Location:` posterior degrada la respuesta
+a 302 y el 403 nunca sale por el cable.
+
+**Lo que queda pendiente, dicho en voz alta:**
+
+- **Apoderados.** `ApoderadoController::guardar()` sigue permitiendo a cualquier secretaria editar
+  cualquier apoderado, y `guardarLibre()` actualiza los datos de contacto de un apoderado que pudo
+  crear otra persona. No hay columna de dueño y la reutilización entre hermanos y con el docente
+  delegado hace que «dueño» no sea una idea obvia aquí. **Después del concurso.**
+- **Participantes.** Su dueño es el de su inscripción, así que la regla ya los cubre por la puerta
+  de `/inscripciones/{id}/corregir`. No hay acceso directo a la tabla.
+
+**Cómo se prueba.** Suite nueva, `propiedad-de-registros.php`, **29 comprobaciones**. Existe aparte
+de `frontera-de-roles` por una razón concreta: aquella simula a la secretaria con **el id del
+administrador** —le basta el rol para lo que comprueba—, así que ahí `puedeOperar()` responde que sí
+a todo y no vería ninguna regresión de D-52. Esta monta sesiones con ids reales y distintos.
+
+La suite vigila las dos mitades. La restrictiva: que `puedeOperar()` diga que no a lo de otra
+secretaria, a lo del administrador y a una fila sin dueño; que «Corregir» salga en las filas propias
+y **en ninguna más**; que las guardas del servidor estén y se ejecuten antes de escribir. Y la
+permisiva, que es la que sostiene el sábado: que la secretaria **siga viendo todas las filas**, que
+las casillas de cobro no se filtren por dueño, y que `PagoController`, `CarneController` y
+`ControlController` **no** contengan `puedeOperar`. Esa última comprobación está escrita al revés a
+propósito: si alguien «completa» D-52 añadiendo la guarda ahí, la suite se pone roja antes de que la
+delegación mixta se quede sin poder cobrarse.
+
+Las cuatro últimas trabajan sobre una inscripción **real** escrita con el id de una secretaria y
+revertida al terminar, no sobre `usuario_id` repartidos a mano: si PDO devolviera esa columna como
+cadena y alguien quitara un cast, `===` diría que no en todas las filas y la secretaria se quedaría
+sin poder corregir **ni lo suyo** — el peor fallo posible en día de registro masivo, y el que una
+prueba con datos fabricados en memoria nunca vería.
+
+**Estado:** verificado que la suite detecta el fallo de verdad, saboteando `puedeOperar()` para que
+devuelva siempre `true`: **cuatro comprobaciones en rojo**, y de vuelta a verde al restaurarla.
+
+---
+
 ### D-51 — Anular pasa a ser exclusivo del administrador
 
 **Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** D-15, D-39, D-40
