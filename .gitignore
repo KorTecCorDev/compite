@@ -33,6 +33,11 @@
 /storage/exportaciones/*
 !/storage/exportaciones/.gitkeep
 
+# Respaldos de la base. NUNCA se versionan: un volcado lleva los documentos y
+# los nombres de estudiantes menores de edad, y el repositorio es remoto.
+/storage/respaldos/*
+!/storage/respaldos/.gitkeep
+
 # ---------------------------------------------------------------------------
 # Compilados de assets
 # ---------------------------------------------------------------------------

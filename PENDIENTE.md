@@ -74,12 +74,24 @@ detectó porque un dígito cambiado lo convierte en otro documento.
 
 **Con el DNI del chico delante, hay que decidir cuál es el bueno.** La 21 está
 viva y pendiente, así que **ese es el documento que va a ir impreso en su
-carné**: si el correcto es el `…439`, hay que corregirlo antes de imprimir.
-Ahora ya se puede, sin anular nada.
+carné**.
 
-D-50 **no fusiona** los dos registros: si intentas ponerle a uno el documento
-del otro, te lo rechaza nombrándolo con su código. Decidir cuál se queda es
-trabajo humano.
+**Ojo: si el bueno resulta ser el `…439`, D-50 no lo arregla solo.**
+`Participante::porDocumento()` busca en `participantes` sin mirar el estado de
+la inscripción, así que **el participante 20 sigue ocupando ese documento aunque
+esté anulado**, y el sistema rechazará el cambio nombrándolo. Está bien que lo
+haga —dos participantes no pueden compartir documento— pero significa que hay
+que liberarlo primero:
+
+- **Sin tocar la base:** «Reinscribir» la 20 → corregirle a ella el documento →
+  volver a anularla → y entonces corregir la 21. Todo desde la pantalla y con
+  firma en cada paso.
+- **A mano:** un `UPDATE` sobre el participante 20, con respaldo antes. Más
+  rápido, pero sin rastro en `correcciones`.
+- **O dejarlo.** En la puerta se busca por código, no por documento, así que un
+  dígito mal no deja a nadie fuera.
+
+D-50 **no fusiona** registros: decidir cuál se queda es trabajo humano.
 
 ---
 
