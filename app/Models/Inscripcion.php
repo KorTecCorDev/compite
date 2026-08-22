@@ -601,6 +601,52 @@ final class Inscripcion
     }
 
     /**
+     * Los inscritos que compiten, para el acta de los jurados (Fase 5).
+     *
+     * **Solo confirmadas**, por decisión del propietario: al acta entra quien
+     * pagó. Quien se inscriba el día del concurso y no haya cobrado todavía no
+     * aparece hasta que se regenere el documento.
+     *
+     * **Ni un solo dato de dinero.** No es un olvido: el acta circula por las
+     * mesas de jurado y se fotocopia, y ahí no pinta nada el monto ni el medio
+     * de pago. El reporte con dinero es el otro, el de dirección.
+     *
+     * No agrupa: devuelve filas planas con su categoría y su modalidad, y el
+     * reparto en bolsas lo hace `Concurso::bolsa()` sobre esta lista. Es lo que
+     * mantiene UNA sola copia de la regla de D-54 en vez de un `CASE` en el SQL
+     * que pudiera divergir del dominio.
+     *
+     * El orden es alfabético con la colación española, así que la Ñ cae entre
+     * la N y la O y no al final — con apellidos como Ñopo o Ñiquén no es
+     * hipotético.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function paraActa(int $concursoId): array
+    {
+        $es = Database::ordenEspanol();
+
+        return Database::todos(
+            'SELECT i.id, i.tipo_origen,
+                    p.codigo_correlativo, p.dni,
+                    p.ap_paterno, p.ap_materno, p.nombres,
+                    p.tipo_participante,
+                    ie.nombre AS institucion,
+                    cat.id AS categoria_id, cat.nivel, cat.grado
+               FROM inscripciones i
+               JOIN participantes p ON p.id = i.participante_id
+               JOIN categorias cat ON cat.id = i.categoria_id
+          LEFT JOIN instituciones_educativas ie ON ie.id = p.institucion_id
+              WHERE p.concurso_id = :con
+                AND i.estado = \'confirmada\'
+           ORDER BY p.ap_paterno' . $es . ' ASC,
+                    p.ap_materno' . $es . ' ASC,
+                    p.nombres'    . $es . ' ASC',
+            ['con' => $concursoId]
+        );
+    }
+
+    /**
      * Fondo de devoluciones: no es una entidad, es este listado
      * (regla confirmada, sección 3 del plan).
      *

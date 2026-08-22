@@ -192,7 +192,42 @@ siempre las tres.
 
 ---
 
-## LO SIGUIENTE: los reportes Excel (Fase 5)
+## Las actas YA ESTÁN (D-56 y D-57) — falta probarlas en papel
+
+`GET /reportes/actas.zip`, **solo administrador**, con el botón «Descargar actas
+(ZIP)» en el listado de inscripciones. Baja **un libro por bolsa de
+competencia** y once hojas dentro de cada uno, una por grado:
+
+```
+actas-cociap-2026-08-22.zip
+  ├─ acta-privada-libre.xlsx   ← privada y libre JUNTOS (D-37)
+  ├─ acta-publica.xlsx
+  └─ acta-cociap.xlsx
+```
+
+Por bolsa y **no por modalidad**: cuatro libros habrían separado a privados de
+libres y habrían dado dos ganadores donde las bases dicen uno. Columnas
+**Correctas · Incorrectas · Puntaje · H/E** en blanco, firma del **Comité de
+Inscripción**, solo confirmadas. Se genera al vuelo, así que después de cada
+tanda de cobros basta con volver a descargarlo.
+
+**Rendimiento medido, no supuesto:** 1000 participantes → **0,96 s y 32 MB**;
+2000 → 1,81 s. No hay nada que optimizar aquí. Lo que peor escala del sistema
+son los carnés en PDF (~0,4 s cada diez), ya mitigado generando por delegación.
+
+**Lo que falta, y solo puedes hacerlo tú:**
+
+1. **Abre el ZIP e imprime una hoja.** Las pruebas reabren los `.xlsx` y
+   comprueban que nadie cae en el libro equivocado, pero **no ven la página**:
+   si una columna se parte o las casillas quedan estrechas para escribir a mano,
+   eso se ve en el papel y en ningún otro sitio.
+2. **Confirma PhpSpreadsheet en el servidor antes de publicar.** `vendor/` no
+   viaja con el autodeploy. El comando está en D-56, §11. Si sale `false`, hace
+   falta `composer install --no-dev` allá.
+
+---
+
+## LO SIGUIENTE: el reporte administrativo (Fase 5)
 
 **Ya no es deuda aplazada: el propietario confirmó que el acta de los jurados
 sale del sistema, así que es requisito del sábado.**
@@ -213,6 +248,52 @@ sale del sistema, así que es requisito del sábado.**
   instalado en el servidor** antes, no después: allí los errores no se ven.
 - La **pantalla del fondo de devoluciones** sigue sin existir. El cálculo ya
   está en `Inscripcion::fondoDevoluciones()`; le faltan la vista y la ruta.
+
+---
+
+## Dashboard de estadísticas — analizado y APLAZADO tras el acta (21-ago)
+
+Decisión del propietario: **el acta va primero**; esto se retoma cuando la Fase 5
+esté hecha y probada. El análisis queda aquí para no repetirlo.
+
+**Alcance acordado — tramo A, y solo eso:** una pantalla `/estadisticas`
+**solo administrador** (`Auth::exigirAdministrador()`, que ya existe) con:
+
+1. Reparto **por bolsa de competencia**, marcando las bolsas de un solo
+   participante. Reutiliza `Concurso::bolsas()` (D-54), ya desplegado.
+2. **Por delegación**, con lo que falta por cobrar de cada una — es lo que
+   permite saber a qué colegio llamar. Hoy hay 17 delegaciones con inscritos.
+3. El resumen de cobro, que ya calcula `Inscripcion::resumen()`.
+
+**Tramo B, descartado salvo petición expresa:** auto-refresh, ritmo por hora y
+desglose por modalidad. La modalidad aporta poco sobre la bolsa —hoy
+organizadora 48, privada 40, pública 18, libre 7— y la bolsa es la que decide
+premios. **Nada de exportar desde el dashboard**: ese es el trabajo del acta y no
+puede tener dos implementaciones.
+
+**Tres decisiones técnicas ya tomadas, con su motivo:**
+
+- **Sin librería de gráficos.** Todo el JS del sitio suma ~10 KB y no hay una
+  sola dependencia de runtime; Chart.js son ~200 KB detrás de un CDN que cachea
+  siete días. Con 3 bolsas y 11 categorías, barras de CSS cuentan lo mismo y
+  pesan cero.
+- **«En vivo» = `<meta refresh>`, no polling con JSON.** Las agregaciones miden
+  **0,56–0,84 ms** con el lote dentro: no hay nada que optimizar, y un endpoint
+  JSON con actualización parcial del DOM es diez veces el trabajo y diez veces la
+  superficie de fallo para tres usuarios.
+- **Pantalla aparte, no ampliar `/panel`.** D-53 acaba de decidir que el panel
+  sea discreto, y el panel lo ven las secretarias.
+
+**Lo que este dashboard NO podrá mostrar, y conviene no olvidarlo:**
+**cuánta gente ha llegado.** `/control` solo busca y muestra; no marca ingreso, y
+`inscripciones` no tiene ninguna columna de asistencia. Un tablero de puerta en
+vivo exigiría añadir ese registro, y el propietario lo descartó (21-ago): este
+año la puerta funciona con carné impreso y búsqueda por código o apellido.
+
+**Comprobado y deliberado, para que no vuelva a saltar en cada revisión:**
+`/panel` usa `exigirSesion()` y enseña «Recaudado» a las dos secretarias. **Es
+intencional** —ellas cobran, así que ven el total—, confirmado por el propietario
+el 21-ago. No es un fallo de permisos.
 
 ---
 
@@ -244,7 +325,7 @@ sale del sistema, así que es requisito del sábado.**
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 17 suites · 282 comprobaciones, base real
+php scripts/pruebas/todas.php          # 18 suites · 313 comprobaciones, base real
 php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```

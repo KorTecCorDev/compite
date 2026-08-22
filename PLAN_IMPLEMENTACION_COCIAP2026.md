@@ -1930,6 +1930,148 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-57 — Un libro por bolsa, y el rendimiento medido en vez de supuesto
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-56, D-54
+
+El propietario pidió dos cosas el día del concurso: que el proceso fuera **óptimo para unos 1000
+participantes**, y **separar las actas en un libro por modalidad**, con una hoja por grado dentro
+de cada uno. La segunda se aplicó corregida, y la primera resultó no hacer falta.
+
+**1. Por BOLSA, no por modalidad. La corrección importa y es cara.**
+
+Las modalidades son cuatro; las bolsas, tres. Un libro por modalidad habría puesto a los
+**privados y a los libres en archivos separados**, y de cada archivo habría salido un ganador por
+grado: **dos ganadores donde las bases dicen uno** (D-37). Es exactamente el fallo que D-54 cerró
+en el código, reintroducido por el reparto de archivos.
+
+Se planteó al propietario con las dos opciones y sus consecuencias, y eligió **tres libros por
+bolsa**: `acta-privada-libre.xlsx`, `acta-publica.xlsx`, `acta-cociap.xlsx`. La estructura del
+ZIP se corresponde ahora con cómo se premia: cada libro contiene exactamente a quienes compiten
+entre sí. `GeneradorActa` recorre `Concurso::bolsas()` y **nunca** la lista de modalidades.
+
+El nombre del archivo sale del **rótulo** y no del identificador de la base —«cociap», no
+«organizadora»—: quien reparte las actas busca la palabra que ve en el carné.
+
+**2. Once hojas por libro, también las vacías.** Cada libro lleva las 11 categorías; donde esa
+bolsa no tiene a nadie, la cabecera dice «sin inscritos». Una pestaña que falta se confunde con
+un fallo del reporte. La bolsa de un solo participante sigue avisando, ahora en la cabecera de la
+hoja: «1 inscrito — COMPITE SOLO, gana su bolsa por defecto».
+
+**3. Se entrega un ZIP**, `GET /reportes/actas.zip`. La ruta se renombró desde
+`/reportes/acta.xlsx`: una URL que termina en `.xlsx` y devuelve un ZIP engaña a quien la lee y
+puede confundir a un intermediario. `ext-zip` ya era requisito —PhpSpreadsheet lo necesita para
+escribir cualquier `.xlsx`—, así que no añade dependencias.
+
+**4. El rendimiento no era el problema, y conviene que quede escrito.**
+
+Medido con filas sintéticas, proceso completo incluido:
+
+| Participantes | Tiempo | Memoria pico |
+|---|---|---|
+| 113 (los reales) | 0,46 s | 30 MB |
+| **1000** | **0,96 s** | 32 MB |
+| 2000 | 1,81 s | 36 MB |
+
+Escalado lineal y con holgura: con 1000 participantes las actas tardan **menos de un segundo**.
+Aunque el servidor compartido sea tres veces más lento, son tres segundos. **No se optimizó el
+generador, porque no hacía falta.** Lo que peor escala del sistema son los carnés en PDF —Dompdf
+tarda ~0,4 s cada diez, así que mil de una sentada serían ~40 s—, y eso ya está mitigado
+generando por delegación y nunca «todos».
+
+De paso queda corregido un número que se dio el 21-ago: los «~2,4 s con 113» de D-56 incluían el
+arranque en frío del proceso y la consulta. El coste real del generador con 113 filas es 0,36 s.
+
+**Tres mejoras que sí se aplicaron, por ser mejor código y no por necesidad:** los estilos se
+aplican **por rango** y no celda a celda —con mil filas eso multiplicaba por nueve los objetos de
+estilo—, la altura de fila se fija **por hoja** en vez de fila a fila, y cada libro se libera con
+`disconnectWorksheets()` en cuanto se escriben sus bytes. El resultado es que la versión de tres
+libros usa **menos** memoria que la de uno solo (32 MB contra 36 con 1000), pese a generar 33
+hojas en vez de 11.
+
+**Un fallo propio, encontrado al escribirlo:** la entrega del ZIP tenía el `exit` de la descarga
+**dentro** del `try`, y `exit` **no ejecuta los bloques `finally`** en PHP. El archivo temporal se
+habría quedado en el disco del servidor en cada descarga. Ahora los bytes se leen, el `finally`
+borra, y la entrega ocurre fuera del bloque.
+
+**Comprobado.** `acta-jurados.php` sube a **27 comprobaciones** y las dos que más importan son
+nuevas: que **todos los privados** y **todos los libres** caen en el mismo libro, verificado
+abriendo el archivo. Si alguna vez alguien reparte por modalidad, esa prueba se pone roja. Total
+de la suite: **18 pruebas, 313 comprobaciones**.
+
+---
+
+### D-56 — El acta de los jurados, primer reporte de la Fase 5
+
+**Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** Fase 5 (§8), D-54
+
+El acta que va a la mesa el día del concurso: quién compite en cada bolsa, con las columnas que
+el jurado llena a mano. `GET /reportes/acta.xlsx`, **solo administrador**.
+
+**Diez decisiones, todas del propietario (21-ago), preguntadas una a una y no supuestas:**
+
+1. **Excel**, no PDF. Se planteó el PDF —un acta se firma, y la maquetación fija de Dompdf lo
+   haría más fiel al imprimir—, y el propietario confirmó Excel.
+2. **Una hoja por categoría** (11), con las tres bolsas dentro. Cada jurado imprime su pestaña y
+   tiene su grado completo.
+3. **Las bolsas vacías salen igual**, rotuladas «sin inscritos». Un bloque que falta se confunde
+   con un fallo del reporte; así se ve de un vistazo que ahí no hay nadie.
+4. **Columnas que el jurado llena: Correctas, Incorrectas, Puntaje y H/E** (hora de entrega).
+5. **Van EN BLANCO, sin fórmula.** Se ofreció calcular el puntaje con una fórmula de Excel y el
+   propietario prefirió que no: una fórmula la pisa cualquiera al escribir encima, y el acta se
+   usa impresa. El sistema no calcula ni guarda nada — la calificación sigue fuera de alcance (§9).
+6. **Con DNI.** Decisión suya, sabiendo que son menores y que el documento se fotocopia.
+7. **Solo confirmadas.** Al acta entra quien pagó. Como el sábado hay inscripción en la puerta,
+   el libro se genera **al vuelo en cada descarga** —igual que el carné desde D-24—, así que
+   recoge los cobros del momento sin que nadie tenga que acordarse de regenerarlo.
+8. **Orden alfabético con la colación española**, así que la Ñ cae entre la N y la O. Con
+   apellidos como Ñopo o Ñiquén en los datos reales, no es hipotético.
+9. **Firma el «Comité de Inscripción»**, una sola línea. Corrige la propuesta inicial, que ponía
+   dos líneas de jurado: el sistema certifica quién está inscrito, no quién califica.
+10. **Solo administrador**: es el documento oficial del concurso y sale de una sola mano.
+
+**La bolsa no se decide aquí.** `GeneradorActa` pregunta a `Concurso::bolsa()` (D-54). Si el
+generador reimplantara el agrupamiento habría dos copias de la regla que reparte los premios,
+que es exactamente lo que D-54 vino a cerrar. Por lo mismo, `Inscripcion::paraActa()` devuelve
+filas planas y **no** agrupa en SQL.
+
+**La bolsa de un solo participante se avisa en el propio título del bloque** —«1 inscrito —
+COMPITE SOLO, gana su bolsa por defecto»— y no en una nota al final. Hay que verlo al repartir
+las hojas, no descubrirlo en la premiación.
+
+**Dos detalles medidos contra los datos reales, no estimados:**
+
+- El **ancho de la columna del código**: el correlativo ocupa 22 caracteres
+  (`COCIAP2026-0026-ZRK44Z`) y la columna estaba puesta a 14, así que salía cortado justo en la
+  impresión, que es donde el documento se usa. Corregido a 24 tras verlo en el archivo generado.
+- Al **estudiante libre** la columna Institución le pone «Libre» y no un guion: compite en la
+  misma bolsa que los privados, y una casilla vacía obligaría al jurado a adivinar si es un libre
+  o un dato que falta.
+
+**Comprobado de verdad, no solo que se genere.** `scripts/pruebas/acta-jurados.php` **vuelve a
+abrir el `.xlsx`** y comprueba lo que dice dentro: que hay una fila por confirmada y ningún código
+repetido, que **ninguno cae en la bolsa equivocada** (leyendo bajo qué título quedó cada código),
+que salen las tres bolsas de cada categoría, que las cuatro columnas están y **ninguna trae valor
+ni fórmula**, que firma el Comité, y que el enlace lo ve el administrador y no la secretaria. Un
+libro que se escribe sin error pero con la gente mal repartida pasaría cualquier prueba que solo
+mirase que hay bytes. Son **19 comprobaciones**, más 4 de frontera de rol en
+`frontera-de-roles.php`. Total de la suite: **18 pruebas, 305 comprobaciones**.
+
+**Riesgo medido y anotado:** generar el libro con 113 confirmadas tarda **~2,4 s** en local. En
+el hosting compartido será más, y crecerá con las inscripciones del sábado. Queda por debajo de
+cualquier `max_execution_time` razonable, pero si algún día se acerca, la salida es generar por
+categoría en vez del libro entero — el mismo razonamiento que llevó a que los carnés se impriman
+por delegación y no «todos los del concurso» de una sentada.
+
+**Pendiente de verificar en el servidor, y no es menor:** `vendor/` está en `.gitignore` y **no
+viaja con el autodeploy**. PhpSpreadsheet está en `composer.json` desde el primer commit (17-ago),
+antes del despliegue, y Dompdf del mismo bloque funciona allá porque los carnés se generan — así
+que debería estar. Pero eso es deducción, no comprobación, y en ese servidor los errores no se
+ven. Antes de publicar el acta hay que confirmarlo por SSH con
+`php -r 'require "vendor/autoload.php"; var_dump(class_exists("PhpOffice\\PhpSpreadsheet\\Spreadsheet"));'`.
+
+---
+
 ### D-55 — La suite deja de poder mentir
 
 **Fecha:** 2026-08-21 · **Estado:** implementado y probado · **Afecta:** `scripts/pruebas/`

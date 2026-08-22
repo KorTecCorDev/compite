@@ -35,6 +35,22 @@ foreach ($inscripciones as $ins) {
         <a class="boton boton--tenue" href="<?= View::e(View::url('/inscripciones/libre')) ?>">
             Estudiante libre
         </a>
+        <?php if (Auth::esAdministrador()): ?>
+            <?php
+            /*
+             * Las actas van aquí y no en la barra de navegación: es una
+             * descarga, no una sección, y esta es la pantalla donde el
+             * administrador ya está mirando quién compite. Solo para él.
+             *
+             * Baja un ZIP con un libro por bolsa de competencia, así que el
+             * rótulo va en plural: quien lo pulsa tiene que saber que recibe
+             * varios archivos y no uno.
+             */
+            ?>
+            <a class="boton boton--tenue" href="<?= View::e(View::url('/reportes/actas.zip')) ?>">
+                Descargar actas (ZIP)
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 

@@ -21,6 +21,7 @@ use App\Controllers\InscripcionController;
 use App\Controllers\InstitucionController;
 use App\Controllers\PagoController;
 use App\Controllers\PanelController;
+use App\Controllers\ReporteController;
 use App\Controllers\UsuarioController;
 use Core\View;
 
@@ -109,6 +110,19 @@ $router->get('/carne/{codigo}', [CarneController::class, 'publico']);
 // física: a 15 mm impresos, cada carácter de más encoge los módulos del QR
 // hasta que la cámara de un celular deja de leerlo. Ver GeneradorCarne.
 $router->get('/c/{sufijo}', [CarneController::class, 'publicoCorto']);
+
+// ---------------------------------------------------------------------
+// Fase 5 — Reportes
+// ---------------------------------------------------------------------
+// Las actas de los jurados: un ZIP con UN LIBRO POR BOLSA de competencia, y
+// once hojas dentro de cada uno, una por grado. Por bolsa y no por modalidad:
+// privada y libre compiten juntas (D-37), y separarlas en dos archivos daría
+// dos ganadores donde las bases dicen uno.
+//
+// SOLO ADMINISTRADOR: es el documento oficial del concurso. No lleva ni un dato
+// de dinero —circula por las mesas y se fotocopia—; el reporte con montos es el
+// administrativo, que va aparte.
+$router->get("/reportes/actas.zip", [ReporteController::class, "acta"]);
 
 // ---------------------------------------------------------------------
 // Control de ingreso — el día del concurso

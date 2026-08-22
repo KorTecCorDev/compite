@@ -158,5 +158,29 @@ $correccion = (string) file_get_contents(Config::ruta('app/Controllers/Correccio
 $c('«Corregir» sigue abierto a los dos roles',
     str_contains($correccion, 'Auth::exigirSesion()') && !str_contains($correccion, 'Auth::exigirAdministrador()'));
 
+/*
+ * El acta de los jurados es SOLO del administrador (Fase 5, decisión del
+ * propietario del 21-ago): es el documento oficial del concurso.
+ *
+ * Se comprueba aquí, sobre el código, y no montando una petición: igual que la
+ * anulación, la guarda corta con un `redirigir()`, y una prueba que buscara un
+ * 403 no encontraría ninguno. Lo que importa es que la guarda esté **antes** de
+ * consultar y generar: exigir el rol después de haber armado el libro sería
+ * trabajo hecho para nadie, y sobre todo significaría que los datos ya se
+ * leyeron para quien no debía.
+ */
+$reporte     = (string) file_get_contents(Config::ruta('app/Controllers/ReporteController.php'));
+$posAdmin    = strpos($reporte, 'Auth::exigirAdministrador()');
+$posConsulta = strpos($reporte, 'Inscripcion::paraActa');
+$posGenerar  = strpos($reporte, 'GeneradorActa::libros');
+
+$c('el acta exige administrador', $posAdmin !== false);
+$c('y lo exige ANTES de consultar los datos',
+    $posAdmin !== false && $posConsulta !== false && $posAdmin < $posConsulta);
+$c('y antes de generar el libro',
+    $posAdmin !== false && $posGenerar !== false && $posAdmin < $posGenerar);
+$c('el acta no exige solo sesión, como si fuera de los dos roles',
+    !str_contains($reporte, 'Auth::exigirSesion()'));
+
 echo "\n{$ok} correctas, {$mal} fallidas\n";
 exit($mal === 0 ? 0 : 1);
