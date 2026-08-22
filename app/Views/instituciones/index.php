@@ -67,7 +67,7 @@ use Core\View;
             <tbody>
             <?php foreach ($instituciones as $ie): ?>
                 <tr>
-                    <td class="tabla__principal"><strong><?= View::e($ie['nombre']) ?></strong></td>
+                    <td class="tabla__principal mayus"><strong><?= View::e($ie['nombre']) ?></strong></td>
                     <td data-etiqueta="Gestión">
                         <?php
                         /* El anfitrión lleva SU papel, no su gestión (D-37). Es de

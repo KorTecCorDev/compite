@@ -325,7 +325,7 @@ el 21-ago. No es un fallo de permisos.
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 18 suites · 313 comprobaciones, base real
+php scripts/pruebas/todas.php          # 19 suites · 333 comprobaciones, base real
 php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```

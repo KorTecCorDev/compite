@@ -289,7 +289,8 @@ try {
                     $sinInstitucion++;
                 }
 
-                if ($institucion === 'Libre') {
+                // En mayúsculas como todo lo demás del acta desde D-58.
+                if ($institucion === 'LIBRE') {
                     $rotuladoLibre = true;
                 }
             }

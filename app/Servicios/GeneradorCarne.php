@@ -12,6 +12,7 @@ use Endroid\QrCode\ErrorCorrectionLevel;
 use Endroid\QrCode\Writer\PngWriter;
 use Core\Config;
 use Core\Correlativo;
+use Core\Texto;
 use Core\Url;
 use Core\View;
 
@@ -500,8 +501,14 @@ HTML;
          * que la quinta fila no entre en la hoja A4. Partido en dos, la altura
          * del bloque es constante y la maqueta deja de depender del largo.
          */
-        $apellidos = trim(($d['ap_paterno'] ?? '') . ' ' . ($d['ap_materno'] ?? ''));
-        $nombres   = trim((string) ($d['nombres'] ?? ''));
+        /*
+         * En MAYÚSCULAS, como el DNI y como el acta (D-58). Antes salían tal
+         * como se hubieran tecleado, así que el mismo estudiante aparecía de una
+         * forma en su carné y de otra en el acta — dos documentos oficiales del
+         * mismo concurso que no coincidían entre sí.
+         */
+        $apellidos = Texto::nombrePropio(($d['ap_paterno'] ?? '') . ' ' . ($d['ap_materno'] ?? ''));
+        $nombres   = Texto::nombrePropio((string) ($d['nombres'] ?? ''));
 
         $grado = (int) ($d['grado'] ?? 0) . '° ' . ucfirst((string) ($d['nivel'] ?? ''));
 
@@ -547,7 +554,7 @@ HTML;
         $procedencia = '';
 
         if (!$esLibre) {
-            $origen   = (string) ($d['institucion'] ?? '—');
+            $origen   = Texto::nombrePropio((string) ($d['institucion'] ?? '—'));
             $ptOrigen = self::tamanoQueQuepa($origen, self::ORIGEN_PT, self::ORIGEN_POR_LINEA, 0.65);
 
             $procedencia = '<div class="rotulo">Procedencia</div>'

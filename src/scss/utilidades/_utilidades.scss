@@ -25,3 +25,24 @@
 .oculto {
     display: none;
 }
+
+/*
+ * Nombres propios en MAYÚSCULAS (D-58).
+ *
+ * Unos usuarios teclean «RODRIGUEZ CAMILO» y otros «Rodriguez Camilo», así que
+ * el mismo listado mezclaba las dos formas. Se uniforma AL MOSTRAR y no al
+ * guardar: en los datos hay apellidos como «De la Cruz» bien escritos, y
+ * ninguna capitalización automática sabe reconstruirlos si se pierden.
+ *
+ * Va en CSS y no en PHP porque es presentación pura: no toca el valor que viaja
+ * en los formularios ni el que se compara al buscar, y quitarlo es borrar estas
+ * líneas. Los mismos nombres en el carné y en el acta sí se transforman en PHP
+ * (`Core\Texto`), porque allí no hay hoja de estilos que valga.
+ *
+ * NO se aplica a los `input`: ahí `text-transform` haría que la pantalla
+ * enseñara mayúsculas mientras se envía lo que se tecleó, que es peor que no
+ * hacer nada.
+ */
+.mayus {
+    text-transform: uppercase;
+}

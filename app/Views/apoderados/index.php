@@ -61,7 +61,7 @@ use Core\View;
             <?php foreach ($apoderados as $a): ?>
                 <tr>
                     <td data-etiqueta="DNI"><code><?= View::e($a['dni']) ?></code></td>
-                    <td class="tabla__principal">
+                    <td class="tabla__principal mayus">
                         <strong><?= View::e($a['ap_paterno'] . ' ' . $a['ap_materno']) ?></strong>,
                         <?= View::e($a['nombres']) ?>
                     </td>

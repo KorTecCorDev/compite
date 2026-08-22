@@ -257,7 +257,7 @@ foreach ($inscripciones as $ins) {
                             </a>
                         <?php endif; ?>
                     </td>
-                    <td class="tabla__principal">
+                    <td class="tabla__principal mayus">
                         <strong><?= View::e($ins['ap_paterno'] . ' ' . $ins['ap_materno']) ?></strong>,
                         <?= View::e($ins['nombres']) ?>
                         <br><span class="tenue"><?= View::e($ins['dni']) ?></span>
@@ -272,7 +272,10 @@ foreach ($inscripciones as $ins) {
                         <?php if ($ins['tipo_participante'] === 'libre'): ?>
                             <span class="etiqueta etiqueta--neutra">libre</span>
                         <?php else: ?>
-                            <?= View::e($ins['institucion'] ?? '—') ?>
+                            <?php /* Solo el nombre del colegio en mayúsculas: la
+                                     píldora de al lado es un rótulo del sistema,
+                                     no un dato que nadie haya tecleado. */ ?>
+                            <span class="mayus"><?= View::e($ins['institucion'] ?? '—') ?></span>
                             <span class="etiqueta etiqueta--<?= View::e($modalidad) ?>">
                                 <?= View::e(Concurso::etiquetaModalidad($modalidad)) ?>
                             </span>

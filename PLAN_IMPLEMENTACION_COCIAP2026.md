@@ -1930,6 +1930,63 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-58 — Nombres propios en mayúsculas: al mostrar, nunca al guardar
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-56, D-57, vistas de listado
+
+El propietario pidió uniformar los registros en mayúsculas —inputs, tablas y actas—, porque unos
+usuarios teclean «RODRIGUEZ CAMILO» y otros «Rodriguez Camilo».
+
+**Lo primero fue medir, y el diagnóstico contradijo la premisa.** Clasificando los 209 registros
+de texto de la base: de 114 participantes, **112 estaban ya en «Tipo Título»** y **uno solo** en
+mayúsculas (el id 67). En apoderados, 46 de 51. Las instituciones cuentan como «otros» solo
+porque llevan siglas y preposiciones —`IE Colegio Parroquial Nuestra Señora del Sagrado Corazón
+de Jesús`—, que es la forma **correcta** en español. No había caos: había una fila desviada.
+
+**El problema real estaba en otro sitio, y sí existía:** el carné pintaba el nombre tal como
+estuviera en la base y el acta ponía los apellidos en mayúsculas y los nombres no. **El mismo
+estudiante salía de dos formas distintas en dos documentos oficiales del mismo concurso.**
+
+**Por qué NO se normaliza la base.** En los datos hay apellidos con preposición bien escritos:
+`De la Cruz`, `De Moreno`, `De Loli`. Una capitalización automática los rompe —`MB_CASE_TITLE`
+devuelve «De La Cruz» y convierte `IE` en `Ie`—, así que normalizar al guardar habría **empeorado
+datos correctos y de forma irreversible**. `mb_strtoupper`, en cambio, no puede equivocarse: «DE
+LA CRUZ» es correcto y aplicarlo dos veces da lo mismo. Esa idempotencia es lo que hace segura la
+transformación, y solo se conserva si se aplica al mostrar.
+
+**Por qué NO se toca ningún `input`.** `text-transform: uppercase` sobre un campo de captura hace
+que la pantalla enseñe mayúsculas mientras se envía lo que se tecleó: la interfaz mentiría sobre
+lo que se va a guardar, y la mezcla seguiría existiendo, solo que invisible. Se descartó
+explícitamente y hay una prueba que lo vigila.
+
+**Lo que se hizo:**
+
+1. `Core\Texto::nombrePropio()` — único sitio donde se decide. Mayúsculas y colapso de espacios
+   repetidos, para que un doble espacio de tecleo no se imprima.
+2. **Acta**: nombres, apellidos e institución. El estudiante libre pasa a rotularse `LIBRE`.
+3. **Carné**: apellidos, nombres y procedencia. Es lo que cierra la incoherencia entre ambos.
+4. **Tablas y grillas**: una clase `.mayus` en CSS —presentación pura, no toca el valor que viaja
+   en los formularios ni el que se compara al buscar—, aplicada al nombre del participante, al
+   del apoderado, al de la institución y a la ficha de `/control`. La píldora de modalidad queda
+   fuera: es un rótulo del sistema, no un dato tecleado.
+5. **El registro 67 no se corrige**: al mostrarse en mayúsculas deja de desentonar por sí solo.
+   Decisión del propietario, y evita un `UPDATE` sobre datos reales el día del concurso.
+
+**Un riesgo que se verificó antes de darlo por bueno.** Las mayúsculas son más anchas, y la
+maqueta del carné está medida al milímetro: `NOMBRE_POR_LINEA` está calibrado generando hojas de
+diez hasta que se parten en dos páginas. Se generó la hoja con **los diez casos más largos reales**
+—incluido `RAMÍREZ RONDAN, MAURICIO RENATO` con `IE COLEGIO PARROQUIAL NUESTRA SEÑORA DEL SAGRADO
+CORAZÓN DE JESÚS`— y sigue ocupando **una sola página**.
+
+**Comprobado.** `scripts/pruebas/mayusculas.php`, 20 comprobaciones. Las que importan: que la
+**base conserva los nombres con minúsculas** —es lo que demuestra que la normalización sigue
+siendo de presentación—, que el acta y el carné coinciden, y que **ningún input ni textarea lleva
+la clase**. Dos comprobaciones iniciales resultaron tautológicas —comparaban el valor esperado con
+el mismo helper que lo produce, y habrían dado verde siempre— y se rehicieron leyendo las celdas
+del archivo. Total de la suite: **19 pruebas, 333 comprobaciones**.
+
+---
+
 ### D-57 — Un libro por bolsa, y el rendimiento medido en vez de supuesto
 
 **Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-56, D-54

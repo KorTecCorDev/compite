@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Servicios;
 
 use App\Models\Concurso;
+use Core\Texto;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
@@ -348,12 +349,20 @@ final class GeneradorActa
         $hoja->getPageMargins()->setTop(0.5)->setBottom(0.5)->setLeft(0.4)->setRight(0.4);
     }
 
-    /** @param array<string, mixed> $fila */
+    /**
+     * Apellidos y nombres, **todo en mayúsculas** (D-58).
+     *
+     * Antes solo los apellidos iban en mayúsculas y los nombres salían tal como
+     * estuvieran en la base, así que el acta mezclaba «RODRIGUEZ CAMILO, EDWARD
+     * FABRIZZIO» con «BRAVO CAMONES, Kerim Elián» según quién hubiera tecleado.
+     *
+     * @param array<string, mixed> $fila
+     */
     private static function nombre(array $fila): string
     {
-        $apellidos = trim((string) $fila['ap_paterno'] . ' ' . (string) $fila['ap_materno']);
+        $apellidos = Texto::nombrePropio((string) $fila['ap_paterno'] . ' ' . (string) $fila['ap_materno']);
 
-        return mb_strtoupper($apellidos) . ', ' . (string) $fila['nombres'];
+        return $apellidos . ', ' . Texto::nombrePropio((string) $fila['nombres']);
     }
 
     /**
@@ -367,6 +376,6 @@ final class GeneradorActa
     {
         $institucion = trim((string) ($fila['institucion'] ?? ''));
 
-        return $institucion !== '' ? $institucion : 'Libre';
+        return $institucion !== '' ? Texto::nombrePropio($institucion) : 'LIBRE';
     }
 }

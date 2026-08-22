@@ -80,7 +80,7 @@ $veredictos = [
 
                     <p class="control-ficha__veredicto"><?= View::e($veredicto) ?></p>
 
-                    <p class="control-ficha__nombre">
+                    <p class="control-ficha__nombre mayus">
                         <?= View::e(trim($r['ap_paterno'] . ' ' . $r['ap_materno'])) ?>,
                         <?= View::e($r['nombres']) ?>
                     </p>
