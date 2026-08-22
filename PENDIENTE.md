@@ -1,11 +1,28 @@
-# Punto de retomada — 21 de agosto de 2026, madrugada
+# Punto de retomada — 22 de agosto de 2026, día del concurso
 
 Este archivo vive en el repositorio a propósito: se lee desde cualquier máquina.
 Lo que hay en él es **estado**, no decisiones — las decisiones están en la §11 de
 `PLAN_IMPLEMENTACION_COCIAP2026.md`.
 
-**Hoy viernes 21 entra el lote grande de inscripciones. Mañana sábado 22 es el
-concurso, con inscripción el mismo día.**
+**HOY es el concurso, con inscripción el mismo día.** El lote grande entró el 21
+y se cobró entero: **113 confirmadas, 2 anuladas, cero pendientes**.
+
+## Lo desplegado hoy, y lo que falta comprobar en vivo
+
+Tres despliegues el 22: la **bolsa de competencia en el dominio** (D-54), la
+**suite que deja de poder mentir** (D-55), las **actas de los jurados** (D-56 y
+D-57) y los **nombres en mayúsculas** (D-58).
+
+> **PENDIENTE DE COMPROBAR EN PRODUCCIÓN:** pulsar «Descargar actas (ZIP)» con
+> sesión de administrador. Ese clic es lo único que confirma que
+> **PhpSpreadsheet está instalado en el servidor**: `vendor/` no viaja con el
+> autodeploy. Si sale página en blanco o error 500, allí los errores no se ven —
+> diagnosticar con el comando de D-56 §11 y arreglar con
+> `composer install --no-dev` en la carpeta del sitio. **No hace falta volver a
+> desplegar.**
+
+Y sigue sin hacerse lo de siempre: **nadie ha impreso todavía una hoja del acta**.
+Las pruebas leen el `.xlsx` por dentro, pero no ven la página.
 
 ---
 
@@ -15,10 +32,15 @@ concurso, con inscripción el mismo día.**
 |---|---|
 | Producción | `~/domains/palegoldenrod-gorilla-440933.hostingersite.com/public_html` |
 | Base | `u761410128_compite` · MariaDB 11.8.8 |
-| Base local | **copia de producción** desde el 20-ago por la noche |
+| Base local | **copia de producción** desde el 21-ago |
 | PHP servidor | 8.3.30 (consola) |
 | Guía | `DESPLIEGUE.md` · el push a `main` es el despliegue |
 | Banco de pruebas | `docs/protocolo-pruebas.html` — 137 pruebas manuales |
+
+**Antes de cualquier commit que toque `src/`:** comprobar que **no hay ningún
+proceso `node` corriendo**. El watcher de gulp reapareció **cuatro veces** entre
+el 20 y el 22 y deja los assets sin minificar; commitearlos los publica y el CDN
+los sirve una semana. `git diff HEAD --stat -- public/build` vacío es la prueba.
 
 **La cuenta de hosting está compartida** con `sigacociap.net`, que es el otro
 proyecto del propietario. No se toca ni se lee.
