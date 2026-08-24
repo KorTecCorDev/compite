@@ -2066,9 +2066,11 @@ otras cuatro: que la sesión habla UTC, que los dos tipos de columna se leen ya 
 un día de calendario no se mueve, y que sigue sin moverse **aunque el desplazamiento no sea cero**,
 que es cuando el fallo aparecería. Total del proyecto: **20 pruebas, 458 comprobaciones**.
 
-**Queda una comprobación que solo se puede hacer allá:** entrar a producción y mirar que la hora de
-un cobro conocido coincide con la real. La inferencia es sólida —803 filas con 18 000 segundos
-exactos—, pero es inferencia.
+**Confirmado en producción por el propietario el 23-ago-2026: la hora sale correcta.** Quedaba la
+única comprobación que no se podía hacer desde local —mirar que la hora de un cobro conocido
+coincida con la real—, porque todo lo anterior se apoyaba en una inferencia: 803 filas con un
+desfase de exactamente 18 000 segundos. La inferencia era sólida, pero era inferencia; ahora es un
+hecho comprobado, y con ello **`app.zona_datos = 'UTC'` queda validado contra el servidor real**.
 
 ---
 

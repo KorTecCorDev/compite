@@ -35,13 +35,21 @@ D-57) y los **nombres en mayúsculas** (D-58).
 Y sigue sin hacerse lo de siempre: **nadie ha impreso todavía una hoja del acta**.
 Las pruebas leen el `.xlsx` por dentro, pero no ven la página.
 
-**SIN DESPLEGAR todavía**, todo hecho el 22 por la tarde y sin ninguna
-migración: los **reportes contables** (D-59), la **firma que sobrevive a la
-reinscripción** (D-60), la **grilla de cobros** (D-61), la **rendición de
-cuentas** (D-62), la **hora de Ancash en todo el sistema** (D-63) y las
-**operaciones con sus participantes dentro** (D-64). Probados en local —134
-comprobaciones propias y la suite entera en verde—, así que el despliegue es el
-`git push` de siempre. Detalle más abajo.
+**DESPLEGADO el 23-ago** (commit `3516387`), sin ninguna migración: los
+**reportes contables** (D-59), la **firma que sobrevive a la reinscripción**
+(D-60), la **grilla de cobros** (D-61), la **rendición de cuentas** (D-62), la
+**hora de Ancash en todo el sistema** (D-63) y las **operaciones con sus
+participantes dentro** (D-64). Detalle más abajo.
+
+Verificado en vivo tras el push: el `app.css` publicado es **idéntico byte a
+byte** al commiteado y trae las reglas nuevas, las cinco rutas de `/reportes/*`
+responden 302 al login —existen y están protegidas—, y la vista pública del
+carné responde 200 **con una consulta real a la base**, que es lo único que
+prueba que el `SET SESSION time_zone` nuevo no rompió nada. El autodeploy tardó
+unos minutos, como de costumbre.
+
+✅ **Y el propietario confirmó el 23-ago que la hora sale correcta en
+producción.** Era la última pieza que dependía de una inferencia.
 
 ---
 
@@ -387,9 +395,11 @@ real es 20-ago S/ 215,00 · 21-ago S/ 5 215,00 · 22-ago S/ 3 815,00.
 - Hay una prueba que **recorre el código y falla si alguna fecha se pinta fuera
   de `Core\Fecha`**.
 
-**Confírmalo en producción con una línea**, para no fiarnos de una inferencia:
-`SELECT NOW(), @@session.time_zone;` — si allá responde en UTC, la configuración
-es la correcta tal como está.
+✅ **Comprobado en producción por el propietario el 23-ago: la hora sale
+correcta.** Con eso `app.zona_datos = 'UTC'` deja de ser una deducción y pasa a
+estar validado contra el servidor real. Si algún día se migra a un hosting cuyo
+MySQL corra en hora local, esa clave hay que revisarla: describe la zona **del
+volcado**, no la del servidor que lo lee.
 
 ---
 
