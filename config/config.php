@@ -22,6 +22,30 @@ return [
         'zona'      => 'America/Lima',
 
         /*
+         * Interruptor de mantenimiento. **Cierra el sitio entero.**
+         *
+         * Con `true`, toda petición que entre por el front controller —panel,
+         * login, reportes, control de puerta, carné público y los QR ya
+         * impresos— recibe la página «en mantenimiento» con un 503, y no llega
+         * a ejecutarse ni una consulta a la base.
+         *
+         * Sin excepciones y sin puerta trasera, por decisión del propietario:
+         * en `true` tampoco entra el administrador. Reabrir es cambiar esta
+         * línea a `false` y desplegar; ese es todo el trámite.
+         *
+         * Vive en el archivo VERSIONADO a propósito. `config.local.php` no se
+         * sube y el despliegue es `git push`: si el interruptor viviera allí,
+         * abrir y cerrar el sitio obligaría a editar un archivo a mano en el
+         * servidor por cPanel. Aquí, cerrar y abrir son un commit.
+         *
+         * El efecto secundario de eso conviene saberlo: un `true` versionado
+         * cierra también tu XAMPP en cuanto hagas `git pull`. Para seguir
+         * trabajando en local con el sitio cerrado en producción, declara
+         * `'mantenimiento' => false` en tu `config/config.local.php`.
+         */
+        'mantenimiento' => true,
+
+        /*
          * La zona en la que están escritas las columnas DATETIME de la base
          * —hoy solo `inscripciones.fecha_pago`— (D-62).
          *

@@ -1930,6 +1930,58 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-65 — El cierre del sitio es una línea de configuración, no un archivo en el servidor
+
+**Fecha:** 2026-08-24 · **Estado:** implementado y probado · **Afecta:** sección 3, D-49
+
+Terminado el concurso, el sistema tiene que dejar de estar en pie sin borrarse: los datos siguen
+ahí, el código sigue desplegado, pero nadie de fuera debe poder entrar a las inscripciones ni a los
+cobros. Pedido por el propietario (24-ago).
+
+**Bloqueo total, sin puerta trasera.** Se evaluaron tres formas de dejarse una entrada —una llave
+secreta por URL que dejara cookie, la sesión de administrador, una lista de IP— y el propietario
+las descartó todas: si el sitio está cerrado, está cerrado también para nosotros. La consecuencia
+hay que asumirla y está escrita en el código: para volver a consultar un reporte hay que reabrir el
+sitio entero, y reabrirlo es un commit. Media hora abierto y otro commit para cerrarlo, si hace
+falta.
+
+**El interruptor vive en `config/config.php`, versionado.** Es la decisión que parece menor y no lo
+es. El sitio se despliega con `git push` y `config.local.php` no se sube: si el interruptor viviera
+en el archivo local, abrir y cerrar el sitio significaría entrar por cPanel a editar un archivo a
+mano en producción, que es justo la operación que este proyecto ha evitado en todas partes. Puesto
+en el archivo versionado, cerrar es cambiar `false` por `true` y empujar. El precio es que un `true`
+también cierra el XAMPP de quien haga `git pull`, y por eso queda dicho en el propio comentario que
+en local se anula declarándolo en `config.local.php`.
+
+**En el front controller, no en el `.htaccess` ni en una ruta.** `public/index.php` es el único
+punto por el que pasan todas las peticiones. Puesto antes de `Sesion::iniciar()`, del router y de la
+primera consulta, un visitante bloqueado no abre la base de datos ni se lleva una cookie. En una ruta
+habría que acordarse de cubrir las diecinueve; en el `.htaccess`, el bloqueo dependería de
+mod_rewrite, que es exactamente la dependencia que la sección de seguridad del propio `.htaccess`
+evita a propósito.
+
+**503 y `no-store`, las dos por el mismo motivo.** El código es 503 «servicio no disponible» y no un
+200 ni un 404: un 200 le diría a los buscadores que este aviso *es* el contenido del sitio, y un 404
+que las direcciones dejaron de existir. Y la respuesta va con `Cache-Control: no-store`, que aquí no
+es higiene sino necesidad: delante hay un CDN que cachea siete días (D-49). Una página de
+mantenimiento guardada en esa caché seguiría cerrando el sitio después de haberlo reabierto, y esa
+avería —el interruptor en `false` y el sitio cerrado igual— es mucho más difícil de diagnosticar
+que la que arregla.
+
+**La página no lleva layout.** `layouts/limpio` arranca llamando a `Sesion::tomarFlash()`, y el
+cierre ocurre antes de que la sesión exista; envolverla en él obligaría a abrir sesión solo para
+poder decir que no hay servicio. Es HTML completo, con la hoja compilada —que Apache sirve como
+archivo estático, sin pasar por el front controller— y un puñado de reglas en línea de respaldo por
+si algún día se despliega sin compilar los assets. No enlaza a ninguna parte: con el bloqueo total
+no queda una sola ruta viva a la que mandar a nadie.
+
+**Estado:** probado sobre HTTP real. Con el interruptor en `true`, ocho rutas —raíz, login, panel,
+reportes, control, carné público, inscripciones y una inexistente— y un POST de login devuelven las
+nueve un **503**, sin `Set-Cookie` y sin tocar la base. Con el interruptor en `false`, el sitio
+responde como siempre. Las 20 pruebas de `scripts/pruebas/` siguen pasando.
+
+---
+
 ### D-64 — Cada operación de cobro enseña de quién es
 
 **Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-59, D-14

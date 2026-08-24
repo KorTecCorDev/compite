@@ -18,6 +18,32 @@ Lo que hay en él es **estado**, no decisiones — las decisiones están en la �
 **A partir de aquí no se cambia ningún dato** (decisión del propietario,
 22-ago). Lo que quede mal se declara en la rendición, no se corrige en la base.
 
+## El interruptor de cierre del sitio (24-ago)
+
+El sitio se puede cerrar entero desde **una línea** de `config/config.php`:
+
+```php
+'mantenimiento' => true,   // false = sitio abierto
+```
+
+En `true`, **todas** las rutas responden 503 con la página «Sitio en
+mantenimiento»: panel, login, reportes, control de puerta, carné público y los
+QR ya impresos. **No hay excepción ni puerta trasera** — decisión del
+propietario. Cerrar es cambiar esa línea a `true` y hacer `git push`; reabrir
+es cambiarla a `false` y volver a empujar. El autodeploy tarda sus minutos, como
+siempre. Detalle y porqués en **D-65** del plan.
+
+> ⚠️ **Ojo con el orden.** Con el sitio cerrado no se puede entrar a imprimir
+> nada ni a comprobar el ZIP de las actas: son las dos cosas que siguen
+> pendientes aquí abajo. **Hazlas primero, cierra después** — o reabre un rato
+> cuando toque.
+>
+> Y en local: un `true` que llegue por `git pull` también cierra tu XAMPP. Para
+> seguir trabajando con el sitio cerrado en producción, pon
+> `'app' => ['mantenimiento' => false]` en tu `config/config.local.php`.
+
+---
+
 ## Lo desplegado hoy, y lo que falta comprobar en vivo
 
 Tres despliegues el 22: la **bolsa de competencia en el dominio** (D-54), la
