@@ -131,6 +131,40 @@ final class Database
             . "ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION'"
         );
 
+        /*
+         * Zona horaria de la sesión, fijada a UTC (D-63).
+         *
+         * **No cambia ningún dato**: `TIMESTAMP` ya se almacena internamente en
+         * UTC, y esto solo decide en qué zona se entrega al leer. Lo que hace es
+         * quitar de en medio una diferencia entre entornos que solo se veía en
+         * producción, que es donde no se ven los errores.
+         *
+         * El problema que cierra: la base mezcla dos tipos que MySQL trata de
+         * forma distinta. `inscripciones.fecha_pago` es `DATETIME` y se guarda
+         * literal —quedó escrita en UTC durante el concurso, porque el servidor
+         * corre en UTC—; `created_at` y `updated_at` son `TIMESTAMP` y se
+         * convierten **a la zona de quien lee**. Resultado: los mismos datos
+         * daban horas distintas en la máquina de desarrollo (MySQL en hora de
+         * Lima) y en Hostinger (MySQL en UTC), y solo una de las dos podía ser
+         * correcta.
+         *
+         * Con la sesión fijada, **todo instante que sale de la base está en
+         * UTC**, en cualquier máquina, y `Core\Fecha` lo pasa a hora de Ancash
+         * al mostrarlo. Una sola regla en vez de una por tipo de columna.
+         *
+         * `+00:00` y no `'UTC'`: el nombre requiere que las tablas de zonas
+         * horarias estén cargadas en el servidor, y en un hosting compartido no
+         * siempre lo están. El desplazamiento numérico funciona siempre.
+         *
+         * Se comprobó antes de fijarlo que **ninguna consulta del sistema
+         * compara contra `NOW()` ni `CURDATE()`** para decidir nada de negocio:
+         * las únicas apariciones son al ESCRIBIR la fecha de un cobro y la de un
+         * carné. Las fechas del concurso —evento, cierre de inscripción— son
+         * columnas `DATE`, días de calendario sin hora, y no las toca ninguna
+         * zona horaria.
+         */
+        $pdo->exec("SET SESSION time_zone = '+00:00'");
+
         self::$conexion = $pdo;
 
         return self::$conexion;

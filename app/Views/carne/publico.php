@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Concurso;
+use Core\Fecha;
 use Core\View;
 
 /** @var array<string, mixed> $ficha */
@@ -31,7 +32,7 @@ $modalidad = Concurso::etiquetaModalidad(
 );
 
 $fecha = !empty($ficha['fecha_evento'])
-    ? date('d/m/Y', strtotime((string) $ficha['fecha_evento']))
+    ? Fecha::dia($ficha['fecha_evento'])
     : '';
 ?>
 <div class="carne-tarjeta carne-tarjeta--<?= View::e($estado ?: 'sin-inscripcion') ?>">

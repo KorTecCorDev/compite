@@ -198,6 +198,18 @@ final class AnulacionController extends Controller
                         'medio_pago'            => $habiaPagado ? $inscripcion['medio_pago'] : null,
                         'yape_codigo_seguridad' => $habiaPagado ? $inscripcion['yape_codigo_seguridad'] : null,
                         'fecha_pago'            => $habiaPagado ? $inscripcion['fecha_pago'] : null,
+
+                        /*
+                         * La firma del cobro se arrastra (D-60). Es la de quien
+                         * COBRÓ, no la de quien reinscribe: el arqueo cuenta
+                         * dinero recibido, y atribuirlo aquí movería un importe
+                         * entre dos cajas que nunca lo tocaron. Quién reinscribe
+                         * queda en `usuario_id`, unas líneas más arriba.
+                         *
+                         * Puede ser NULL si el cobro original es anterior a
+                         * D-39; entonces sigue sin firma, que es la verdad.
+                         */
+                        'confirmado_por'        => $habiaPagado ? $inscripcion['confirmado_por'] : null,
                     ]);
 
                     if ($habiaPagado) {

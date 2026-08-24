@@ -169,10 +169,28 @@ $c('«Corregir» sigue abierto a los dos roles',
  * trabajo hecho para nadie, y sobre todo significaría que los datos ya se
  * leyeron para quien no debía.
  */
-$reporte     = (string) file_get_contents(Config::ruta('app/Controllers/ReporteController.php'));
-$posAdmin    = strpos($reporte, 'Auth::exigirAdministrador()');
-$posConsulta = strpos($reporte, 'Inscripcion::paraActa');
-$posGenerar  = strpos($reporte, 'GeneradorActa::libros');
+$reporte = (string) file_get_contents(Config::ruta('app/Controllers/ReporteController.php'));
+
+/*
+ * Se recorta el cuerpo de `acta()` antes de mirar nada.
+ *
+ * Antes esto se comprobaba sobre el archivo entero, y funcionaba solo mientras
+ * el controlador tuvo una sola acción. Con los reportes contables dentro (D-59)
+ * dejó de valer: el arqueo SÍ es de los dos roles y usa `exigirSesion()`, así
+ * que la última comprobación empezó a fallar señalando una guarda correcta.
+ *
+ * Acotar es lo que mantiene viva la pregunta original —«¿el ACTA está detrás
+ * del rol?»— en vez de convertirla en «¿alguien en este archivo dijo sesión?»,
+ * que no es lo que aquí importa. El arqueo tiene sus propias comprobaciones de
+ * rol en `reportes-contables.php`.
+ */
+$cuerpoActa = substr($reporte, (int) strpos($reporte, 'public function acta('));
+$siguiente  = strpos($cuerpoActa, '    /**', 10);
+$cuerpoActa = $siguiente === false ? $cuerpoActa : substr($cuerpoActa, 0, $siguiente);
+
+$posAdmin    = strpos($cuerpoActa, 'Auth::exigirAdministrador()');
+$posConsulta = strpos($cuerpoActa, 'Inscripcion::paraActa');
+$posGenerar  = strpos($cuerpoActa, 'GeneradorActa::libros');
 
 $c('el acta exige administrador', $posAdmin !== false);
 $c('y lo exige ANTES de consultar los datos',
@@ -180,7 +198,7 @@ $c('y lo exige ANTES de consultar los datos',
 $c('y antes de generar el libro',
     $posAdmin !== false && $posGenerar !== false && $posAdmin < $posGenerar);
 $c('el acta no exige solo sesión, como si fuera de los dos roles',
-    !str_contains($reporte, 'Auth::exigirSesion()'));
+    !str_contains($cuerpoActa, 'Auth::exigirSesion()'));
 
 echo "\n{$ok} correctas, {$mal} fallidas\n";
 exit($mal === 0 ? 0 : 1);

@@ -1,0 +1,1 @@
+document.querySelectorAll("[data-imprimir]").forEach(function(i){i.addEventListener("click",function(){window.print()})});

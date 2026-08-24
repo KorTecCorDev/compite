@@ -45,6 +45,10 @@
 @use 'paginas/cobro';
 @use 'paginas/carne';
 @use 'paginas/control';
+// `reportes` va el último de las páginas: su bloque `@media print` apaga la
+// barra, el pie y los botones, y esas reglas tienen que ganarle a las de los
+// componentes que las encendieron. Es el único parcial que redefine tokens.
+@use 'paginas/reportes';
 
 // --- Utilidades: siempre al final ----------------------------------------
 @use 'utilidades/utilidades';

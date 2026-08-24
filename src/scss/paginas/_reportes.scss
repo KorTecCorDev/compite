@@ -1,0 +1,465 @@
+@use '../base/tokens' as t;
+@use '../base/medios' as m;
+
+// ---------------------------------------------------------------------------
+// Reportes contables (D-59)
+// ---------------------------------------------------------------------------
+// Tres pantallas —arqueo, estado de la caja y fondo de devoluciones— pensadas
+// para acabar en papel: un arqueo se firma y se entrega junto con el dinero.
+// De ahí que la mitad de este archivo sea el bloque `@media print`, que es el
+// primero del proyecto.
+
+// Navegación entre los tres reportes. La secretaria solo ve uno, así que el
+// parcial ni la dibuja: no hay pestañas de una sola pestaña.
+.reporte-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+}
+
+.reporte-nav__enlace {
+    padding: .45rem .85rem;
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    background: var(--papel);
+    color: var(--tinta-suave);
+    font-size: .86rem;
+    text-decoration: none;
+
+    &:hover {
+        border-color: t.$borde-hover;
+        color: var(--tinta);
+    }
+
+    &--activo {
+        background: var(--acento-suave);
+        border-color: t.$borde-acento;
+        color: var(--acento);
+        font-weight: 600;
+    }
+}
+
+// La identidad del documento: qué es, de qué concurso, cuándo se sacó, quién lo
+// sacó y con qué criterio. Sí se imprime — es parte del papel, no de la
+// pantalla: dos impresiones del mismo día con cifras distintas son
+// indistinguibles si ninguna dice a qué hora salió.
+.reporte-identidad {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: .8rem 1.5rem;
+    margin: 0;
+    padding: 1rem 1.25rem;
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+
+    &__par {
+        min-width: 0;
+
+        dt {
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            color: var(--tinta-suave);
+        }
+
+        dd {
+            margin: .15rem 0 0;
+            font-size: .9rem;
+        }
+
+        // El criterio de corte es una frase, no un dato suelto: ocupa la fila.
+        &--ancho {
+            grid-column: 1 / -1;
+
+            dd {
+                max-width: 90ch;
+                color: var(--tinta-suave);
+            }
+        }
+    }
+}
+
+// Los dos campos de fecha de la grilla de cobros. Van con su rótulo dentro del
+// `<label>` porque «desde» y «hasta» sin texto son dos casillas idénticas: el
+// `placeholder` de un `input[type=date]` no lo pinta ningún navegador.
+.filtros__fecha {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .84rem;
+    color: var(--tinta-suave);
+
+    input[type="date"] {
+        padding: .5rem .55rem;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font: inherit;
+        font-size: .9rem;
+        background: var(--papel);
+    }
+}
+
+.subtitulo-seccion {
+    margin: .5rem 0 -.25rem;
+    font-size: 1.05rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+
+// Las columnas de dinero se alinean a la derecha y con cifras de ancho fijo:
+// una columna de importes que no alinea las unidades no se puede sumar de un
+// vistazo, que es justo lo que se le pide a este reporte.
+// Los subtítulos de los anexos de la rendición: un escalón por debajo de
+// `.subtitulo-seccion`, para que se lea «Anexo I» y dentro «I.1», «I.2».
+.subtitulo-anexo {
+    margin: .75rem 0 -.4rem;
+    font-size: .95rem;
+    color: var(--tinta-suave);
+}
+
+// Los cuatro desgloses de la recaudación —día, medio, modalidad, cobrador— van
+// de dos en dos: son tablas cortas y apiladas dejarían media pantalla vacía a
+// la derecha. Al imprimir se reparten igual, y así el bloque cabe en una hoja.
+.rendicion-cuadros {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.tabla--numerica {
+    .celda--numero {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+}
+
+.celda--fuerte {
+    font-weight: 700;
+}
+
+// Segunda línea dentro de una celda: el recuento debajo del importe, el código
+// debajo del nombre, la explicación debajo del concepto.
+.celda__nota {
+    display: block;
+    font-size: .74rem;
+    font-weight: 400;
+    color: var(--tinta-suave);
+    white-space: normal;
+}
+
+// La fila que suma las de arriba. Se separa con una línea, como en cualquier
+// cuenta escrita a mano.
+.fila--suma td {
+    border-top: 2px solid var(--borde);
+}
+
+.tabla tfoot {
+    th,
+    td {
+        background: t.$gris-cabecera;
+        border-top: 2px solid var(--borde);
+        font-size: .9rem;
+    }
+
+    th {
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: .85rem;
+        color: var(--tinta);
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Las operaciones de cobro, con sus participantes dentro (D-64)
+// ---------------------------------------------------------------------------
+// Cada operación es una ficha: arriba la cabecera —cuándo, quién, con qué,
+// cuánto— y debajo la lista de quiénes la componen. Es una ficha y no una fila
+// de tabla porque lo que hay dentro es otra lista, y una tabla con una tabla
+// anidada dentro de una celda no se lee ni en pantalla ni en papel.
+.operaciones {
+    display: grid;
+    gap: .9rem;
+}
+
+.operacion {
+    background: var(--papel);
+    border: 1px solid var(--borde);
+    border-radius: var(--radio);
+    box-shadow: var(--sombra);
+    overflow: hidden;
+
+    &__cabecera {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: .5rem 1rem;
+        padding: .7rem .9rem;
+        background: t.$gris-cabecera;
+        border-bottom: 1px solid var(--borde);
+    }
+
+    &__momento {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        margin-right: .5rem;
+    }
+
+    &__datos {
+        color: var(--tinta-suave);
+        font-size: .88rem;
+    }
+
+    &__totales {
+        display: flex;
+        align-items: baseline;
+        gap: .6rem;
+        white-space: nowrap;
+    }
+
+    &__monto {
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__cuenta {
+        font-size: .78rem;
+        color: var(--tinta-suave);
+    }
+
+    &__aviso {
+        margin: 0;
+        padding: .5rem .9rem;
+        background: var(--aviso-suave);
+        border-bottom: 1px solid t.$borde-aviso;
+        font-size: .8rem;
+        color: var(--aviso);
+    }
+
+    &__lista {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    // Las columnas se declaran en el `li` y no en una tabla para que en pantalla
+    // estrecha cada participante se pliegue solo, sin perder el orden de lectura:
+    // primero quién es, después de dónde viene y cuánto pagó.
+    &__item {
+        display: grid;
+        grid-template-columns: 2.2rem minmax(0, 2.2fr) auto 7.5rem minmax(0, 1.8fr) 5.5rem;
+        align-items: baseline;
+        gap: .3rem .7rem;
+        padding: .4rem .9rem;
+        font-size: .86rem;
+        border-bottom: 1px solid t.$gris-suave;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    &__n {
+        color: var(--tinta-suave);
+        font-size: .75rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    &__codigo,
+    &__grado,
+    &__procedencia {
+        color: var(--tinta-suave);
+        font-size: .78rem;
+    }
+
+    &__codigo {
+        white-space: nowrap;
+    }
+
+    &__importe {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+    }
+}
+
+@include m.hasta-tableta {
+    .operacion__item {
+        // En vertical, el nombre manda y lo demás se apila debajo.
+        grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+
+        .operacion__nombre     { grid-column: 2 / -1; }
+        .operacion__codigo     { grid-column: 2 / 3; }
+        .operacion__grado      { grid-column: 3 / -1; text-align: right; }
+        .operacion__procedencia { grid-column: 2 / 3; }
+        .operacion__importe    { grid-column: 3 / -1; }
+    }
+}
+
+// Las dos firmas del pie de entrega. Solo existen en papel.
+.reporte-firmas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-top: 3.5rem;
+
+    &__linea {
+        border-top: 1px solid var(--tinta);
+        padding-top: .4rem;
+        text-align: center;
+        font-size: .8rem;
+        color: var(--tinta-suave);
+    }
+}
+
+// `solo-imprimir` está oculto en pantalla y `no-imprimir` desaparece en papel.
+// Van aquí y no en utilidades porque hoy solo las usan los reportes; el día que
+// una tercera pantalla las necesite, se suben.
+.solo-imprimir {
+    display: none;
+}
+
+@include m.hasta-movil {
+    .reporte-identidad {
+        grid-template-columns: 1fr;
+        gap: .6rem;
+        padding: .9rem 1rem;
+    }
+
+    // Los dos rangos de fecha ocupan fila entera: en 360 px, «Cobrado desde» y
+    // su casilla no caben al lado de otro control sin partirse.
+    .filtros__fecha {
+        flex: 1 1 100%;
+
+        input[type="date"] {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Papel
+// ---------------------------------------------------------------------------
+// Lo que se imprime es el documento, no la aplicación: fuera la barra de
+// navegación, el pie del sistema, los botones y los avisos de pantalla.
+//
+// El fondo se fuerza a blanco y la tinta a negro porque el gris del sistema
+// sale lavado en cualquier impresora de oficina, y un importe que no se lee no
+// sirve de nada. `print-color-adjust` evita que el navegador «ahorre» tinta
+// borrando los fondos de cabecera que separan las secciones de la tabla.
+@media print {
+    .barra,
+    .pie,
+    .avisos,
+    .no-imprimir,
+    .reporte-nav {
+        display: none !important;
+    }
+
+    .solo-imprimir {
+        display: grid;
+    }
+
+    :root {
+        --fondo: #fff;
+        --papel: #fff;
+        --tinta: #000;
+        --tinta-suave: #333;
+        --borde: #999;
+        --sombra: none;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    .contenido {
+        max-width: none;
+        padding: 0;
+        gap: .9rem;
+    }
+
+    .tabla-contenedor,
+    .reporte-identidad,
+    .metrica {
+        border: 1px solid #999;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .tabla {
+        font-size: .78rem;
+
+        th {
+            background: #f0f0f0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    }
+
+    // Una fila partida entre dos hojas deja media línea de dinero arriba y
+    // media abajo. Y la cabecera se repite en cada página: sin eso, la segunda
+    // hoja es una lista de números sin decir de qué son.
+    tr {
+        break-inside: avoid;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    .subtitulo-seccion {
+        break-after: avoid;
+    }
+
+    // El pie de firmas no se queda huérfano en una hoja para él solo.
+    .reporte-firmas {
+        break-inside: avoid;
+        margin-top: 2.5rem;
+    }
+
+    /*
+     * Las fichas de operación (D-64).
+     *
+     * `break-inside: avoid` NO se le pone a la ficha entera: una operación de
+     * treinta inscritos no cabe en media hoja, y forzarla dejaría páginas casi
+     * vacías. Lo que sí se impide es que la cabecera se quede sola al pie de una
+     * página —«21/08 16:50 · Tatiana · S/ 300,00» sin nadie debajo— y que un
+     * participante se parta por la mitad.
+     */
+    .operacion {
+        border-color: #999;
+        box-shadow: none;
+        break-inside: auto;
+    }
+
+    .operacion__cabecera {
+        background: #f0f0f0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        break-after: avoid;
+        break-inside: avoid;
+    }
+
+    .operacion__aviso {
+        background: none;
+        color: #000;
+        break-after: avoid;
+    }
+
+    .operacion__item {
+        break-inside: avoid;
+        font-size: .74rem;
+        padding: .22rem .9rem;
+    }
+
+    @page {
+        margin: 14mm;
+    }
+}

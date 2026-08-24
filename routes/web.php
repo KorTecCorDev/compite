@@ -124,6 +124,34 @@ $router->get('/c/{sufijo}', [CarneController::class, 'publicoCorto']);
 // administrativo, que va aparte.
 $router->get("/reportes/actas.zip", [ReporteController::class, "acta"]);
 
+// Los reportes contables (D-59). Pantallas imprimibles, no descargas: lo que
+// hace falta el día del concurso es cerrar caja, y una pantalla no depende de
+// que PhpSpreadsheet esté instalado en el servidor.
+//
+// El arqueo es la ÚNICA pantalla contable que ve la secretaria, y solo con lo
+// suyo: es el papel con el que entrega el dinero que cobró. El acotado lo hace
+// el controlador, no la vista.
+$router->get('/reportes/caja', [ReporteController::class, 'caja']);
+
+// Las otras tres son de dirección, solo administrador.
+//
+// La rendición de cuentas (D-62): el documento de cierre para dirección, con
+// el padrón nominal y el anexo de observaciones. Concurso cerrado, solo lectura.
+$router->get('/reportes/rendicion', [ReporteController::class, 'rendicion']);
+
+// La grilla de cobros (D-61): TODAS las inscripciones con el detalle de su pago
+// —quién lo confirmó, con qué, con qué código de Yape y a qué hora—, ordenadas
+// por fecha de confirmación. Es la pantalla de auditoría; el listado de
+// `/inscripciones` sigue siendo la de trabajo, en orden de nómina.
+$router->get('/reportes/cobros', [ReporteController::class, 'cobros']);
+
+// El reparto del dinero del concurso entero y lo que hay que devolver.
+$router->get('/reportes/saldos', [ReporteController::class, 'saldos']);
+
+// El fondo de devoluciones (flujo 7 del §6). El cálculo existía desde la Fase 4
+// y nunca tuvo pantalla: se consultaba a mano contra la base.
+$router->get('/reportes/devoluciones', [ReporteController::class, 'devoluciones']);
+
 // ---------------------------------------------------------------------
 // Control de ingreso — el día del concurso
 // ---------------------------------------------------------------------
@@ -131,10 +159,6 @@ $router->get("/reportes/actas.zip", [ReporteController::class, "acta"]);
 // perdido, que con estudiantes de primaria no es un riesgo sino una certeza:
 // el papel acelera la fila, pero la fuente de verdad es esta consulta.
 $router->get('/control', [ControlController::class, 'index']);
-
-// ---------------------------------------------------------------------
-// Fase 5 — Reportes                        (pendiente)
-// ---------------------------------------------------------------------
 
 $router->noEncontrado(static function (): void {
     echo View::renderizar('errores.404', ['titulo' => 'No encontrado'], 'limpio');

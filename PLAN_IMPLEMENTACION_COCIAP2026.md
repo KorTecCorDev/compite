@@ -1930,6 +1930,553 @@ sin comprobarse en un teléfono físico.
 
 ---
 
+### D-64 — Cada operación de cobro enseña de quién es
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-59, D-14
+
+El arqueo agrupaba los cobros por operación —cuándo, quién, con qué medio, cuánto— y ahí se
+quedaba: una línea que decía «S/ 350,00, 28 inscripciones» **sin decir de quiénes**. Para cuadrar
+contra la nómina de una delegación o contra el extracto del banco, esa línea no sirve; hay que poder
+ver los 28 nombres. Pedido por el propietario (22-ago), y visible **también en el papel**.
+
+**Ficha y no fila de tabla.** Lo que va dentro de cada operación es otra lista, y una tabla con otra
+tabla anidada en una celda no se lee ni en pantalla ni impresa. Cada operación pasa a ser una ficha:
+cabecera con los datos del cobro y, debajo, una línea por participante con su código, su grado, su
+procedencia y su importe.
+
+**Una sola consulta, agrupada en PHP — y esta es la decisión que importa.**
+
+Lo natural habría sido un `GROUP BY` para las cabeceras y un segundo `SELECT` para el detalle. Se
+descartó: repetiría la clave de agrupación en dos sitios, y el día que una de las dos cambie, el
+total de la cabecera dejaría de ser la suma de lo que hay debajo. En un papel que se firma al
+entregar dinero, decir **S/ 350,00 arriba y listar S/ 340,00** es el peor fallo posible, porque no
+revienta: se firma. Ahora **el total se calcula a partir de las mismas filas que se listan**, así
+que no puede contradecirlas, y hay una prueba que recorre las 142 fichas comprobándolo.
+
+**Lo que esto sacó a la luz, y no es menor.** Con los participantes a la vista se ve que **5
+operaciones tocan más de una procedencia**, y una de ellas mezcla **14 colegios distintos** en un
+solo «cobro por transferencia». La conclusión es que lo que la reconstrucción agrupa **no es una
+operación bancaria: es un clic de confirmación**. La confirmación es masiva (D-14), así que una
+secretaria puede seleccionar treinta inscripciones de catorce colegios que pagaron por separado y
+confirmarlas todas de una vez; para Yape el código las distingue, pero transferencia y efectivo no
+llevan referencia y quedan fundidas.
+
+Eso ya estaba dicho en D-59 —«es una heurística, no un hecho»— pero era una advertencia teórica.
+Ahora la ficha **avisa en el sitio**: cuando una operación toca varias procedencias, lo dice encima
+de la lista. Es la diferencia entre documentar una limitación y enseñarla donde estorba.
+
+**Detalles que no son obvios:**
+
+1. **Orden alfabético dentro de la ficha**, con la colación española. No es estético: es el orden en
+   el que se cotejan los nombres contra la lista que trae la delegación.
+2. **`inscripciones` pasó a llamarse `cantidad`**, y `participantes` es la lista. Tener una clave
+   llamada «inscripciones» que era un número, al lado de un array de inscripciones, era pedir un
+   error.
+3. **El momento de la operación sigue siendo el más antiguo del grupo**, como hacía el
+   `MIN(fecha_pago)` de antes.
+
+**Impresión: `break-inside: avoid` NO va en la ficha entera.** Una operación de treinta inscritos no
+cabe en media hoja y forzarla dejaría páginas casi vacías. Lo que sí se impide es que **la cabecera
+se quede huérfana** al pie de una página —«21/08 16:50 · Tatiana · S/ 300,00» sin nadie debajo— y
+que la línea de un participante se parta por la mitad.
+
+**Medido:** 142 fichas y 804 líneas de participante en **43 ms** y 688 KB, con 8 MB de pico. Es la
+vista del administrador, que ve las tres cajas; la de una secretaria es una fracción de eso.
+
+**Comprobado.** 9 comprobaciones nuevas (suite contable: **134**): que la ficha lista exactamente a
+los participantes de su operación, que **ninguna ficha discrepa de sus propios participantes**, que
+todas las operaciones juntas dan el cobrado bruto, que hay una ficha por operación y una línea por
+persona en el HTML, y que una operación de un solo colegio no se marca como mezclada.
+
+Una de ellas nació mal y conviene dejarlo escrito: comparaba los participantes **como lista
+ordenada** contra los ids creados. Falló, y con razón — dentro de la ficha el orden es alfabético, y
+los dos casos de prueba se llaman igual, así que su desempate es arbitrario. Afirmaba algo que el
+código no promete. Se corrigió comparando conjuntos. Total del proyecto: **20 pruebas, 467
+comprobaciones**.
+
+---
+
+### D-63 — La hora de Ancash, en todo el sistema y en los dos entornos
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-62, D-53, `Core\Database`
+
+D-62 corrigió la hora **en los reportes contables**. El propietario pidió lo evidente: que la fecha
+y hora reales se vean **en todas partes**. Al hacerlo apareció que el problema era más ancho de lo
+que D-62 describía.
+
+**La base mezcla dos tipos que MySQL trata de forma distinta.**
+
+| Columna | Tipo | Qué hace MySQL al leer |
+|---|---|---|
+| `inscripciones.fecha_pago` | `DATETIME` | La entrega **literal**, sin tocarla |
+| `created_at`, `updated_at`, `generado_en` | `TIMESTAMP` | La **convierte a la zona de quien lee** |
+
+Con el servidor en UTC y la máquina de desarrollo en hora de Lima, eso significaba que **los mismos
+datos daban horas distintas en cada entorno**, y que aplicar una única corrección a las dos habría
+arreglado una y roto la otra. Peor: `created_at` se veía **bien en local y cinco horas adelantado en
+producción**, que es exactamente la clase de fallo que este proyecto no puede permitirse — allí los
+errores no se ven.
+
+**La solución es fijar la zona de la sesión, no parchear cada columna.** `Core\Database` ejecuta
+ahora `SET SESSION time_zone = '+00:00'` junto al `sql_mode`. A partir de ahí **todo instante que
+sale de la base está en UTC, en cualquier máquina**, y `Core\Fecha` lo pasa a hora de Ancash al
+mostrarlo. Una sola regla en lugar de una por tipo de columna, y la hora que se ve en desarrollo es
+la que se verá en el servidor.
+
+**No cambia ningún dato**, y conviene entender por qué: `TIMESTAMP` ya se almacena internamente en
+UTC —la zona de sesión solo decide cómo se presenta— y `DATETIME` se entrega tal cual esté escrito.
+No se reescribe una sola fila.
+
+`'+00:00'` y no `'UTC'`: el nombre exige que las tablas de zonas horarias estén cargadas en el
+servidor, y en un hosting compartido no siempre lo están. El desplazamiento numérico funciona
+siempre.
+
+**Se comprobó antes de tocarlo** que ninguna consulta compara contra `NOW()` ni `CURDATE()` para
+decidir nada de negocio: las únicas apariciones son al **escribir** la fecha de un cobro y la de un
+carné. Si hubiera habido un `WHERE fecha <= CURDATE()`, cambiar la zona de la sesión habría movido
+resultados en silencio.
+
+**Un día de calendario NO es un instante, y ahora está escrito en el código.** `Core\Fecha` expone
+dos métodos y la diferencia es deliberada:
+
+- `mostrar()` — para `DATETIME` y `TIMESTAMP`. **Convierte.**
+- `dia()` — para las columnas `DATE`: fecha del evento, cierre de inscripción. **No convierte.**
+
+El concurso es el sábado 22 en Ancash y en Tokio; es un día, no un momento. Pasarlo por la
+conversión lo movería al **21 a las 19:00**, y ese día sale impreso en el carné y en el acta. Son
+dos métodos y no uno con un parámetro para que la próxima persona que vea un `date()` junto a un
+`Fecha::mostrar()` no «arregle» el que no tocaba.
+
+**Y dos ayudantes más, por la misma razón de fondo.** `Fecha::ahora()` y `Fecha::hoy()` no dependen
+del `php.ini`: `date()` a secas usa la zona por defecto de PHP, que la aplicación fija en
+`public/index.php` pero **un script de consola no**, y que en el servidor puede venir en UTC. Un
+documento que se firma no puede llevar una hora de emisión que dependa de por dónde se lanzó, y la
+cuenta atrás del panel con un PHP en UTC diría «ya pasó» desde las siete de la tarde de la víspera —
+la misma familia de fallo que D-53 corrigió con «faltan 1 día».
+
+**Lo que se tocó**, todo de presentación: `Core\Database` (la sesión), `Core\Fecha` (`dia`, `ahora`,
+`hoy`), el historial de correcciones, la vista pública del carné, `GeneradorActa`, `GeneradorCarne`,
+la cabecera de identidad de los reportes, la cuenta atrás del panel, el nombre del ZIP de actas y la
+tabla por día de la rendición.
+
+**Comprobado.** Cinco comprobaciones nuevas (suite contable: **125**), y la más útil no mira una
+fecha sino el código: **recorre `app/` y `core/` y falla si alguna fecha se pinta fuera de
+`Core\Fecha`** —descontando los comentarios, que citan `date()` para explicar el problema—. Las
+otras cuatro: que la sesión habla UTC, que los dos tipos de columna se leen ya en la misma zona, que
+un día de calendario no se mueve, y que sigue sin moverse **aunque el desplazamiento no sea cero**,
+que es cuando el fallo aparecería. Total del proyecto: **20 pruebas, 458 comprobaciones**.
+
+**Queda una comprobación que solo se puede hacer allá:** entrar a producción y mirar que la hora de
+un cobro conocido coincide con la real. La inferencia es sólida —803 filas con 18 000 segundos
+exactos—, pero es inferencia.
+
+---
+
+### D-62 — La rendición de cuentas: los sobre registros se declaran, no se corrigen
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-59, D-60, D-61, Fase 5 (§8)
+
+Concurso terminado. El propietario fija dos condiciones: **no se cambia ningún dato** y hay que
+resolver los **sobre registros** dentro de una rendición contable profesional. Todo lo que sigue es
+de solo lectura: `GET /reportes/rendicion`, **solo administrador**.
+
+---
+
+**Primero, un error mío que conviene dejar escrito porque casi cuesta una decisión equivocada.**
+
+Al auditar los datos informé de que **805 filas pagadas tenían `fecha_pago` posterior a su propia
+`updated_at`**, que la aplicación no puede producir, y concluí que los datos de dinero eran
+fabricados. Estuvo mal. La causa es de tipos: **`fecha_pago` es `DATETIME` y se guarda literal;
+`created_at` y `updated_at` son `TIMESTAMP` y MySQL los convierte al leer**. El volcado se escribió
+en un servidor con MySQL en UTC y se estaba leyendo en una máquina con MySQL en hora de Lima, así
+que los `DATETIME` conservaron su valor y los `TIMESTAMP` se recalcularon.
+
+Lo que lo demostró: **803 de las 805 filas dan exactamente 18 000 segundos de desfase**, y las dos
+restantes se modificaron después del cobro por otra razón. Un desfase constante y redondo no es una
+falsificación, es una zona horaria. Los datos son reales y completos.
+
+---
+
+**El hallazgo verdadero, que sí afecta a la rendición.** Las horas de pago están **cinco horas
+adelantadas** respecto de la hora de Ancash, y eso no es cosmético:
+
+> **191 cobros, S/ 1 965,00, están archivados con fecha del sábado 22 y se cobraron el viernes 21
+> por la noche.** En un cierre por día, esa es la diferencia entre cuadrar y no cuadrar.
+
+Con la hora corregida, el cierre real del concurso es:
+
+| Día (hora de Ancash) | Cobros | Importe |
+|---|---:|---:|
+| Jueves 20 | 19 | S/ 215,00 |
+| Viernes 21 | 437 | S/ 5 215,00 |
+| Sábado 22 | 348 | S/ 3 815,00 |
+
+**Se corrige AL LEER, nunca tocando los datos** (`Core\Fecha`, `app.zona_datos` en configuración).
+Reescribir 805 fechas de pago es reescribir el libro de caja, y un libro que se reescribe deja de
+ser prueba de nada. El dato guardado es correcto en su zona; lo que faltaba era decir en cuál está.
+
+**Por qué la zona de los datos es configuración y no se detecta sola.** Se intentó deducirla
+comparando el `NOW()` de MySQL con la hora de PHP: no sirve. Eso dice en qué zona escribe el
+servidor **de ahora**, no aquel en el que se escribieron las filas — y este volcado, creado en UTC y
+leído en una máquina en hora de Lima, es justo el caso en el que la detección respondería «cero» y
+dejaría el error intacto. Es una propiedad **del volcado**, no del servidor que lo lee.
+
+---
+
+**Los sobre registros: tres casos, y tres tratamientos distintos.** Se buscaron por tres vías
+independientes —pagos escritos dos veces, nombres repetidos, y apellidos + colegio + grado
+repetidos— y no hay más.
+
+| | Caso | Importe | Tratamiento |
+|---|---|---|---|
+| I.1 | **Cobro duplicado**: misma persona, mismo colegio, mismo grado, cobrada dos veces | S/ 10,00 | **Se descuenta** del ingreso |
+| I.2 | **Homónimos**: mismo nombre, distinta procedencia | — | Se declara, no se descuenta |
+| I.3 | **Un pago en dos filas**: la copia que deja la reinscripción | S/ 15,00 de riesgo | Se declara; el dinero entró una vez |
+
+**El umbral de I.1 es deliberado y está en el código.** Dos personas con el mismo nombre completo
+pueden existir; dos con el mismo nombre **en el mismo colegio y el mismo grado** son la misma
+persona registrada dos veces. Solo ese caso se descuenta. El resto se declara para que lo juzgue
+una persona, que es lo que corresponde cuando hay que decidir si a un niño se le cobró dos veces.
+
+**Nada de esto se corrige en la base, y es la decisión de fondo del documento.** Un registro
+contable no se arregla borrando: se arregla revelando. El volcado del concurso es prueba de lo que
+ocurrió, y el anexo explica cada diferencia entre las filas, las personas y los soles.
+
+Por decisión del propietario (22-ago), el cobro duplicado se declara **cobro indebido pendiente de
+devolución**: ese dinero no es del concurso. De ahí la cadena de conciliación del documento:
+
+```
+809  inscripciones registradas
+ −5  anuladas
+804  confirmadas y cobradas          →  S/ 9 245,00  recaudado bruto
+ −1  competidor duplicado            →  S/     10,00 cobro indebido
+803  competidores efectivos          →  S/ 9 235,00  ingreso legítimo
+```
+
+**La propiedad que hace defendible el documento, y que hay una prueba vigilando:** añadir una
+persona duplicada sube el bruto y sube lo indebido **en el mismo importe**, así que el ingreso
+legítimo no se mueve. Cobrar dos veces a la misma persona no le añade un sol al concurso.
+
+**El padrón nominal completo va dentro** (una fila por inscripción, incluidas las anuladas), por
+decisión del propietario: una rendición que solo lista a quien pagó no permite rastrear las bajas,
+que es lo primero que alguien va a querer comprobar.
+
+---
+
+**Se retira la propuesta de la tabla `pagos`.** En el análisis previo recomendé un libro de pagos
+con migración en cuatro pasos. **Con el concurso cerrado y sin tocar datos, ya no procede**: su
+valor era impedir duplicaciones futuras, y no habrá más cobros. La duplicación es ahora un hecho
+histórico en **una** fila, identificada, excluida de los totales y declarada en el anexo. Montar esa
+migración sería asumir el riesgo de tocar la tabla del dinero para prevenir algo que no puede
+volver a ocurrir en este concurso. **Queda para el COCIAP 2027**, que es donde sirve, junto con
+`fecha_anulacion` y el registro de la devolución efectuada.
+
+---
+
+**Una discrepancia entre la documentación y los datos, reportada como pide el §0.**
+`PENDIENTE.md` afirma que el 21-ago se intercambiaron por consola los documentos de los
+participantes 20 y 21, dejando el bueno (`…439`) en el registro vivo. **Los datos dicen lo
+contrario**: el `…439` está en el participante 20, que es el anulado, y quien compitió lleva el
+`…438`. O se revirtió —el propio documento cuenta que la primera vez faltó el `COMMIT`— o nunca
+llegó a aplicarse. **El estudiante que compitió está registrado con el documento equivocado**, y eso
+hay que decidirlo antes de emitir cualquier constancia a su nombre. No se tocó nada.
+
+---
+
+**Comprobado.** 30 comprobaciones nuevas (secciones 13 a 15), que suben la suite contable a **120**.
+Las tres que importan:
+
+- **PHP y SQL convierten la hora igual**, también en el cobro más antiguo y en el más reciente. Si
+  divergieran, el día por el que se agrupa la recaudación no sería el que se imprime al lado y el
+  documento se contradiría sin que nada fallara.
+- **Un cobro de las nueve de la noche del viernes se filtra por su día real** y no por el día con el
+  que quedó guardado. Se reproduce con una fecha fijada a mano y no con el reloj, para que la prueba
+  diga lo mismo un martes a las tres.
+- **Los cuatro desgloses cuadran con el bruto**, antes y después de añadir un duplicado.
+
+Total del proyecto: **20 pruebas, 453 comprobaciones**, todas en verde.
+
+---
+
+### D-61 — La grilla de cobros: todas las inscripciones, en el orden del dinero
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-59, D-18, D-48, Fase 5 (§8)
+
+Pedido por el propietario: **ver TODAS las inscripciones** con su estado, quién confirmó el pago,
+con qué medio, el código de verificación cuando es Yape, y la fecha y hora de la confirmación —
+**ordenadas por esa fecha**. `GET /reportes/cobros`, **solo administrador**.
+
+**Por qué es una pantalla nueva y no seis columnas más en `/inscripciones`.** Son dos documentos
+con dos públicos y **dos órdenes incompatibles**: el listado de trabajo va en orden de nómina
+—apellido paterno, materno, nombres, con la colación española (D-18)— porque se usa para encontrar
+a una persona; este va en orden de reloj, porque se usa para reconstruir qué pasó con el dinero.
+Un solo listado con las dos cosas obligaría a elegir un orden y estropear el otro uso, y arrastraría
+además la columna de acciones y la casilla de cobro (D-48) a una pantalla donde no se opera nada.
+
+**El orden, entero y decidido.** Pagadas primero, de la más reciente a la más antigua; **lo no
+cobrado al final**. Esa segunda mitad es tan parte del requisito como la primera: `fecha_pago` es
+`NULL` en toda pendiente, y ordenar por una columna nulable sin decir dónde caen los nulos deja ese
+trozo del listado al criterio del motor — que puede cambiar con la versión. Va explícito en el SQL
+(`ORDER BY (i.fecha_pago IS NULL) ASC, i.fecha_pago DESC, i.id DESC`) y hay una prueba que recorre
+la lista entera comprobando que ninguna pagada aparece después de una sin cobrar.
+
+**Aquí NO se suma dinero, y es la decisión importante de esta pantalla.**
+
+La grilla enseña **filas crudas**, una por inscripción. Por D-59 sabemos que una reinscripción deja
+el mismo pago escrito en dos filas —la anulada conserva el suyo y la nueva lo copia—, así que
+**sumar esta lista cobraría dos veces al mismo estudiante**. Poner un total al pie habría sido
+regalar una cifra que contradice a `/reportes/saldos`, y con dos cifras distintas en pantalla la que
+se cree es la que uno tiene delante.
+
+En vez de eso, cada fila trae `pago_contado`: vale 1 en la fila que los reportes de dinero cuentan y
+0 en la copia, que sale marcada **«ya contado»**. Un aviso arriba dice cuántas hay y por qué, y solo
+aparece si las hay — una advertencia permanente deja de leerse. Los totales se piden donde
+corresponde, con un enlace a Estado de la caja.
+
+Eso obligó a un refactor pequeño y necesario: la regla de «qué fila cuenta» estaba dentro de
+`DESDE_COBROS_VIGENTES`, y ahora vive suelta en `Inscripcion::FILA_DE_PAGO_VIGENTE`, que usan los
+dos. **Una sola copia**: si la grilla la reimplementara, marcaría como contadas filas que el saldo
+no cuenta, y las dos pantallas se contradirían sin que nadie lo notara.
+
+**Los filtros salen de la misma `condiciones()` que el listado.** Se le añadieron cuatro claves
+—`medio_pago`, `confirmado_por`, `desde`, `hasta`— y ninguna la envía `/inscripciones`, así que allí
+no cambian nada. Van en esa función y no en una paralela por lo mismo que dice su propio comentario:
+es donde un filtro se convierte en SQL, y con dos funciones `contarFiltradas()` contaría con unas
+condiciones y la grilla pintaría con otras, con lo que el aviso de «hay más filas» mentiría. Hay una
+prueba que compara las dos cuentas con el mismo filtro.
+
+Cuatro detalles que no son obvios:
+
+1. **`FILTROS_COBROS` es una lista aparte de `FILTROS`.** `FILTROS` es lo que `urlListado()` acepta
+   al reconstruir la vuelta al listado tras un cobro fallido (D-48); esa pantalla no sabe nada de
+   estas cuatro claves y no tiene por qué empezar a aceptarlas.
+2. **`hasta` se compara contra el final del día.** `fecha_pago` es `DATETIME`: un `<= '2026-08-22'`
+   dejaría fuera todo lo cobrado ese día después de medianoche, es decir, todo.
+3. **Dos valores que no son datos:** `medio_pago = sin_cobrar` busca `IS NULL`, y
+   `confirmado_por = sin_firma` busca los cobros sin firmar de antes de D-39. Se resuelven en
+   `condiciones()` y nunca viajan como parámetro, porque no son un medio ni un id de usuario.
+4. **El desplegable de cobradores lista a TODOS los usuarios, no solo a los activos.** Quien cobró
+   en julio puede estar desactivado hoy, y sin su nombre en la lista sus cobros no se podrían
+   filtrar. Es la misma razón por la que los usuarios se desactivan y no se borran.
+
+**Solo administrador.** Enseña de una vez quién cobró cada inscripción y **el código de Yape de
+todas**, que es justo lo que D-59 reservó a las filas propias cuando mira una secretaria. Cada una
+sigue teniendo su arqueo con lo suyo. Si algún día se abre a secretaría, el cambio es una línea en
+el controlador — y habría que decidir antes qué se hace con los códigos ajenos.
+
+**Medido, no supuesto** (base local, 809 filas —que incluyen las generadas, ver `PENDIENTE.md`—):
+consulta **15 ms**, render **17 ms**, **1,6 MB** de HTML y 12 MB de pico. En producción, con unas
+115 inscripciones, la página baja a ~230 KB. El `TOPE_LISTADO` de 2000 se aplica igual que en el
+listado, con el mismo aviso de «hay más» apoyado en `contarFiltradas()`: cortar en silencio en una
+pantalla de auditoría sería peor aquí que en ninguna otra.
+
+**Comprobado:** 28 comprobaciones nuevas en `scripts/pruebas/reportes-contables.php` (secciones 10 a
+12), que suben esa suite a **90**. Las que importan: que salen los tres estados y no solo lo
+cobrado; que **el orden se cumple en toda la lista**, nulos incluidos; que la copia de una
+reinscripción va marcada y la fila viva no; que cada filtro deja solo lo suyo; que la grilla y el
+contador aplican el mismo filtro; y que a la secretaria **no se le ofrece siquiera el enlace**.
+Total del proyecto: **20 pruebas, 423 comprobaciones**, todas en verde.
+
+---
+
+### D-60 — La firma del cobro sobrevive a la reinscripción
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-38, D-39, D-59
+
+**El defecto, verificado en el código.** `Inscripcion::crear()` (`app/Models/Inscripcion.php:107-128`)
+inserta nueve columnas y **`confirmado_por` no es ninguna de ellas**. Al reinscribir a quien ya
+había pagado, la fila nueva nace `estado = 'confirmada'` con `medio_pago`, `fecha_pago` y el código
+de Yape copiados —eso sí se cuidó— pero **sin firma**. El resultado es un cobro confirmado que no
+tiene dueño, que es exactamente la situación que D-39 vino a cerrar; la reinscripción la
+reintroduce en silencio.
+
+No es histórico: **se está generando hoy**. Los `NULL` anteriores a D-39 son otra cosa —el retrato
+de lo que pasó antes de que el sistema supiera registrarlo— y esos se quedan como están, por el
+mismo motivo que dice aquella migración: *una firma inventada es peor que ninguna*.
+
+**Se arrastra la firma del cobrador ORIGINAL, no la de quien reinscribe.** El arqueo cuenta dinero
+recibido, y esa plata la recibió el primero; atribuírsela a quien reinscribe movería un importe
+entre dos cajas que nunca lo tocaron. Quién reinscribió no se pierde: queda en `usuario_id` de la
+fila nueva, que es la firma de quien registra (D-39).
+
+**Alcance exacto, para que no crezca.** De los tres sitios que llaman a `Inscripcion::crear()`, solo
+uno crea filas ya pagadas: `AnulacionController.php:191`. Los otros dos —`InscripcionController.php:264`
+y `:458`— nacen pendientes y no tienen firma de cobro que arrastrar. El cambio es aceptar
+`confirmado_por` en `crear()` y pasarlo allí. **Cero migraciones**: la columna existe desde D-39.
+
+**Comprobado** en `scripts/pruebas/reportes-contables.php` (caso 4) y no en `firmas-y-usuarios.php`,
+como se había previsto: la firma solo se puede leer sobre el caso completo de reinscripción, que es
+el que esa suite monta. Seis comprobaciones, y **dos son de distinta naturaleza a propósito**:
+
+- Que el modelo **sabe** guardar la firma, y que sin cobro no se la inventa (queda `NULL`).
+- Que el controlador **se la pasa**, leído sobre la fuente de `reinscribir()`. Esta segunda hace
+  falta porque el defecto no estaba en el modelo sino en el cableado: una prueba que solo llamara a
+  `crear()` con la firma puesta pasaría en verde con el defecto intacto — exactamente el tipo de
+  prueba que no puede fallar que D-55 vino a erradicar.
+
+Sin esto, el arqueo de D-59 empezaría a acumular cobros sin dueño el mismo día que se publica.
+
+---
+
+### D-59 — Los reportes contables, y la regla de contar el dinero una sola vez
+
+**Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** Fase 5 (§8), flujo 7 (§6), D-14, D-15, D-38, D-56
+
+El acta de los jurados no lleva **ni un dato de dinero**, y es deliberado (D-56 §4). Éste es el
+otro reporte, el de dirección: el que responde **cuánto entró, por qué medio, en manos de quién y
+qué falta por cobrar**. Tres pantallas, todas de solo lectura y **cero migraciones**:
+
+| Pantalla | Qué contesta |
+|---|---|
+| `/reportes/caja` | Arqueo: cuánto recibió cada usuario, desglosado por medio de pago |
+| `/reportes/saldos` | Las cinco líneas del saldo, cuadradas contra la caja física |
+| `/reportes/devoluciones` | El fondo de devoluciones, que ya calcula `Inscripcion::fondoDevoluciones()` y llevaba desde la Fase 5 sin vista ni ruta |
+
+**Cuatro decisiones del propietario (22-ago), preguntadas y no supuestas:**
+
+1. **Pantalla imprimible antes que Excel.** Lo que hace falta esta noche es cerrar caja, y una
+   pantalla no depende de que PhpSpreadsheet esté instalado en el servidor — que a día de hoy
+   **sigue sin confirmarse** (D-56, último párrafo). El `.xlsx` se añade después, sobre los mismos
+   cálculos y sin reimplementarlos.
+2. **El administrador ve las tres cajas; cada secretaria ve solo la suya.** Es la línea de D-52
+   —cada quien opera sus propios registros— aplicada al dinero, y no inventa una excepción nueva:
+   el cierre de caja es el papel con el que se entrega lo recaudado, así que quien lo entrega tiene
+   que poder imprimirlo sin pedírselo a nadie. El código de seguridad de Yape aparece **solo en las
+   filas propias**, y para el administrador en todas: es la única llave de conciliación que existe.
+   · Derivado al implementarlo: **el arqueo es la única de las tres pantallas que ve la secretaria**.
+   `/reportes/saldos` y `/reportes/devoluciones` exigen administrador —el reparto del dinero del
+   concurso entero y lo que hay que devolver son de dirección, y anular ya es exclusivo suyo por
+   D-51—. Por eso la barra lleva **un solo enlace**, «Caja», y las otras dos se alcanzan desde
+   dentro: una puerta que va a dar 403 no se le enseña a nadie, igual que con Instituciones.
+3. **El dinero en limbo tiene línea propia**, no entra al fondo de devoluciones. Ver más abajo.
+4. **La firma del cobro se arregla antes de emitir el primer arqueo** → D-60.
+
+**La regla de contar, que es lo que hace contable a este reporte.**
+
+`Inscripcion::resumen()` cuenta como recaudado solo `estado = 'confirmada'`. **Eso no cuadra con
+el cajón**: el dinero de una inscripción cobrada y luego anulada desaparece del recaudado, pero
+sigue físicamente en poder de la organización hasta que alguien lo devuelva. Y sumar «todo lo que
+tenga `fecha_pago`» es peor todavía, porque **cobra dos veces al mismo estudiante**: al reinscribir
+(`app/Controllers/AnulacionController.php:186-207`) la fila nueva **copia** `medio_pago`,
+`fecha_pago` y `yape_codigo_seguridad`, y la anulada **conserva los suyos**. El mismo S/ 10.00
+está escrito en dos filas a propósito, para que la nueva sepa cómo se cobró.
+
+El discriminador correcto no es el estado ni el marcador de devolución, es **si el participante
+tiene todavía una inscripción viva**:
+
+```
+Cobrado bruto   = confirmadas con fecha_pago
+                + anuladas pagadas cuyo participante NO tiene inscripción viva
+(-) Devoluciones efectuadas                              ← HOY NO SE REGISTRA (ver abajo)
+(=) En poder de la organización
+Por cobrar      = pendientes
+```
+
+y ese segundo sumando se parte en dos líneas que no significan lo mismo:
+
+- **Por devolver** (`requiere_devolucion = 1`): anulación definitiva de algo ya pagado. Es el fondo.
+- **Cobrado pendiente de reasignar**: anulada *para reinscribir* que todavía no se reinscribió.
+  `Inscripcion::anular()` pone `requiere_devolucion = esDefinitiva && estado === 'confirmada'`
+  (`app/Models/Inscripcion.php:538`), así que estas quedan en 0 y **hoy no salen en ningún sitio**:
+  ni en recaudado, ni en el fondo. Es el hueco entre los dos botones de D-15.
+
+La anulada pagada **con** inscripción viva es la reinscrita, y se excluye: su dinero ya está contado
+en la fila confirmada.
+
+**Corrección hecha al implementarlo, y merece quedar escrita.** La primera versión de esta regla
+era un `NOT EXISTS` —el mismo que sostiene la columna `puede_reinscribir` de `Inscripcion::listar()`
+(`:189`)— sobre «anuladas sin ninguna hermana viva». **Se rompe con la cadena larga**: pagó, se
+anuló, se reinscribió, y esa segunda se anuló definitivamente. Entonces quedan **dos** anuladas
+pagadas y ninguna viva, y el mismo importe se sumaría dos veces. No es hipotético: cada
+reinscripción deja una anulada pagada detrás, y basta con anular después la fila buena.
+
+Lo que se implementó es más fuerte y no depende de la longitud de la cadena: **una fila por
+participante**. De todas las filas pagadas de una persona se elige la viva si la tiene y, si no, la
+más reciente; el destino de ese dinero lo decide esa fila. Vive en una sola constante,
+`Inscripcion::DESDE_COBROS_VIGENTES`, que usan los tres reportes — y de ahí sale gratis que el
+arqueo y el saldo cuadren entre sí, en vez de cuadrar por casualidad.
+
+**Por qué NO se toca `anular()` para meter el limbo en el fondo.** Ese dinero no se devuelve: está
+esperando la reinscripción, y `limpiarDevolucion()` (`:595`) existe precisamente para que el reporte
+no pida entregar una plata que la secretaria va a reutilizar — el concurso la pagaría dos veces. Lo
+que falta no es marcarlo como devolución, es **verlo**; y para verlo basta con leer.
+
+**Por qué NO se crea la tabla `pagos` hoy.** Es la deuda estructural de verdad: la confirmación es
+masiva (D-14), así que un Yape de S/ 300 por treinta estudiantes escribe **el mismo código de tres
+dígitos en treinta filas**, y la reinscripción lo copia a filas de otra fecha. **No existe la
+entidad «operación de cobro»**, solo una marca repetida, y el arqueo tiene que reconstruirla
+agrupando por `(confirmado_por, medio_pago, yape_codigo_seguridad, minuto de fecha_pago)` — que es
+una heurística, no un hecho. Hoy es el día del concurso, con cobros entrando por la puerta: una
+migración sobre la tabla que guarda el dinero no se hace hoy. Queda anotada para después.
+
+**Lo que este reporte NO puede decir, y hay que saberlo antes de firmarlo:**
+
+- **Devoluciones efectuadas.** El sistema sabe decir «se debe»; nunca «se devolvió, cuándo, por qué
+  medio y quién firmó». `limpiarDevolucion()` borra el marcador sin dejar rastro. La línea existe
+  en el saldo, en cero y rotulada como no registrada, para que el cuadre no mienta por omisión.
+- **La fecha de anulación no existe.** `fondoDevoluciones()` selecciona `i.updated_at` (`:660`) como
+  si lo fuera, y cualquier `UPDATE` posterior —`anotarEnAnulacion()`, `limpiarDevolucion()`,
+  `cambiarProcedencia()`— la mueve. En la pantalla se rotula «última modificación», no «fecha de
+  anulación», hasta que exista la columna.
+- **Transferencia y efectivo no llevan ninguna referencia externa**, así que solo se concilian por
+  importe y fecha. Solo Yape tiene llave, y de tres dígitos.
+
+**Falta medir contra la base de PRODUCCIÓN, y no se da por bueno hasta hacerlo.** La local no puede
+responderlo: al medir salieron **312 inscripciones con `fecha_pago` en el futuro** —hasta las 15:56
+de un día en el que eran las 12:35— y 808 participantes donde `PENDIENTE.md` registraba 113
+confirmadas. Son filas generadas, probablemente las de la medición de rendimiento de D-57, que
+nunca se limpiaron. **Ninguna cifra de dinero sacada de la base local es real**, y por eso aquí no
+se anota ninguna. Lo que sí vale de esa corrida es que el mecanismo funciona y que el cuadre cierra
+sobre 809 filas. En el servidor, con sesión de administrador, la pantalla `/reportes/saldos` da la
+respuesta directamente; por consola:
+
+```sql
+SELECT SUM(i.estado='confirmada' AND i.confirmado_por IS NULL)  AS cobros_sin_firma,
+       SUM(i.estado='anulada'    AND i.fecha_pago IS NOT NULL
+           AND i.requiere_devolucion = 0)                       AS anuladas_pagadas_sin_marcador,
+       SUM(i.requiere_devolucion)                               AS por_devolver
+  FROM inscripciones i JOIN participantes p ON p.id = i.participante_id
+ WHERE p.concurso_id = 1;
+```
+
+De `anuladas_pagadas_sin_marcador`, las que tengan inscripción viva son reinscripciones correctas;
+las que no, son el limbo.
+
+**Cómo se comprueba.** `scripts/pruebas/reportes-contables.php`, **62 comprobaciones**, con el
+patrón de D-55: la suite **crea su propio caso** dentro de la transacción que `_comun.php` revierte,
+en vez de buscar filas reales que mañana pueden no existir. Y **mide por diferencia** contra el
+estado real de la base, nunca contra cifras absolutas: cualquier número escrito a mano aquí
+caducaría con el cobro siguiente.
+
+Lo que de verdad vigila, y que una prueba de «el total sale» no vería:
+
+- Que **una reinscripción pagada suma una sola vez**. Se monta la cadena entera —cobrar, anular
+  para reinscribir, recrear copiando el pago— y se comprueba que las dos filas tienen `fecha_pago`
+  y que aun así el bruto no se mueve.
+- Que **la anulada en limbo aparece en su línea** y no en el fondo de devoluciones.
+- Que **el cuadre cierra**: la suma de los tres medios da el total de cada cobrador, y la suma de
+  todos los cobradores da el cobrado bruto del saldo.
+- Que **un cobro masivo se reconstruye como una sola operación**. Las dos filas se escriben con la
+  misma `fecha_pago` fijada a mano y no con la del reloj: si no, la prueba fallaría sola cuando la
+  corrida cayera a caballo entre dos minutos.
+- La frontera de rol, sobre el controlador: el arqueo exige sesión y acota, las otras dos exigen
+  administrador.
+- Que **las tres pantallas se dibujan de verdad**, renderizándolas con datos reales y las dos
+  sesiones. Leer el código de una vista no ejecuta ni una línea: un índice mal escrito pasaría
+  entero hasta que alguien abriera la pantalla, y estas se abren el día que hay que entregar
+  dinero. De paso comprueba lo que la secretaria **no** ve: ni la caja de otra persona, ni los
+  enlaces a las dos pantallas de dirección.
+
+**Un efecto colateral que hubo que arreglar:** `frontera-de-roles.php` comprobaba que el acta está
+detrás del rol buscando `Auth::exigirSesion()` **en todo el archivo** del controlador. Con el arqueo
+dentro —que sí es de los dos roles y usa esa guarda con toda razón— la comprobación empezó a fallar
+señalando código correcto. Se acotó al cuerpo de `acta()`, que es lo que mantiene viva la pregunta
+original en vez de convertirla en «¿alguien en este archivo dijo sesión?».
+
+**Total de la suite: 20 pruebas, 395 comprobaciones**, todas en verde.
+
+---
+
 ### D-58 — Nombres propios en mayúsculas: al mostrar, nunca al guardar
 
 **Fecha:** 2026-08-22 · **Estado:** implementado y probado · **Afecta:** D-56, D-57, vistas de listado

@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
+use Core\Fecha;
 use Core\View;
 
 /** @var array<string, mixed>|null $concurso */
 /** @var array<string, mixed> $resumen */
 
-$hoy = new DateTimeImmutable('today');
+$hoy = Fecha::hoy();
 
 /**
  * La cuenta atrás, concordada.
@@ -41,9 +42,9 @@ $cuentaAtras = static function (int $dias, string $vencido): string {
 <?php else: ?>
 
     <?php
-    $evento     = new DateTimeImmutable((string) $concurso['fecha_evento']);
+    $evento     = new DateTimeImmutable((string) $concurso['fecha_evento'], Fecha::zonaLocal());
     $diasEvento = (int) $hoy->diff($evento)->format('%r%a');
-    $finInsc    = new DateTimeImmutable((string) $concurso['fecha_fin_inscripcion']);
+    $finInsc    = new DateTimeImmutable((string) $concurso['fecha_fin_inscripcion'], Fecha::zonaLocal());
     $diasInsc   = (int) $hoy->diff($finInsc)->format('%r%a');
     ?>
 

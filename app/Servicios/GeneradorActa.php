@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Servicios;
 
 use App\Models\Concurso;
+use Core\Fecha;
 use Core\Texto;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -228,7 +229,7 @@ final class GeneradorActa
         };
 
         $fecha = !empty($concurso['fecha_evento'])
-            ? date('d/m/Y', (int) strtotime((string) $concurso['fecha_evento']))
+            ? Fecha::dia($concurso['fecha_evento'])
             : '';
 
         $lineas = [

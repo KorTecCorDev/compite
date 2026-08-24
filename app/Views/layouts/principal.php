@@ -35,11 +35,19 @@ $flash = Sesion::tomarFlash();
 
     <?php
     $rutaActual = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?? '';
+    /*
+     * «Caja» lleva al arqueo (D-59), y lo ven los dos roles: la secretaria solo
+     * encuentra ahí lo que cobró ella —es su cierre, el papel con el que
+     * entrega el dinero— y el administrador, las tres cajas más los enlaces a
+     * las otras dos pantallas contables. Un solo enlace en la barra en vez de
+     * tres: las otras dos son de dirección y se llega a ellas desde dentro.
+     */
     $enlaces = [
         '/panel'          => 'Panel',
         '/inscripciones'  => 'Inscripciones',
         '/apoderados'     => 'Apoderados',
         '/control'        => 'Control de ingreso',
+        '/reportes/caja'  => 'Caja',
     ];
 
     /*

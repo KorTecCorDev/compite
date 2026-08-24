@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Core\Database;
+use Core\Fecha;
 use InvalidArgumentException;
 
 /**
@@ -48,6 +49,22 @@ final class Inscripcion
      * a la vista.
      */
     public const FILTROS = ['institucion_id', 'tipo_origen', 'nivel', 'grado', 'estado', 'q'];
+
+    /**
+     * Los filtros de la grilla de cobros (D-61).
+     *
+     * Son los seis de arriba —el WHERE lo arma la misma `condiciones()`— más
+     * los cuatro que solo tienen sentido mirando dinero: con qué se pagó, quién
+     * lo confirmó y entre qué fechas.
+     *
+     * Es una lista aparte y no una ampliación de `FILTROS` porque `FILTROS` es
+     * lo que `urlListado()` acepta al reconstruir la vuelta al listado de
+     * `/inscripciones`, y esa pantalla no sabe nada de estos cuatro.
+     */
+    public const FILTROS_COBROS = [
+        'institucion_id', 'tipo_origen', 'nivel', 'grado', 'estado', 'q',
+        'medio_pago', 'confirmado_por', 'desde', 'hasta',
+    ];
 
     /**
      * Reconstruye la URL del listado quedándose solo con las claves conocidas.
@@ -104,25 +121,32 @@ final class Inscripcion
          * rastro de CÓMO se cobró: la secretaria cuadrando la caja al final del
          * día veía un pago confirmado sin medio, y el código de seguridad de
          * Yape —que es la prueba de esa transacción— desaparecía.
+         *
+         * `confirmado_por` viaja con ellos desde D-60, y faltaba: la fila nacía
+         * confirmada, con fecha y medio de pago, pero SIN FIRMA. Un cobro sin
+         * dueño es justo lo que D-39 vino a cerrar, y la reinscripción lo
+         * reintroducía en silencio. Es la firma del cobrador ORIGINAL: esa plata
+         * la recibió él, y quién reinscribe ya queda en `usuario_id`.
          */
         return Database::insertar(
             'INSERT INTO inscripciones (
                 participante_id, categoria_id, usuario_id, estado, tipo_origen, monto,
-                medio_pago, yape_codigo_seguridad, fecha_pago
+                medio_pago, yape_codigo_seguridad, fecha_pago, confirmado_por
              ) VALUES (
                 :participante, :categoria, :usuario, :estado, :tipo_origen, :monto,
-                :medio_pago, :yape, :fecha_pago
+                :medio_pago, :yape, :fecha_pago, :confirmado_por
              )',
             [
-                'participante' => $datos['participante_id'],
-                'categoria'    => $datos['categoria_id'],
-                'usuario'      => $datos['usuario_id'],
-                'estado'       => $datos['estado'] ?? 'pendiente',
-                'tipo_origen'  => $datos['tipo_origen'],
-                'monto'        => $datos['monto'],
-                'medio_pago'   => $datos['medio_pago'] ?? null,
-                'yape'         => $datos['yape_codigo_seguridad'] ?? null,
-                'fecha_pago'   => $datos['fecha_pago'] ?? null,
+                'participante'   => $datos['participante_id'],
+                'categoria'      => $datos['categoria_id'],
+                'usuario'        => $datos['usuario_id'],
+                'estado'         => $datos['estado'] ?? 'pendiente',
+                'tipo_origen'    => $datos['tipo_origen'],
+                'monto'          => $datos['monto'],
+                'medio_pago'     => $datos['medio_pago'] ?? null,
+                'yape'           => $datos['yape_codigo_seguridad'] ?? null,
+                'fecha_pago'     => $datos['fecha_pago'] ?? null,
+                'confirmado_por' => $datos['confirmado_por'] ?? null,
             ]
         );
     }
@@ -301,6 +325,70 @@ final class Inscripcion
             foreach (['q1', 'q2', 'q3', 'q4', 'q5'] as $clave) {
                 $parametros[$clave] = $termino;
             }
+        }
+
+        /*
+         * A partir de aquí, los filtros de la GRILLA DE COBROS (D-61). Ninguno
+         * lo envía el listado de `/inscripciones`, así que allí no cambian nada.
+         *
+         * Van en esta misma función y no en una paralela porque es aquí donde un
+         * filtro se convierte en SQL: con dos funciones, `contarFiltradas()`
+         * contaría con unas condiciones y la grilla pintaría con otras, y el
+         * aviso de «hay más filas» mentiría en cuanto se usara un filtro nuevo.
+         *
+         * Solo se referencian columnas de `i`, `p` y `cat`: `contarFiltradas()`
+         * no une `usuarios`, así que filtrar por quién cobró se hace contra
+         * `i.confirmado_por`, que es el id y no necesita el JOIN.
+         */
+        if (!empty($filtros['medio_pago'])) {
+            if ($filtros['medio_pago'] === 'sin_cobrar') {
+                $sql .= ' AND i.medio_pago IS NULL';
+            } else {
+                $sql .= ' AND i.medio_pago = :medio_pago';
+                $parametros['medio_pago'] = $filtros['medio_pago'];
+            }
+        }
+
+        if (!empty($filtros['confirmado_por'])) {
+            // `sin_firma` son los cobros que nadie firmó: los anteriores a D-39.
+            // No es un usuario, así que no puede viajar como id.
+            if ($filtros['confirmado_por'] === 'sin_firma') {
+                $sql .= ' AND i.fecha_pago IS NOT NULL AND i.confirmado_por IS NULL';
+            } else {
+                $sql .= ' AND i.confirmado_por = :confirmado_por';
+                $parametros['confirmado_por'] = (int) $filtros['confirmado_por'];
+            }
+        }
+
+        /*
+         * El rango de fechas se aplica sobre `fecha_pago` —es una grilla de
+         * cobros— y por tanto **excluye lo no cobrado**: una pendiente no tiene
+         * fecha que comparar. Que eso ocurra por el rango y no en silencio es
+         * justamente lo que la pantalla explica al lado del filtro.
+         *
+         * `hasta` se compara contra el final del día y no contra la fecha a
+         * secas: `fecha_pago` es DATETIME, así que `<= '2026-08-22'` dejaría
+         * fuera todo lo cobrado ese día después de medianoche, que es todo.
+         */
+        /*
+         * Las dos fechas llegan del `<input type="date">`, o sea en hora de
+         * Ancash, y `fecha_pago` está guardada en la del servidor (D-62). Se
+         * compara contra la columna ya convertida, porque si no «el viernes»
+         * significaría dos cosas distintas a cada lado del `>=` y los 191
+         * cobros del viernes por la noche saldrían filtrados como del sábado.
+         *
+         * Convertir la columna impide usar su índice; con 809 filas eso no se
+         * nota, y la alternativa —desplazar los límites en vez de la columna—
+         * es más rápida y bastante más fácil de equivocar al leerla.
+         */
+        if (!empty($filtros['desde'])) {
+            $sql .= ' AND ' . Fecha::sqlLocal('i.fecha_pago') . ' >= :desde';
+            $parametros['desde'] = $filtros['desde'] . ' 00:00:00';
+        }
+
+        if (!empty($filtros['hasta'])) {
+            $sql .= ' AND ' . Fecha::sqlLocal('i.fecha_pago') . ' <= :hasta';
+            $parametros['hasta'] = $filtros['hasta'] . ' 23:59:59';
         }
 
         return [$sql, $parametros];
@@ -671,6 +759,429 @@ final class Inscripcion
            ORDER BY p.ap_paterno' . $es . ' ASC,
                     p.ap_materno' . $es . ' ASC,
                     p.nombres'    . $es . ' ASC',
+            ['con' => $concursoId]
+        );
+    }
+
+    /* ------------------------------------------------------------------
+     * Reportes contables (D-59)
+     * ------------------------------------------------------------------ */
+
+    /**
+     * El SQL canónico del dinero: **una fila por cada pago que existe de
+     * verdad**, ni una más.
+     *
+     * Es el corazón de los tres reportes y por eso está escrito UNA vez. Si el
+     * arqueo y el saldo cada uno se lo montara por su cuenta, cuadrarían entre
+     * sí solo por casualidad — y un reporte contable que no se cuadra a sí
+     * mismo no es contable.
+     *
+     * **Por qué no basta con `estado = 'confirmada'`:** el dinero de una
+     * inscripción cobrada y luego anulada desaparecería del reporte, pero sigue
+     * físicamente en el cajón hasta que alguien lo devuelva.
+     *
+     * **Por qué no basta con `fecha_pago IS NOT NULL`:** cobraría dos veces al
+     * mismo estudiante. Al reinscribir (D-38), la fila nueva **copia**
+     * `medio_pago`, `fecha_pago` y el código de Yape, y la anulada **conserva
+     * los suyos**. Están escritos dos veces a propósito, para que la nueva sepa
+     * cómo se cobró.
+     *
+     * **Lo que sí funciona: elegir una fila por participante.** De todas las
+     * filas pagadas de una persona se toma la viva si la tiene, y si no la más
+     * reciente. Eso vale también para la cadena larga —pagó, se anuló, se
+     * reinscribió, se volvió a anular—, donde contar «anuladas sin hermana
+     * viva» sumaría el mismo importe dos veces.
+     *
+     * El `ORDER BY (i2.estado <> 'anulada') DESC` pone la viva primero, porque
+     * en MySQL una comparación vale 1 o 0. Un participante no puede tener dos
+     * vivas: lo impide `activaDe()` en todos los caminos de escritura.
+     *
+     * **Es `public` para que la rendición (D-62) la use tal cual, no por ser
+     * API.** Es un fragmento de SQL, no un contrato: quien lo use tiene que
+     * poner `i` como alias de `inscripciones`. Se comparte en vez de copiarse
+     * porque dos versiones de esta regla son dos contabilidades distintas.
+     */
+    public const FILA_DE_PAGO_VIGENTE = <<<'SQL'
+        (
+             SELECT i2.id
+               FROM inscripciones i2
+              WHERE i2.participante_id = i.participante_id
+                AND i2.fecha_pago IS NOT NULL
+           ORDER BY (i2.estado <> 'anulada') DESC, i2.id DESC
+              LIMIT 1
+        )
+    SQL;
+
+    /**
+     * El `FROM ... WHERE` de los tres reportes de dinero, ya acotado a las
+     * filas que cuentan.
+     *
+     * Se apoya en `FILA_DE_PAGO_VIGENTE`, que es la regla de arriba y vive
+     * separada porque **la grilla de cobros también la necesita** —para marcar
+     * qué filas ya están contadas en otra— y dos copias de esa consulta serían
+     * dos reglas que pueden divergir.
+     */
+    public const DESDE_COBROS_VIGENTES = '
+          FROM inscripciones i
+          JOIN participantes p ON p.id = i.participante_id
+     LEFT JOIN usuarios u ON u.id = i.confirmado_por
+         WHERE p.concurso_id = :con
+           AND i.fecha_pago IS NOT NULL
+           AND i.id = ' . self::FILA_DE_PAGO_VIGENTE;
+
+    /**
+     * Dónde está hoy cada pago. Tres destinos, y ninguno se puede omitir.
+     *
+     * `sin_reasignar` es el que no existía en ninguna pantalla: una anulación
+     * **no definitiva** sobre algo ya pagado deja `requiere_devolucion = 0`
+     * (ver `anular()`), así que ese dinero no salía ni en lo recaudado ni en el
+     * fondo. Está en el cajón esperando la reinscripción. Es el hueco entre los
+     * dos botones de D-15, y aquí se ve.
+     */
+    private const DESTINO = <<<'SQL'
+        CASE
+            WHEN i.estado <> 'anulada'     THEN 'en_firme'
+            WHEN i.requiere_devolucion = 1 THEN 'por_devolver'
+            ELSE 'sin_reasignar'
+        END
+    SQL;
+
+    /**
+     * La grilla de cobros (D-61): **todas** las inscripciones, con el detalle
+     * de su pago y ordenadas por cuándo se confirmó.
+     *
+     * Es la pantalla de auditoría, no la de totales. Devuelve **filas crudas**,
+     * una por inscripción, incluidas las pendientes y las anuladas: es lo que
+     * permite responder «¿qué pasó con este estudiante?», que es una pregunta
+     * distinta de «¿cuánto hay en caja?».
+     *
+     * Y precisamente por eso **aquí no se suma dinero**. Una reinscripción deja
+     * el mismo pago escrito en dos filas (D-59), así que sumar esta lista
+     * cobraría dos veces al mismo estudiante. Para no dejarlo a la
+     * interpretación de quien mire, cada fila trae `pago_contado`: vale 1 en la
+     * fila que los reportes de dinero cuentan y 0 en la copia. La pantalla lo
+     * dice con una marca, y los totales se piden en `/reportes/saldos`.
+     *
+     * **El orden es por fecha de confirmación, de lo más reciente a lo más
+     * antiguo**, y lo no cobrado va al final: es lo que hace que al abrir la
+     * pantalla se vea el último cobro arriba. Ordenar por una columna que puede
+     * ser NULL sin decidir dónde caen los nulos deja ese trozo del listado al
+     * criterio del motor.
+     *
+     * @param array<string, mixed> $filtros
+     * @return array<int, array<string, mixed>>
+     */
+    public static function cobros(int $concursoId, array $filtros = []): array
+    {
+        [$filtro, $parametros] = self::condiciones($concursoId, $filtros);
+
+        return Database::todos(
+            "SELECT i.id, i.estado, i.monto, i.tipo_origen,
+                    i.medio_pago, i.yape_codigo_seguridad, i.fecha_pago,
+                    i.requiere_devolucion, i.motivo_anulacion, i.created_at,
+                    i.confirmado_por,
+                    u.nombres AS cobrador,
+                    reg.nombres AS registrado_por,
+                    p.codigo_correlativo, p.dni, p.tipo_participante,
+                    p.ap_paterno, p.ap_materno, p.nombres,
+                    ie.nombre AS institucion,
+                    cat.nivel, cat.grado,
+                    (i.fecha_pago IS NOT NULL AND i.id = " . self::FILA_DE_PAGO_VIGENTE . ") AS pago_contado
+               FROM inscripciones i
+               JOIN participantes p ON p.id = i.participante_id
+               JOIN categorias cat ON cat.id = i.categoria_id
+               JOIN usuarios reg ON reg.id = i.usuario_id
+          LEFT JOIN usuarios u ON u.id = i.confirmado_por
+          LEFT JOIN instituciones_educativas ie ON ie.id = p.institucion_id
+              WHERE p.concurso_id = :concurso" . $filtro . '
+           ORDER BY (i.fecha_pago IS NULL) ASC,
+                    i.fecha_pago DESC,
+                    i.id DESC
+              LIMIT ' . self::TOPE_LISTADO,
+            $parametros
+        );
+    }
+
+    /**
+     * Las cinco líneas del saldo, cuadradas contra la caja física.
+     *
+     * `devuelto` sale siempre en 0 y **no es un cálculo**: el sistema no
+     * registra la devolución efectuada en ninguna parte —`limpiarDevolucion()`
+     * borra el marcador sin dejar rastro—, así que la línea existe para que el
+     * cuadre no mienta por omisión. El día que se registre, se calcula aquí.
+     *
+     * @return array<string, mixed>
+     */
+    public static function saldos(int $concursoId): array
+    {
+        $filas = Database::todos(
+            'SELECT ' . self::DESTINO . ' AS destino,
+                    COUNT(*) AS n,
+                    COALESCE(SUM(i.monto), 0) AS monto
+             ' . self::DESDE_COBROS_VIGENTES . '
+          GROUP BY destino',
+            ['con' => $concursoId]
+        );
+
+        $saldo = [
+            'en_firme'      => ['n' => 0, 'monto' => 0.0],
+            'por_devolver'  => ['n' => 0, 'monto' => 0.0],
+            'sin_reasignar' => ['n' => 0, 'monto' => 0.0],
+        ];
+
+        foreach ($filas as $fila) {
+            $destino = (string) $fila['destino'];
+
+            if (isset($saldo[$destino])) {
+                $saldo[$destino] = [
+                    'n'     => (int) $fila['n'],
+                    'monto' => (float) $fila['monto'],
+                ];
+            }
+        }
+
+        $pendientes = Database::uno(
+            "SELECT COUNT(*) AS n, COALESCE(SUM(i.monto), 0) AS monto
+               FROM inscripciones i
+               JOIN participantes p ON p.id = i.participante_id
+              WHERE p.concurso_id = :con
+                AND i.estado = 'pendiente'",
+            ['con' => $concursoId]
+        );
+
+        $bruto = $saldo['en_firme']['monto']
+               + $saldo['por_devolver']['monto']
+               + $saldo['sin_reasignar']['monto'];
+
+        return [
+            'en_firme'      => $saldo['en_firme'],
+            'por_devolver'  => $saldo['por_devolver'],
+            'sin_reasignar' => $saldo['sin_reasignar'],
+            'bruto'         => $bruto,
+            'devuelto'      => 0.0,
+            'en_poder'      => $bruto,
+            'por_cobrar'    => [
+                'n'     => (int) ($pendientes['n'] ?? 0),
+                'monto' => (float) ($pendientes['monto'] ?? 0),
+            ],
+        ];
+    }
+
+    /**
+     * El arqueo: cuánto recibió cada persona, desglosado por medio de pago.
+     *
+     * `$usuarioId` acota a un solo cobrador. La secretaria ve solo el suyo
+     * (D-59), y de paso eso es su cierre de caja: el papel con el que entrega
+     * el dinero.
+     *
+     * La fila **«(sin firma)»** agrupa los cobros con `confirmado_por` nulo, y
+     * no se esconde ni se reparte entre los demás: son los anteriores a D-39
+     * —y, hasta D-60, los nacidos de una reinscripción—. Repartirlos sería
+     * inventar quién recibió un dinero.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function arqueoPorUsuario(int $concursoId, ?int $usuarioId = null): array
+    {
+        $parametros = ['con' => $concursoId];
+        $filtro     = '';
+
+        if ($usuarioId !== null) {
+            // Los cobros sin firma no son de nadie, así que `= :usuario` los
+            // deja fuera por sí solo. Es lo correcto: no son suyos.
+            $filtro = ' AND i.confirmado_por = :usuario';
+            $parametros['usuario'] = $usuarioId;
+        }
+
+        return Database::todos(
+            "SELECT i.confirmado_por,
+                    COALESCE(u.nombres, '(sin firma)') AS cobrador,
+                    SUM(i.medio_pago = 'yape')          AS n_yape,
+                    SUM(i.medio_pago = 'transferencia') AS n_transferencia,
+                    SUM(i.medio_pago = 'efectivo')      AS n_efectivo,
+                    COALESCE(SUM(CASE WHEN i.medio_pago = 'yape'          THEN i.monto END), 0) AS monto_yape,
+                    COALESCE(SUM(CASE WHEN i.medio_pago = 'transferencia' THEN i.monto END), 0) AS monto_transferencia,
+                    COALESCE(SUM(CASE WHEN i.medio_pago = 'efectivo'      THEN i.monto END), 0) AS monto_efectivo,
+                    COUNT(*) AS n_total,
+                    COALESCE(SUM(i.monto), 0) AS monto_total
+             " . self::DESDE_COBROS_VIGENTES . $filtro . '
+          GROUP BY i.confirmado_por, u.nombres
+          ORDER BY (i.confirmado_por IS NULL) ASC, u.nombres ASC',
+            $parametros
+        );
+    }
+
+    /**
+     * Las operaciones de cobro, reconstruidas.
+     *
+     * **Esto es una reconstrucción, no un hecho, y el reporte lo dice.** No
+     * existe la entidad «operación»: la confirmación es masiva (D-14), así que
+     * un Yape de S/ 300 por treinta estudiantes escribe el mismo código de tres
+     * dígitos en treinta filas. Lo que las une es haber sido confirmadas por la
+     * misma persona, con el mismo medio y el mismo código, **en el mismo
+     * minuto** — que es lo que ocurre cuando se pulsa «Confirmar» una vez.
+     *
+     * Es la única forma de conciliar contra la aplicación del banco, y por eso
+     * la tabla `pagos` de verdad está anotada como deuda en D-59.
+     *
+     * El minuto, y no el segundo: el bucle de `PagoController` abre una
+     * transacción por inscripción, así que treinta carnés pueden repartirse
+     * entre dos segundos consecutivos y partirían la operación en dos.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function operacionesDeCobro(int $concursoId, ?int $usuarioId = null): array
+    {
+        $parametros = ['con' => $concursoId];
+        $filtro     = '';
+
+        if ($usuarioId !== null) {
+            $filtro = ' AND i.confirmado_por = :usuario';
+            $parametros['usuario'] = $usuarioId;
+        }
+
+        $es = Database::ordenEspanol();
+
+        /*
+         * **Una sola consulta, agrupada en PHP, y no dos consultas.** (D-64)
+         *
+         * La alternativa evidente —un `GROUP BY` para las cabeceras y otro
+         * `SELECT` para el detalle— repetiría la clave de agrupación en dos
+         * sitios, y el día que una de las dos cambie el total de la cabecera
+         * dejaría de ser la suma de lo que hay debajo. En un papel que se firma
+         * al entregar dinero, esa discrepancia es exactamente lo que no puede
+         * pasar: aquí **el total se calcula a partir de las filas que se
+         * listan**, así que no puede contradecirlas.
+         *
+         * El orden dentro de cada operación es alfabético con la colación
+         * española, que es como se coteja contra la nómina de la delegación.
+         */
+        $filas = Database::todos(
+            "SELECT i.id, i.monto, i.medio_pago, i.yape_codigo_seguridad, i.fecha_pago,
+                    i.confirmado_por,
+                    COALESCE(u.nombres, '(sin firma)') AS cobrador,
+                    DATE_FORMAT(i.fecha_pago, '%Y-%m-%d %H:%i') AS minuto,
+                    p.codigo_correlativo, p.dni,
+                    p.ap_paterno, p.ap_materno, p.nombres,
+                    p.tipo_participante,
+                    (SELECT ie.nombre
+                       FROM instituciones_educativas ie
+                      WHERE ie.id = p.institucion_id) AS institucion,
+                    (SELECT CONCAT(cat.nivel, ' ', cat.grado)
+                       FROM categorias cat
+                      WHERE cat.id = i.categoria_id) AS categoria
+             " . self::DESDE_COBROS_VIGENTES . $filtro . '
+          ORDER BY minuto DESC,
+                   cobrador' . $es . ' ASC,
+                   i.medio_pago ASC,
+                   p.ap_paterno' . $es . ' ASC,
+                   p.ap_materno' . $es . ' ASC,
+                   p.nombres'    . $es . ' ASC',
+            $parametros
+        );
+
+        $operaciones = [];
+
+        foreach ($filas as $fila) {
+            // La clave es la misma de siempre: quién cobró, con qué medio, con
+            // qué código y en qué minuto. Ver la nota de arriba sobre por qué el
+            // minuto y no el segundo.
+            $clave = implode('|', [
+                (string) $fila['confirmado_por'],
+                (string) $fila['medio_pago'],
+                (string) $fila['yape_codigo_seguridad'],
+                (string) $fila['minuto'],
+            ]);
+
+            if (!isset($operaciones[$clave])) {
+                $operaciones[$clave] = [
+                    'momento'               => $fila['fecha_pago'],
+                    'medio_pago'            => $fila['medio_pago'],
+                    'yape_codigo_seguridad' => $fila['yape_codigo_seguridad'],
+                    'confirmado_por'        => $fila['confirmado_por'],
+                    'cobrador'              => $fila['cobrador'],
+                    'cantidad'              => 0,
+                    'monto'                 => 0.0,
+                    'procedencias'          => [],
+                    'participantes'         => [],
+                ];
+            }
+
+            $procedencia = $fila['tipo_participante'] === 'libre'
+                ? 'Libre'
+                : (string) ($fila['institucion'] ?? '—');
+
+            $operaciones[$clave]['cantidad']++;
+            $operaciones[$clave]['monto'] += (float) $fila['monto'];
+            $operaciones[$clave]['procedencias'][$procedencia] = true;
+            $operaciones[$clave]['participantes'][] = [
+                'id'                 => (int) $fila['id'],
+                'codigo_correlativo' => $fila['codigo_correlativo'],
+                'dni'                => $fila['dni'],
+                'ap_paterno'         => $fila['ap_paterno'],
+                'ap_materno'         => $fila['ap_materno'],
+                'nombres'            => $fila['nombres'],
+                'procedencia'        => $procedencia,
+                'categoria'          => $fila['categoria'],
+                'monto'              => (float) $fila['monto'],
+            ];
+
+            // La más antigua del grupo es el momento de la operación, igual que
+            // hacía el `MIN(fecha_pago)` de la versión anterior.
+            if ($fila['fecha_pago'] < $operaciones[$clave]['momento']) {
+                $operaciones[$clave]['momento'] = $fila['fecha_pago'];
+            }
+        }
+
+        /*
+         * Cuántas procedencias distintas toca la operación. Con más de una, es
+         * señal de que la reconstrucción pudo haber fundido dos cobros reales
+         * del mismo minuto: dos delegaciones que pagaron en efectivo seguidas.
+         * La pantalla lo avisa en vez de presentarlo como un hecho.
+         */
+        foreach ($operaciones as &$operacion) {
+            $operacion['procedencias'] = array_keys($operacion['procedencias']);
+        }
+
+        unset($operacion);
+
+        return array_values($operaciones);
+    }
+
+    /**
+     * Cobrado pendiente de reasignar: el dinero que no está en ningún sitio.
+     *
+     * Anuladas **para reinscribir** que todavía no se reinscribieron, con su
+     * pago dentro. No van al fondo de devoluciones a propósito: esa plata no se
+     * devuelve, se está reutilizando, y pedir que se entregue haría que el
+     * concurso la pagara dos veces (es justo lo que evita `limpiarDevolucion()`).
+     *
+     * Lo que hace falta es **verlas**, porque mientras tanto están en el cajón
+     * sin figurar en ninguna cuenta.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public static function cobradoSinReasignar(int $concursoId): array
+    {
+        $es = Database::ordenEspanol();
+
+        return Database::todos(
+            "SELECT i.id, i.monto, i.medio_pago, i.fecha_pago, i.motivo_anulacion,
+                    COALESCE(u.nombres, '(sin firma)') AS cobrador,
+                    p.codigo_correlativo, p.dni, p.ap_paterno, p.ap_materno, p.nombres,
+                    p.tipo_participante,
+                    /* Subconsulta y no JOIN: el FROM viene del fragmento
+                       canónico, que es común a los tres reportes y no se
+                       ensancha para una columna de una sola pantalla. */
+                    (SELECT ie.nombre
+                       FROM instituciones_educativas ie
+                      WHERE ie.id = p.institucion_id) AS institucion
+             " . self::DESDE_COBROS_VIGENTES . "
+               AND i.estado = 'anulada'
+               AND i.requiere_devolucion = 0
+          ORDER BY p.ap_paterno" . $es . ' ASC,
+                   p.ap_materno' . $es . ' ASC,
+                   p.nombres'    . $es . ' ASC',
             ['con' => $concursoId]
         );
     }

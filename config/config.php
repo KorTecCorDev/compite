@@ -20,6 +20,25 @@ return [
         'entorno'   => 'local',            // 'local' | 'produccion'
         'depurar'   => true,               // en producción DEBE ser false
         'zona'      => 'America/Lima',
+
+        /*
+         * La zona en la que están escritas las columnas DATETIME de la base
+         * —hoy solo `inscripciones.fecha_pago`— (D-62).
+         *
+         * NO es la zona del servidor que lee: es la del servidor que ESCRIBIÓ.
+         * Hostinger corre MySQL en UTC, así que `NOW()` guardó horas UTC en una
+         * columna que no las convierte al leer. Medido sobre los datos reales:
+         * **5 horas de adelanto**, y 191 cobros del viernes por la noche
+         * archivados con fecha del sábado.
+         *
+         * Se corrige AL LEER, en `Core\Fecha`. Los datos no se tocan: reescribir
+         * 805 fechas de pago es reescribir el libro de caja.
+         *
+         * Ponlo igual que `zona` solo si la base la escribió un MySQL que ya
+         * corría en hora local; entonces el desplazamiento es cero y las
+         * consultas quedan como estaban.
+         */
+        'zona_datos' => 'UTC',
         /*
          * Dominio canónico. **Opcional desde D-43.**
          *

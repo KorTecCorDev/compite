@@ -14,6 +14,7 @@ use Core\Config;
 use Core\Correlativo;
 use Core\Texto;
 use Core\Url;
+use Core\Fecha;
 use Core\View;
 
 /**
@@ -531,7 +532,7 @@ HTML;
         );
 
         $fecha = !empty($d['fecha_evento'])
-            ? date('d/m/Y', strtotime((string) $d['fecha_evento']))
+            ? Fecha::dia($d['fecha_evento'])
             : '';
 
         $ptApellidos = self::tamanoQueQuepa($apellidos, self::NOMBRE_PT, self::NOMBRE_POR_LINEA);

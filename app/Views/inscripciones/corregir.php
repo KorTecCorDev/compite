@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Correccion;
 use Core\Sesion;
+use Core\Fecha;
 use Core\View;
 
 /** @var array<string, mixed> $inscripcion */
@@ -291,7 +292,7 @@ $estaPagada = $inscripcion['estado'] === 'confirmada';
                     <?php foreach ($historial as $fila): ?>
                         <tr>
                             <td data-etiqueta="Cuándo">
-                                <?= View::e(date('d/m/Y H:i', strtotime((string) $fila['created_at']))) ?>
+                                <?= View::e(Fecha::mostrar($fila['created_at'])) ?>
                             </td>
                             <td data-etiqueta="Qué"><?= View::e(Correccion::etiqueta((string) $fila['campo'])) ?></td>
                             <td data-etiqueta="Antes"><span class="tenue"><?= View::e((string) $fila['anterior']) ?></span></td>

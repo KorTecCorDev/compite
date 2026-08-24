@@ -1,11 +1,22 @@
-# Punto de retomada — 22 de agosto de 2026, día del concurso
+# Punto de retomada — 22 de agosto de 2026, concurso terminado
 
 Este archivo vive en el repositorio a propósito: se lee desde cualquier máquina.
 Lo que hay en él es **estado**, no decisiones — las decisiones están en la §11 de
 `PLAN_IMPLEMENTACION_COCIAP2026.md`.
 
-**HOY es el concurso, con inscripción el mismo día.** El lote grande entró el 21
-y se cobró entero: **113 confirmadas, 2 anuladas, cero pendientes**.
+**EL CONCURSO YA TERMINÓ.** Cifras finales, medidas sobre la base:
+
+| | |
+|---|---:|
+| Inscripciones registradas | 809 |
+| Confirmadas y cobradas | 804 · **S/ 9 245,00** |
+| Anuladas | 5 |
+| Pendientes de pago | **0** |
+| Personas en el padrón | 808 |
+| Ingreso legítimo tras ajustes | **S/ 9 235,00** |
+
+**A partir de aquí no se cambia ningún dato** (decisión del propietario,
+22-ago). Lo que quede mal se declara en la rendición, no se corrige en la base.
 
 ## Lo desplegado hoy, y lo que falta comprobar en vivo
 
@@ -24,6 +35,14 @@ D-57) y los **nombres en mayúsculas** (D-58).
 Y sigue sin hacerse lo de siempre: **nadie ha impreso todavía una hoja del acta**.
 Las pruebas leen el `.xlsx` por dentro, pero no ven la página.
 
+**SIN DESPLEGAR todavía**, todo hecho el 22 por la tarde y sin ninguna
+migración: los **reportes contables** (D-59), la **firma que sobrevive a la
+reinscripción** (D-60), la **grilla de cobros** (D-61), la **rendición de
+cuentas** (D-62), la **hora de Ancash en todo el sistema** (D-63) y las
+**operaciones con sus participantes dentro** (D-64). Probados en local —134
+comprobaciones propias y la suite entera en verde—, así que el despliegue es el
+`git push` de siempre. Detalle más abajo.
+
 ---
 
 ## Dónde está todo
@@ -32,15 +51,18 @@ Las pruebas leen el `.xlsx` por dentro, pero no ven la página.
 |---|---|
 | Producción | `~/domains/palegoldenrod-gorilla-440933.hostingersite.com/public_html` |
 | Base | `u761410128_compite` · MariaDB 11.8.8 |
-| Base local | **copia de producción** desde el 21-ago |
+| Base local | **copia de producción** con el concurso ya cerrado (22-ago) |
 | PHP servidor | 8.3.30 (consola) |
 | Guía | `DESPLIEGUE.md` · el push a `main` es el despliegue |
 | Banco de pruebas | `docs/protocolo-pruebas.html` — 137 pruebas manuales |
 
 **Antes de cualquier commit que toque `src/`:** comprobar que **no hay ningún
-proceso `node` corriendo**. El watcher de gulp reapareció **cuatro veces** entre
+proceso `node` corriendo**. El watcher de gulp reapareció **cinco veces** entre
 el 20 y el 22 y deja los assets sin minificar; commitearlos los publica y el CDN
 los sirve una semana. `git diff HEAD --stat -- public/build` vacío es la prueba.
+· La quinta fue el 22 a mediodía, en plena sesión de trabajo: `git status`
+estaba limpio al empezar y ocho archivos de `public/build` aparecieron
+desminificados (+1989 líneas) sin que nadie tocara `src/`.
 
 **La cuenta de hosting está compartida** con `sigacociap.net`, que es el otro
 proyecto del propietario. No se toca ni se lee.
@@ -131,14 +153,18 @@ hacerlo con el móvil en datos móviles y no en wifi, que es el escenario real.
 
 ---
 
-## Un caso real, ya resuelto (21-ago)
+## Un caso real que se creía resuelto (21-ago) — NO lo está
 
 **Los participantes 20 y 21 son el mismo estudiante.**
 
 | id | Documento | Estado |
 |---|---|---|
 | 20 | `61880439` | anulada, libre |
-| 21 | `61880438` | **pendiente de cobro**, delegación (I.E. 34) |
+| 21 | `61880438` | **confirmada y cobrada**, delegación |
+
+> **Comprobado el 22-ago sobre la base: el intercambio de documentos NO está
+> aplicado.** El `…439` sigue en el registro anulado y quien compitió lleva el
+> `…438`. Ver el aviso de la rendición (D-62), más arriba.
 
 Mismo nombre completo, un dígito de diferencia. El 20 se anuló por institución
 equivocada y, como entonces no se podía corregir, se volvió a registrar de cero;
@@ -249,27 +275,121 @@ son los carnés en PDF (~0,4 s cada diez), ya mitigado generando por delegación
 
 ---
 
-## LO SIGUIENTE: el reporte administrativo (Fase 5)
+## LOS REPORTES CONTABLES YA ESTÁN (D-59, D-60 y D-61) — sin desplegar
 
-**Ya no es deuda aplazada: el propietario confirmó que el acta de los jurados
-sale del sistema, así que es requisito del sábado.**
+Cinco pantallas imprimibles, **cero migraciones**, 134 comprobaciones propias:
 
-- **La bolsa de competencia NO es la modalidad.** D-37 fija tres bolsas por
-  nivel+grado: `privada + libre` juntos, `publica`, `organizadora`. Agrupar por
-  las cuatro modalidades separaría a privados de libres y daría **dos ganadores
-  donde las bases dicen uno**.
-- **Esa regla vive hoy solo en un `CASE` dentro de
-  `scripts/pruebas/modalidad-organizadora.php`.** Antes de generar nada tiene
-  que subir al dominio, o habrá dos copias que pueden divergir.
-- Son **dos reportes distintos**: el acta para los jurados (solo confirmadas,
-  **sin ningún dato de dinero**) y el administrativo para dirección (con montos
-  y los filtros combinables del §8).
-- Hay **bolsas con un solo participante**. El reporte tiene que hacerlo visible:
-  descubrirlo en la premiación es mucho peor.
-- `vendor/` no viaja con el autodeploy. **Verificar que PhpSpreadsheet esté
-  instalado en el servidor** antes, no después: allí los errores no se ven.
-- La **pantalla del fondo de devoluciones** sigue sin existir. El cálculo ya
-  está en `Inscripcion::fondoDevoluciones()`; le faltan la vista y la ruta.
+| Ruta | Quién | Qué |
+|---|---|---|
+| `/reportes/rendicion` | administrador | **La rendición de cuentas**: el documento de cierre, con conciliación, anexos y padrón nominal. |
+| `/reportes/caja` | los dos roles | Arqueo por cobrador y medio, más una **ficha por operación con los participantes que la componen**. La secretaria ve **solo lo suyo**: es su cierre. |
+| `/reportes/cobros` | administrador | **La grilla**: TODAS las inscripciones con estado, quién confirmó, medio, código de Yape y hora — ordenadas por fecha de confirmación. Siete filtros. |
+| `/reportes/saldos` | administrador | Las cinco líneas del saldo, con el cuadre comprobado en ejecución. |
+| `/reportes/devoluciones` | administrador | El fondo, que llevaba desde la Fase 4 calculado y **sin pantalla**. |
+
+La barra lleva un solo enlace nuevo, «Caja»; las otras dos se alcanzan desde
+dentro. Se imprimen con el botón o con Ctrl+P: hay un bloque `@media print` que
+apaga barra, pie y botones y añade el pie de firmas «Entregué / Recibí».
+
+**Lo que hay que saber antes de usarlos para entregar dinero:**
+
+- **El mismo pago se cuenta una sola vez**, aunque esté escrito en dos filas por
+  una reinscripción. La regla vive en una sola constante,
+  `Inscripcion::DESDE_COBROS_VIGENTES`, y por eso el arqueo y el saldo cuadran.
+- **Apareció una línea que no existía en ninguna pantalla:** «cobrado sin
+  reasignar» — anuladas para reinscribir que aún no se reinscribieron. Ese
+  dinero está en el cajón y no salía ni en recaudado ni en el fondo.
+- **Las devoluciones efectuadas siguen sin registrarse.** La línea sale en cero
+  y rotulada, para que el cuadre no mienta por omisión.
+- **D-60:** al reinscribir, la firma de quien cobró ya no se pierde. Antes la
+  fila nueva nacía confirmada y **sin dueño**.
+- **La grilla de cobros NO suma dinero, a propósito** (D-61). Enseña filas
+  crudas, así que sumarlas cobraría dos veces al mismo estudiante; las filas
+  cuyo pago ya está contado en otra salen marcadas **«ya contado»** y los
+  totales se piden en `/reportes/saldos`. Es la misma regla, en una sola copia
+  (`Inscripcion::FILA_DE_PAGO_VIGENTE`).
+- **La grilla es de auditoría, no de trabajo.** `/inscripciones` sigue en orden
+  de nómina con sus acciones; esta va en orden de reloj y no opera nada.
+
+---
+
+## LA RENDICIÓN DE CUENTAS (D-62) — el documento de cierre
+
+`/reportes/rendicion`, solo administrador. **El concurso ya terminó y no se
+cambia ningún dato**: los sobre registros se declaran, no se corrigen.
+
+| | |
+|---|---:|
+| Inscripciones registradas | 809 |
+| (−) anuladas | 5 |
+| Confirmadas y cobradas | 804 · **S/ 9 245,00** |
+| (−) cobro duplicado a una misma persona | 1 · **S/ 10,00** |
+| **Competidores efectivos e ingreso legítimo** | **803 · S/ 9 235,00** |
+
+**Los tres sobre registros, encontrados por tres barridos distintos:**
+
+1. **RAMÍREZ OSORIO, BRIYIT ELISA** — inscrita **dos veces** (participantes 195
+   y 196), mismo colegio (IE 86016 Pedro Pablo Atusparia), mismo grado
+   (primaria 4°), **cobrada dos veces con catorce segundos de diferencia** por
+   Tatiana Villar. **S/ 10,00 por devolver** y un competidor fantasma en su
+   bolsa. Es el único caso con dinero de más.
+2. **DEPAZ YAURI, MAURICIO JAVIER** — su pago de S/ 15,00 está escrito en dos
+   filas (la anulada 16 y la reinscrita 23). El dinero entró una vez; ya está
+   contado una vez.
+3. **LEANDRO CHAMORRO, ANDRÉS HERBERG** — participantes 20 y 21, mismo nombre,
+   distinta procedencia. Sin impacto monetario. **Pero ojo:** ver abajo.
+
+Los otros cuatro pares con apellidos+colegio+grado iguales son **hermanos**
+(nombres de pila distintos), comprobado uno a uno.
+
+> ⚠️ **El documento del caso 3 está en el registro equivocado.** Este archivo
+> decía que el 21-ago se intercambiaron por consola los documentos dejando el
+> bueno (`…439`) en el registro vivo. **Los datos dicen lo contrario:** el
+> `…439` está en el participante **20, que es el anulado**, y quien compitió
+> lleva el `…438`. O se revirtió —aquí mismo está anotado que la primera vez
+> faltó el `COMMIT`— o nunca se aplicó. **No se tocó nada.** Hay que decidirlo
+> antes de emitir cualquier constancia a nombre de ese estudiante.
+
+**Falta, y solo puedes hacerlo tú:** imprimir la rendición y una hoja del arqueo
+y mirarlas en papel.
+
+---
+
+## ⚠️ La hora: resuelto en todo el sistema (D-62 y D-63)
+
+> **Corrección de lo que este archivo decía antes.** Aquí llegó a estar escrito
+> que la base local tenía filas generadas y que sus cifras de dinero no eran
+> reales. **Era falso.** Los «pagos en el futuro» eran pagos con hora UTC, y el
+> desfase resultó ser **exactamente 18 000 segundos en 803 de 805 filas** — una
+> zona horaria, no una falsificación. **Los datos son reales y completos**, y el
+> padrón de 808 es el del concurso, no el de las 113 que este archivo registraba
+> antes de la jornada del sábado.
+
+`fecha_pago` es `DATETIME` y guarda la hora del servidor (UTC en Hostinger);
+`created_at` y `updated_at` son `TIMESTAMP` y sí se convierten al leer. De ahí
+las cinco horas.
+
+**Lo que cuesta en la práctica:** 191 cobros, **S/ 1 965,00**, están archivados
+con fecha del sábado y se cobraron el viernes por la noche. Corregido, el cierre
+real es 20-ago S/ 215,00 · 21-ago S/ 5 215,00 · 22-ago S/ 3 815,00.
+
+**Ya está resuelto en TODO el sistema** (D-63), sin tocar un dato:
+
+- La sesión de base de datos habla **UTC** (`SET SESSION time_zone = '+00:00'`),
+  así que `DATETIME` y `TIMESTAMP` —que MySQL entregaba de forma distinta— salen
+  por fin en la misma zona, **y la hora de desarrollo es la de producción**.
+  Antes `created_at` se veía bien en local y 5 h adelantado en el servidor.
+- `Core\Fecha` convierte al mostrar. **`mostrar()` para instantes, `dia()` para
+  días de calendario**: la fecha del evento NO se convierte, o el carné y el
+  acta dirían que el concurso fue el 21 a las 19:00.
+- `Fecha::ahora()` y `Fecha::hoy()` no dependen del `php.ini`, que en consola y
+  en el servidor puede venir en UTC.
+- Hay una prueba que **recorre el código y falla si alguna fecha se pinta fuera
+  de `Core\Fecha`**.
+
+**Confírmalo en producción con una línea**, para no fiarnos de una inferencia:
+`SELECT NOW(), @@session.time_zone;` — si allá responde en UTC, la configuración
+es la correcta tal como está.
 
 ---
 
@@ -347,7 +467,7 @@ el 21-ago. No es un fallo de permisos.
 ## Cómo comprobar que sigue todo en pie
 
 ```
-php scripts/pruebas/todas.php          # 19 suites · 333 comprobaciones, base real
+php scripts/pruebas/todas.php          # 20 suites · 467 comprobaciones, base real
 php scripts/medir_responsive.php       # 7 pantallas × 8 anchos
 php scripts/verificar_despliegue.php   # el servidor: config, esquema, datos, assets
 ```
